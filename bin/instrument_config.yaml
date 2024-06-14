@@ -1,0 +1,95 @@
+devices:
+#    tissue_clearer:
+#        module: brainwasher.proof_of_concept
+#        class: TissueClearer
+#        kwds:
+#            multiport_selector: vici
+#            dispense_pump: syringe_pump_0
+#    syringe_pump_0:
+#        module: runze_control.syringe_pump
+#        class: SY08
+#        args:
+#            - "/dev/ttyUSB0"
+#        kwds:
+#            address: 0x00
+#            syringe_volume_ul: 25
+#    syringe_pump_1:
+#        module: runze_control.syringe_pump
+#        class: SY08
+#        args:
+#            - "/dev/ttyUSB1"
+#        kwds:
+#            address: 0x00
+#            syringe_volume_ul: 25
+#    vici:
+#        module: vicivalve
+#        class: VICI
+#        kwds:
+#            serial: "/dev/ttyUSB0"
+#            address: 0
+
+    tube_length_graph:
+        module: igraph
+        class: Graph
+        constructor: DictList
+        kwds_to_skip:
+            - syringe_pump0
+        kwds:
+            vertices:
+                - name: syringe_pump0
+                - name: reaction_vessel
+                - name: vici_port_0
+                - name: vici_port_1
+                - name: vici_port_2
+                - name: vici_port_3
+                - name: vici_port_4
+                - name: vici_port_5
+                - name: vici_port_6
+                - name: vici_port_7
+                - name: vici_port_8
+                - name: vici_port_9
+                - name: vici_port_10
+                - name: vici_port_com
+            edges:
+                # Internal VICI geometry
+                - source: vici_port_com
+                  target: vici_port_1
+                  weight: 1 # line volume in uL.
+                - source: vici_port_com
+                  target: vici_port_2
+                  weight: 1 # line volume in uL.
+                - source: vici_port_com
+                  target: vici_port_3
+                  weight: 1 # line volume in uL.
+                - source: vici_port_com
+                  target: vici_port_4
+                  weight: 1 # line volume in uL.
+                - source: vici_port_com
+                  target: vici_port_5
+                  weight: 1 # line volume in uL.
+                - source: vici_port_com
+                  target: vici_port_6
+                  weight: 1 # line volume in uL.
+                - source: vici_port_com
+                  target: vici_port_7
+                  weight: 1 # line volume in uL.
+                - source: vici_port_com
+                  target: vici_port_8
+                  weight: 1 # line volume in uL.
+                - source: vici_port_com
+                  target: vici_port_9
+                  weight: 1 # line volume in uL.
+                - source: vici_port_com
+                  target: vici_port_10
+                  weight: 1 # line volume in uL.
+                # External inter-device connections
+                - source: syringe_pump0
+                  target: vici_port_com
+                  weight: 10 # line volume in uL.
+                - source: vici_port_0
+                  target: sbip_reservoir
+                  weight: 10
+                - source: vici_port_10
+                  target: reaction_vessel
+                  weight: 10
+
