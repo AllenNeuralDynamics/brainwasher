@@ -18,6 +18,17 @@ To develop the code, run
 pip install -e .[dev]
 ```
 
+## Raspberry Pi Setup
+Enable I2C interface via Raspi-Config.
+````bash
+sudo raspi-config
+````
+
+If Python drivers were not installed automatically with the first command, you can install them manually from their respective repositories here:
+* [Eight Mosfets Hat](https://github.com/SequentMicrosystems/8mosind-rpi/tree/main/python)
+* [16x Optoisolated Inputs Hat](https://github.com/SequentMicrosystems/16inpind-rpi/blob/main/python/README.md)
+
+
 ## Contributing
 
 ### Linters and testing
