@@ -6,8 +6,29 @@
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen?logo=codecov)
 ![Python](https://img.shields.io/badge/python->=3.7-blue?logo=python)
 
+Note that this package is intended to run on a Raspberry Pi with a particular hardware configuration.
+This package can only be simulated if running on a different system.
 
-## Installation
+## Raspberry Pi Setup
+Enable I2C interface via Raspi-Config.
+````bash
+sudo raspi-config
+````
+
+Ensure virtual environments can be created
+````bash
+sudo apt install python3-venv
+````
+**Recommended(!!)**: Create a new environment.
+````bash
+python3 -m venv brainwasher
+````
+Enter the environment.
+````bash
+source foobar/bin/activate
+````
+
+## Package Installation
 To use the software, in the root directory, run
 ```bash
 pip install -e .
@@ -17,12 +38,6 @@ To develop the code, run
 ```bash
 pip install -e .[dev]
 ```
-
-## Raspberry Pi Setup
-Enable I2C interface via Raspi-Config.
-````bash
-sudo raspi-config
-````
 
 If Python drivers were not installed automatically with the first command, you can install them manually from their respective repositories here:
 * [Eight Mosfets Hat](https://github.com/SequentMicrosystems/8mosind-rpi/tree/main/python)
