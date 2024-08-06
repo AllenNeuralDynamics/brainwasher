@@ -19,6 +19,9 @@ dynamic = ["version"]
 dependencies = [
     "device-spinner @ git+ssh://git@github.com/AllenNeuralDynamics/device-spinner.git@main#egg=device_spinner",
     "igraph>=0.11.5",
+    "SM16inpind==1.0.1",
+    "SM8mosind==1.0.1",
+    "smbus2==0.4.3",
 ]
 
 [project.optional-dependencies]
