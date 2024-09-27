@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-try
+try:
     from enum import StrEnum # 3.11+
 except ImportError:
     class StrEnum(str, Enum):
@@ -31,7 +31,7 @@ class Cmd(StrEnum):
 
     reset = "RESET"
 
-    set_operating_mode = f"SET_MODE_{}"
+    set_operating_mode = "SET_MODE_{}"
 
 
 class OperatingMode(StrEnum):

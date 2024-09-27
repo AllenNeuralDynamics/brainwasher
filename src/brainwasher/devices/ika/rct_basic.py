@@ -45,8 +45,15 @@ class RCTBasic:
     def get_hotplate_temperature_c(self):
         return self.send(self._format_cmd(Cmd.get_hotplate_sensor_value))
 
+    def get_external_temperature_c(self):
+        return self.send(self._format_cmd(Cmd.get_external_sensor_value))
+
     def get_stir_speed_setpoint(self):
         return self.send(self._format_cmd(Cmd.get_stir_speed_setpoint))
+
+    def set_stir_speed(self, rpm: int):
+        rpm = round(rpm)
+        return self.send(self._format_cmd(Cmd.set_stir_speed_setpoint, rpm))
 
     def enable_heater(self):
         return sel.send(self._format_cmd(Cmd.enable_heater))
@@ -54,20 +61,17 @@ class RCTBasic:
     def disable_heater(self):
         return self.send(self._format_cmd(Cmd.disable_heater))
 
-    def start_stirring(self):
+    def enable_stirring(self):
         return self.send(self._format_cmd(Cmd.enable_motor))
 
-    def stop_stirring(self):
+    def disable_stirring(self):
         return self.send(self._format_cmd(Cmd.disable_motor))
 
     def reset(self):
         return self.send(self._format_cmd(Cmd.reset))
 
-    def set_operating_mode(self, mode: Union[OpMode, str]):
+    def set_operating_mode(self, mode: Union[OperatingMode, str]):
         self.send(self._format_cmd(Cmd.set_operating_mode, mode))
-
-    def set_temperature_ctrl_mode(self, mode: Union[TempCtrlMode, str]):
-        pass
 
     # Missing: watchdog safety limits on temperature.
 
@@ -83,9 +87,8 @@ class RCTBasic:
         self.log.debug(f"Sending: {repr(cmd_str)}")
         self.ser.write(cmd_str.encode('ascii'))
         self._last_cmd_send_time = perf_counter()
-        if wait_for_output:  # Wait for all bytes to exit the output buffer.
-            while self.ser.out_waiting:
-                pass
+        while self.ser.out_waiting:
+            pass
         reply = \
             self.ser.read_until(msg_termination.encode("ascii")).decode("utf8")
         self.log.debug(f"Reply: {repr(reply)}")
@@ -108,13 +111,13 @@ class RCTBasic:
         """
         cmd_with_args = cmd.format(*args)
         cmd_str = f"{cmd_with_args}\r\n"
-        return self.send(cmd_str)
+        return cmd_str
 
     @staticmethod
     def _check_reply_for_errors(reply: str):
         try:
             # Try to convert the reply to Error code enum.
-            error_enum = ErrorCode(reply.rstrip('\r\n')
+            error_enum = ErrorCode(reply.rstrip('\r\n'))
             raise RuntimeError("Error: device replied with error code "
                                f"{error_num.name}, code: {error_num.value}.")
         except ValueError:
