@@ -10,7 +10,7 @@ Note that this package is intended to run on a Raspberry Pi with a particular ha
 This package can only be simulated if running on a different system.
 
 ## Raspberry Pi Setup
-Enable I2C interface via Raspi-Config.
+Enable I2C interface via Raspi-Config under *Interface Options*.
 ````bash
 sudo raspi-config
 ````
@@ -25,7 +25,7 @@ python3 -m venv brainwasher
 ````
 Enter the environment.
 ````bash
-source foobar/bin/activate
+source brainwasher/bin/activate
 ````
 
 ## Package Installation
@@ -42,6 +42,7 @@ pip install -e .[dev]
 If Python drivers were not installed automatically with the first command, you can install them manually from their respective repositories here:
 * [Eight Mosfets Hat](https://github.com/SequentMicrosystems/8mosind-rpi/tree/main/python)
 * [16x Optoisolated Inputs Hat](https://github.com/SequentMicrosystems/16inpind-rpi/blob/main/python/README.md)
+* [16x Universal Inputs Hat](https://github.com/SequentMicrosystems/16univin-rpi/blob/main/python/README.md)
 
 
 ## Contributing
