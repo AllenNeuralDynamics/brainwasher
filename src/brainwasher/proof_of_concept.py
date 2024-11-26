@@ -91,6 +91,7 @@ class FlowChamber:
         if dilution_factor is not None:
             prev_solution_volume_ul = total_volume_ul / dilution_factor
 
+        # TODO: total volume < reaction vessel max volume.
         if total_volume_ul < min_volume_ul:
             raise ValueError(f"Cannot fill the vessel with {chemical}. "
                 f"Specified volume ({total_volume_ul} [uL]) < "
@@ -108,6 +109,8 @@ class FlowChamber:
             # FIXME: check if we can't hit the dilution factor with the
             # specified chemistry.
             pass
+
+        new_solution_volume_ul = total_volume_ul - prev_solution_volume_ul
 
         # FIXME: actually implement this function.
         # Note: if prev_solution_volume_ul < self.rxn_vessel.min_volume_ul, this

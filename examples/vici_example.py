@@ -6,12 +6,7 @@ from vicivalve import VICI
 
 # Uncomment for some prolific log statements.
 import logging
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-logger.addHandler(logging.StreamHandler())
-logger.handlers[-1].setFormatter(
-   logging.Formatter(fmt='%(asctime)s:%(levelname)s: %(message)s'))
-
+logging.basicConfig(level=logging.DEBUG)
 
 #ser = Serial("/dev/ttyUSB0", baudrate="9600")
 ser = Serial("/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_DP046FT7-if00-port0",
@@ -19,5 +14,9 @@ ser = Serial("/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_DP046FT7-if00-port0",
 vici = VICI(serial=ser, positions=10)
 
 print(f"Current vici position is: {vici.current_position()}")
+sleep(0.5)
 vici.move_to_position(10)
+print(f"Current vici position is: {vici.current_position()}")
+sleep(0.5)
+vici.move_to_position(2)
 print(f"Current vici position is: {vici.current_position()}")
