@@ -1,0 +1,101 @@
+devices:
+    selector_position_map:
+        modules: builtins
+        class: dict
+        kwds:
+            CLEAR: 5
+            YELLOW: 4
+            PURPLE: 3
+            OUTLET: 2
+            AMBIENT: 10
+    selector_serial_port:
+        args:
+        - "usb-FTDI_FT230X_Basic_UART_DP046JEW-if00-port0"
+        kwds:
+            baudrate: 9600
+    selector:
+        modules: vicivalve
+        class: VICI
+        kwds:
+            serial: selector_serial_port
+            positions: 10
+            position_map: selector_position_map
+    source_pump:
+        module: runze_control.syringe_pump
+        class: sy08
+        kwds:
+            com_port: "platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.3:1.0-port0"
+            syringe_volume_ul: 25000,
+    waste_pump:
+        module: runze_control.syringe_pump
+        class: sy08
+        kwds:
+            com_port: "platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.4:1.0-port0"
+            syringe_volume_ul: 25000,
+    reaction_vessel:
+        module: brainwasher.devices.reaction_vessel
+        class: ReactionVessel
+        kwds:
+            curr_volume_ul: 0
+    pump_selector_valve:
+        module: brainwasher.devices.sequent_microsystems.valve
+        class: ThreeTwoValve
+        kwds:
+            board_address: 0
+            channel: 3
+    source_selector_valve:
+        module: brainwasher.devices.sequent_microsystems.valve
+        class: ThreeTwoValve
+        kwds:
+            board_address: 0
+            channel: 2
+    waste_selector_valve:
+        module: brainwasher.devices.sequent_microsystems.valve
+        class: ThreeTwoValve
+        kwds:
+            board_address: 0
+            channel: 1
+# Liquid Detection Sensors
+    source_pump_bds:
+        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        class: BubbleDetectionSensor
+        kwds:
+            board_address: 0
+            channel: 11
+    waste_pump_bds:
+        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        class: BubbleDetectionSensor
+        kwds:
+            board_address: 0
+            channel: 12
+    selector_clear_bds:
+        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        class: BubbleDetectionSensor
+        kwds:
+            board_address: 0
+            channel: 5
+    selector_yellow_bds:
+        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        class: BubbleDetectionSensor
+        kwds:
+            board_address: 0
+            channel: 4
+    selector_purple_bds:
+        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        class: BubbleDetectionSensor
+        kwds:
+            board_address: 0
+            channel: 3
+    selector_ambient_bds:
+        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        class: BubbleDetectionSensor
+        kwds:
+            board_address: 0
+            channel: 10
+# Full System:
+#    tissue_clearer:
+#        module: brainwasher.proof_of_concept
+#        class: TissueClearer
+#        kwds:
+#            multiport_selector: vici
+#            dispense_pump: syringe_pump_0
