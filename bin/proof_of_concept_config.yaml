@@ -1,6 +1,6 @@
 devices:
     selector_position_map:
-        modules: builtins
+        module: builtins
         class: dict
         kwds:
             CLEAR: 5
@@ -9,12 +9,14 @@ devices:
             OUTLET: 2
             AMBIENT: 10
     selector_serial_port:
+        module: ftdi_serial
+        class: Serial
         args:
         - "usb-FTDI_FT230X_Basic_UART_DP046JEW-if00-port0"
         kwds:
             baudrate: 9600
     selector:
-        modules: vicivalve
+        module: vicivalve
         class: VICI
         kwds:
             serial: selector_serial_port

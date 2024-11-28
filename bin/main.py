@@ -13,20 +13,19 @@ logger.handlers[-1].setFormatter(
    logging.Formatter(fmt='%(asctime)s:%(levelname)s: %(message)s'))
 
 
-device_config = Config("proof_of_concept_instrument_config.yaml")
+device_config = Config("proof_of_concept_config.yaml")
 # TODO: make a to_dict function.
 device_specs = dict(device_config.cfg)
-#import pprint
-#pprint.pprint(device_specs)
+import pprint
+pprint.pprint(device_specs)
 # Create the objects
 factory = DeviceSpinner()
 device_trees = factory.create_devices_from_specs(device_specs["devices"])
 
 # run prime routine.
-try:
-    instrument = device_trees['flow_chamber']
-    logger.info("Success!")
-    #instrument.reset()
+instrument = device_trees['flow_chamber']
+logger.info("Success!")
+#instrument.reset()
 
 #import matplotlib.pyplot as plt
 #import igraph as ig
