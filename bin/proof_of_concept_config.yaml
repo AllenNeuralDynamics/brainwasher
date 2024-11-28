@@ -9,10 +9,10 @@ devices:
             OUTLET: 2
             AMBIENT: 10
     selector_serial_port:
-        module: ftdi_serial
+        module: serial
         class: Serial
         args:
-        - "usb-FTDI_FT230X_Basic_UART_DP046JEW-if00-port0"
+        - "/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_DP046JEW-if00-port0"
         kwds:
             baudrate: 9600
     selector:
@@ -26,13 +26,13 @@ devices:
         module: runze_control.syringe_pump
         class: sy08
         kwds:
-            com_port: "platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.3:1.0-port0"
+            com_port: "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.3:1.0-port0"
             syringe_volume_ul: 25000,
     waste_pump:
         module: runze_control.syringe_pump
         class: sy08
         kwds:
-            com_port: "platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.4:1.0-port0"
+            com_port: "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.4:1.0-port0"
             syringe_volume_ul: 25000,
     reaction_vessel:
         module: brainwasher.devices.reaction_vessel
