@@ -55,6 +55,14 @@ devices:
         kwds:
             board_address: 0
             channel: 1
+    selector_lds_map:
+        modules: builtins
+        class: dict
+        kwds:
+            CLEAR: selector_clear_bds
+            YELLOW: selector_yellow_bds
+            PURPLE: selector_purple_bds
+            AMBIENT: selector_ambient_bds
 # Liquid Detection Sensors
     source_pump_bds:
         module: brainwasher.devices.sequent_microsystems.liquid_detection
@@ -93,9 +101,17 @@ devices:
             board_address: 0
             channel: 10
 # Full System:
-#    tissue_clearer:
-#        module: brainwasher.proof_of_concept
-#        class: TissueClearer
-#        kwds:
-#            multiport_selector: vici
-#            dispense_pump: syringe_pump_0
+    flow_chamber:
+        module: brainwasher.proof_of_concept
+        class: FlowChamber
+        kwds:
+            multiport_selector: selector
+            selector_lds_map: selector_lds_map
+            source_pump: source_pump
+            waste_pump: waste_pump
+            reaction_vessel: reaction_vessel
+            pump_selector_valve: pump_selector_valve
+            source_pump_selector_valve: source_selector_valve
+            waste_pump_selector_valve: waste_selector_valve
+            source_pump_prime_lds: source_pump_bds
+            waste_pump_prime_lds: waste_pump_bds
