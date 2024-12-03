@@ -6,8 +6,8 @@ from device_spinner.device_spinner import DeviceSpinner
 
 import logging
 logger = logging.getLogger()
-#logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 logger.handlers[-1].setFormatter(
    logging.Formatter(fmt='%(asctime)s:%(levelname)s: %(message)s'))

@@ -12,7 +12,7 @@ devices:
         module: serial
         class: Serial
         args:
-        - "/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_DP046JEW-if00-port0"
+        - "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.3:1.0-port0"
         kwds:
             baudrate: 9600
     selector:
@@ -24,16 +24,16 @@ devices:
             position_map: selector_position_map
     source_pump:
         module: runze_control.syringe_pump
-        class: sy08
+        class: SY08
         kwds:
-            com_port: "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.3:1.0-port0"
-            syringe_volume_ul: 25000,
+            com_port: "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.2:1.0-port0"
+            syringe_volume_ul: 25000
     waste_pump:
         module: runze_control.syringe_pump
-        class: sy08
+        class: SY08
         kwds:
             com_port: "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.4:1.0-port0"
-            syringe_volume_ul: 25000,
+            syringe_volume_ul: 25000
     reaction_vessel:
         module: brainwasher.devices.reaction_vessel
         class: ReactionVessel
