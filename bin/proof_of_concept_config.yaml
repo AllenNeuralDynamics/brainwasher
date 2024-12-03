@@ -39,6 +39,7 @@ devices:
         class: ReactionVessel
         kwds:
             curr_volume_ul: 0
+            name: reaction-vessel
     pump_selector_valve:
         module: brainwasher.devices.sequent_microsystems.valve
         class: ThreeTwoValve
