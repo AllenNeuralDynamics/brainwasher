@@ -16,13 +16,12 @@ class FlowChamber:
 
     """
 
-    def __init__(self, selector, selector_lds_map
+    def __init__(self, selector, selector_lds_map,
                  source_pump, waste_pump,
                  reaction_vessel,
                  pump_selector_valve,
                  source_pump_selector_valve,
                  waste_pump_selector_valve,
-                 chemical_prime_lds_list,
                  source_pump_prime_lds,
                  waste_pump_prime_lds,
                  #tube_length_grap
@@ -37,7 +36,6 @@ class FlowChamber:
         self.pump_selector_valve = pump_selector_valve
         self.source_pump_selector_valve = source_pump_selector_valve
         self.waste_pump_selector_valve = waste_pump_selector_valve
-        self.chemical_prime_lds = multiport_selector_lds_list
         self.source_pump_prime_lds = source_pump_prime_lds
         self.waste_pump_prime_lds = waste_pump_prime_lds
 
@@ -105,7 +103,7 @@ class FlowChamber:
         """Fill the selector-to-syringe line flowpath with the specified
             chemical."""
         self.prime_reservoir_line(chemical)
-        if self.source_pump_lds.tripped()
+        if self.source_pump_lds.tripped():
             return
         # Withdraw to source pump sensor.
         # We can do this in <1 full stroke after the chemical is primed.

@@ -59,7 +59,7 @@ devices:
             board_address: 0
             channel: 1
     selector_lds_map:
-        modules: builtins
+        module: builtins
         class: dict
         kwds:
             CLEAR: selector_clear_bds
@@ -68,37 +68,37 @@ devices:
             AMBIENT: selector_ambient_bds
 # Liquid Detection Sensors
     source_pump_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
         class: BubbleDetectionSensor
         kwds:
             board_address: 0
             channel: 11
     waste_pump_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
         class: BubbleDetectionSensor
         kwds:
             board_address: 0
             channel: 12
     selector_clear_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
         class: BubbleDetectionSensor
         kwds:
             board_address: 0
             channel: 5
     selector_yellow_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
         class: BubbleDetectionSensor
         kwds:
             board_address: 0
             channel: 4
     selector_purple_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
         class: BubbleDetectionSensor
         kwds:
             board_address: 0
             channel: 3
     selector_ambient_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_detection
+        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
         class: BubbleDetectionSensor
         kwds:
             board_address: 0
@@ -108,7 +108,7 @@ devices:
         module: brainwasher.proof_of_concept
         class: FlowChamber
         kwds:
-            multiport_selector: selector
+            selector: selector
             selector_lds_map: selector_lds_map
             source_pump: source_pump
             waste_pump: waste_pump

@@ -1,6 +1,6 @@
 """Liquid Detection Sensor abstraction on top of Sequent Microsystems 16-input board"""
 
-from devices.liquid_presence_detection import BubbleDetectionSensor as BaseBubbleDetectionSensor
+from brainwasher.devices.liquid_presence_detection import BubbleDetectionSensor as BaseBubbleDetectionSensor
 
 import lib16inpind
 
