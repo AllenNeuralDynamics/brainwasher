@@ -25,7 +25,7 @@ python3 -m venv brainwasher
 ````
 Enter the environment.
 ````bash
-source brainwasher/bin/activate
+source ~/brainwasher/bin/activate
 ````
 
 ## Package Installation
