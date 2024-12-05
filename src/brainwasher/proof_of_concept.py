@@ -51,10 +51,12 @@ class FlowChamber:
         # The above cmd connects: source pump -> waste.
         self.source_pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
         # Connect: waste pump -> waste
-        #self.log.debug("Connecting Waste Pump to waste.")
-        #self.pump_selector_valve.energize()
-        #self.waste_pump_selector_valve.energize()
-        #self.waste_pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
+        self.log.debug("Connecting Waste Pump to waste.")
+        self.pump_selector_valve.energize()
+        self.waste_pump_selector_valve.energize()
+        self.waste_pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
+        # Restore deenergized state.
+        self.deenergize_all_valves()
 
     def deenergize_all_valves(self):
         self.log.debug("Deenergizing all solenoid valves.")

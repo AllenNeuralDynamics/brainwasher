@@ -53,7 +53,7 @@ Since the Raspberry Pi doesn't have all the text editing bells-and-whistles of y
 To do so, in Linux, use the `watch` command
 
 ```
-watch 'rsync -a /path/to/source_folder pi@raspberrypi.local:/path/to/destination_folder'
+rsync -a /path/to/source_folder pi@raspberrypi.local:/path/to/destination_folder
 ```
 
 Now you can avoid installing Github credentials to push code from the device itself, and simply develop entirely on your PC!
