@@ -16,8 +16,10 @@ logger.handlers[-1].setFormatter(
 device_config = Config("proof_of_concept_config.yaml")
 # TODO: make a to_dict function.
 device_specs = dict(device_config.cfg)
-import pprint
-pprint.pprint(device_specs)
+
+#import pprint
+#pprint.pprint(device_specs)
+
 # Create the objects
 factory = DeviceSpinner()
 device_trees = factory.create_devices_from_specs(device_specs["devices"])
