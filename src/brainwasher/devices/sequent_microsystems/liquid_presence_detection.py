@@ -8,6 +8,7 @@ import lib16inpind
 class BubbleDetectionSensor(BaseBubbleDetectionSensor):
 
     def __init__(self, board_address: int, channel: int):
+        super().__init__()
         self.board_address = board_address
         self.channel = channel
 

@@ -11,6 +11,7 @@ import lib8mosind
 class NCValve(BaseNCValve, BaseSolenoidValve):
 
     def __init__(self, board_address: int, channel: int):
+        super().__init__()
         self.board_address = board_address
         self.channel = channel
 
@@ -30,6 +31,7 @@ class NCValve(BaseNCValve, BaseSolenoidValve):
 class ThreeTwoValve(BaseThreeTwoValve, BaseSolenoidValve):
 
     def __init__(self, board_address: int, channel: int):
+        super().__init__()
         self.board_address = board_address
         self.channel = channel
 

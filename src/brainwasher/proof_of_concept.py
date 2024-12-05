@@ -23,7 +23,7 @@ class FlowChamber:
                  source_pump_selector_valve,
                  waste_pump_selector_valve,
                  source_pump_prime_lds,
-                 waste_pump_prime_lds,
+                 waste_pump_prime_lds
                  #tube_length_grap
                  ):
         """"""
@@ -45,13 +45,22 @@ class FlowChamber:
 
 
     def reset(self):
+        self.log.debug("Connecting Source Pump to waste.")
         self.deenergize_all_valves()
+        self.selector.move_to_position("OUTLET")
         # The above cmd connects: source pump -> waste.
-        self.source_pump.reset() # Home pump; dispense any liquid to waste.
+        self.source_pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
         # Connect: waste pump -> waste
-        self.pump_selector_valve.energize()
-        self.waste_pump_selector_valve.energize()
-        self.waste_pump.reset() # Home pump; dispense any liquid to waste.
+        #self.log.debug("Connecting Waste Pump to waste.")
+        #self.pump_selector_valve.energize()
+        #self.waste_pump_selector_valve.energize()
+        #self.waste_pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
+
+    def deenergize_all_valves(self):
+        self.log.debug("Deenergizing all solenoid valves.")
+        self.pump_selector_valve.deenergize()
+        self.source_pump_selector_valve.deenergize()
+        self.waste_pump_selector_valve.deenergize()
 
     def prime_reservoir_line(self, chemical: str,
                              max_pump_displacement_ul: int = 50000):

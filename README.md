@@ -45,6 +45,30 @@ If Python drivers were not installed automatically with the first command, you c
 * [16x Universal Inputs Hat](https://github.com/SequentMicrosystems/16univin-rpi/blob/main/python/README.md)
 
 
+## Developing
+There are two strategies for editing code on the Raspberry Pi.
+
+### Developing Remotely
+Since the Raspberry Pi doesn't have all the text editing bells-and-whistles of your PC, you can develop all the code on your PC and synchronize the code folder with the Pi to execute the result.
+To do so, in Linux, use the `watch` command
+
+```
+watch 'rsync -a /path/to/source_folder pi@raspberrypi.local:/path/to/destination_folder'
+```
+
+Now you can avoid installing Github credentials to push code from the device itself, and simply develop entirely on your PC!
+
+### Developing Locally
+
+The Raspberry Pi 4 and 5 are fast enough that you can develop code on the Pi itself if needed.
+To do so, login to the Pi, setup Git, and edit files on the device itself.
+
+
+## Deploying
+
+TODO: systemd setup.
+
+
 ## Contributing
 
 ### Linters and testing

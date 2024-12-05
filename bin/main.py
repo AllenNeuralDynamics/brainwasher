@@ -10,7 +10,7 @@ logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 logger.handlers[-1].setFormatter(
-   logging.Formatter(fmt='%(asctime)s:%(levelname)s: %(message)s'))
+    logging.Formatter(fmt='%(asctime)s:%(name)s:%(levelname)s: %(message)s'))
 
 
 device_config = Config("proof_of_concept_config.yaml")
@@ -27,7 +27,8 @@ device_trees = factory.create_devices_from_specs(device_specs["devices"])
 # run prime routine.
 instrument = device_trees['flow_chamber']
 logger.info("Success!")
-#instrument.reset()
+logger.info("Resetting Instrument.")
+instrument.reset()
 
 #import matplotlib.pyplot as plt
 #import igraph as ig

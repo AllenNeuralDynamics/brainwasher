@@ -27,12 +27,14 @@ devices:
         class: SY08
         kwds:
             com_port: "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.2:1.0-port0"
+            address: 0x00
             syringe_volume_ul: 25000
     waste_pump:
         module: runze_control.syringe_pump
         class: SY08
         kwds:
             com_port: "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.4:1.0-port0"
+            address: 0x00
             syringe_volume_ul: 25000
     reaction_vessel:
         module: brainwasher.devices.reaction_vessel
