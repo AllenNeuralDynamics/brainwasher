@@ -6,3 +6,5 @@ fi
 echo "Enabling I2C"
 raspi-config nonint do_i2c 0
 
+
+# TODO: launch with systemd.

@@ -3,6 +3,7 @@
 from brainwasher.devices.liquid_presence_detection import BubbleDetectionSensor as BaseBubbleDetectionSensor
 
 import lib16inpind
+import logging
 
 
 class BubbleDetectionSensor(BaseBubbleDetectionSensor):
@@ -13,8 +14,10 @@ class BubbleDetectionSensor(BaseBubbleDetectionSensor):
         self.channel = channel
 
     def tripped(self):
-        return (lib16inpind.readCh(self.board_address, self.channel) == 1)
+        raw_value = lib16inpind.readCh(self.board_address, self.channel)
+        return (raw_value == 1)
 
     def untripped(self):
-        return (lib16inpind.readCh(self.board_address, self.channel) == 0)
+        raw_value = lib16inpind.readCh(self.board_address, self.channel)
+        return (raw_value == 0)
 

@@ -10,15 +10,17 @@ import lib8mosind
 
 class NCValve(BaseNCValve, BaseSolenoidValve):
 
-    def __init__(self, board_address: int, channel: int):
-        super().__init__()
+    def __init__(self, board_address: int, channel: int, name: str = None):
+        super().__init__(name=name)
         self.board_address = board_address
         self.channel = channel
 
     def energize(self):
+        super().energize()
         lib8mosind.set(self.board_address, self.channel, 1)
 
     def deenergize(self):
+        super().deenergize()
         lib8mosind.set(self.board_address, self.channel, 0)
 
     def open(self):
@@ -30,15 +32,17 @@ class NCValve(BaseNCValve, BaseSolenoidValve):
 
 class ThreeTwoValve(BaseThreeTwoValve, BaseSolenoidValve):
 
-    def __init__(self, board_address: int, channel: int):
-        super().__init__()
+    def __init__(self, board_address: int, channel: int, name: str = None):
+        super().__init__(name=name)
         self.board_address = board_address
         self.channel = channel
 
     def energize(self):
+        super().energize()
         lib8mosind.set(self.board_address, self.channel, 1)
 
     def deenergize(self):
+        super().deenergize()
         lib8mosind.set(self.board_address, self.channel, 0)
 
     def select_way(self, way: Union[int, str]):

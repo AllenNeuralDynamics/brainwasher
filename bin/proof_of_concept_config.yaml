@@ -7,7 +7,7 @@ devices:
             YELLOW: 4
             PURPLE: 3
             OUTLET: 2
-            AMBIENT: 10
+            AMBIENT: 1
     selector_serial_port:
         module: serial
         class: Serial
@@ -29,37 +29,40 @@ devices:
             com_port: "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.2:1.0-port0"
             address: 0x00
             syringe_volume_ul: 25000
-    waste_pump:
-        module: runze_control.syringe_pump
-        class: SY08
-        kwds:
-            com_port: "/dev/serial/by-path/platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.2.4:1.0-port0"
-            address: 0x00
-            syringe_volume_ul: 25000
     reaction_vessel:
         module: brainwasher.devices.reaction_vessel
         class: ReactionVessel
         kwds:
             curr_volume_ul: 0
             name: reaction-vessel
-    pump_selector_valve:
+    rv_source_valve:
         module: brainwasher.devices.sequent_microsystems.valve
         class: ThreeTwoValve
         kwds:
-            board_address: 0
-            channel: 3
-    source_selector_valve:
-        module: brainwasher.devices.sequent_microsystems.valve
-        class: ThreeTwoValve
-        kwds:
+            name: rv_source
             board_address: 0
             channel: 2
-    waste_selector_valve:
+    rv_exhaust_valve:
         module: brainwasher.devices.sequent_microsystems.valve
         class: ThreeTwoValve
         kwds:
+            name: rv_source
             board_address: 0
             channel: 1
+    drain_exhaust_valve:
+        module: brainwasher.devices.sequent_microsystems.valve
+        class: ThreeTwoValve
+        kwds:
+            name: rv_exhaust
+            board_address: 0
+            channel: 3
+    drain_waste_valve:
+        module: brainwasher.devices.sequent_microsystems.valve
+        class: ThreeTwoValve
+        kwds:
+            name: drain_waste
+            board_address: 0
+            channel: 4
     selector_lds_map:
         module: builtins
         class: dict
@@ -69,7 +72,7 @@ devices:
             PURPLE: selector_purple_bds
             AMBIENT: selector_ambient_bds
 # Liquid Detection Sensors
-    source_pump_bds:
+    pump_bds:
         module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
         class: BubbleDetectionSensor
         kwds:
@@ -112,11 +115,10 @@ devices:
         kwds:
             selector: selector
             selector_lds_map: selector_lds_map
-            source_pump: source_pump
-            waste_pump: waste_pump
+            pump: source_pump
             reaction_vessel: reaction_vessel
-            pump_selector_valve: pump_selector_valve
-            source_pump_selector_valve: source_selector_valve
-            waste_pump_selector_valve: waste_selector_valve
-            source_pump_prime_lds: source_pump_bds
-            waste_pump_prime_lds: waste_pump_bds
+            rv_source_valve: rv_source_valve
+            rv_exhaust_valve: rv_exhaust_valve
+            drain_exhaust_valve: drain_exhaust_valve
+            drain_waste_valve: drain_waste_valve
+            pump_prime_lds: pump_bds

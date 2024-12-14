@@ -1,19 +1,26 @@
 """Generic Valve Base Class"""
+import logging
 
 from typing import Union
 
 
-class SolenoidValve:
+class Valve:
+
+    def __init__(self, name: str = None):
+        logger_name = self.__class__.__name__ + (f".{name}" if name else "")
+        self.log = logging.getLogger(logger_name)
+
+class SolenoidValve(Valve):
     """Valve base class."""
 
     def energize(self):
-        raise NotImplementedError
+        self.log.debug("Energizing.")
 
     def deenergize(self):
-        raise NotImplementedError
+        self.log.debug("De-energizing.")
 
 
-class IsolationValve:
+class IsolationValve(Valve):
     """isolation valve base class."""
 
     def open(self):

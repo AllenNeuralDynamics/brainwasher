@@ -29,6 +29,8 @@ instrument = device_trees['flow_chamber']
 logger.info("Success!")
 logger.info("Resetting Instrument.")
 instrument.reset()
+#logger.info("priming DI WATER.")
+#instrument.prime_reservoir_line("CLEAR")
 
 #import matplotlib.pyplot as plt
 #import igraph as ig

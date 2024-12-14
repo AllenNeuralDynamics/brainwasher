@@ -17,27 +17,26 @@ class FlowChamber:
     """
 
     def __init__(self, selector, selector_lds_map,
-                 source_pump, waste_pump,
+                 pump,
                  reaction_vessel,
-                 pump_selector_valve,
-                 source_pump_selector_valve,
-                 waste_pump_selector_valve,
-                 source_pump_prime_lds,
-                 waste_pump_prime_lds
+                 rv_source_valve,
+                 rv_exhaust_valve,
+                 drain_exhaust_valve,
+                 drain_waste_valve,
+                 pump_prime_lds,
                  #tube_length_grap
                  ):
         """"""
         self.log = logging.getLogger(__name__)
         self.selector = selector
         self.selector_lds_map = selector_lds_map
-        self.source_pump = source_pump
-        self.waste_pump = waste_pump
+        self.pump = pump
         self.rxn_vessel = reaction_vessel
-        self.pump_selector_valve = pump_selector_valve
-        self.source_pump_selector_valve = source_pump_selector_valve
-        self.waste_pump_selector_valve = waste_pump_selector_valve
-        self.source_pump_prime_lds = source_pump_prime_lds
-        self.waste_pump_prime_lds = waste_pump_prime_lds
+        self.rv_source_valve = rv_source_valve
+        self.rv_exhaust_valve = rv_exhaust_valve
+        self.drain_exhaust_valve = drain_exhaust_valve
+        self.drain_waste_valve = drain_waste_valve
+        self.pump_prime_lds = pump_prime_lds
 
         self.prime_volumes_ul = {} # Store how much volume was displaced to
                                    # prime a particular chemical so that we
@@ -45,100 +44,107 @@ class FlowChamber:
 
 
     def reset(self):
-        self.log.debug("Connecting Source Pump to waste.")
+        """Initialize all hardware while ensuring that the system can bleed any
+        pressure pockets created to waste."""
         self.deenergize_all_valves()
+        self.log.debug("Connecting Source Pump to waste.")
+        # Connect: source pump -> waste.
+        self.drain_exhaust_valve.energize()
         self.selector.move_to_position("OUTLET")
-        # The above cmd connects: source pump -> waste.
-        self.source_pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
-        # Connect: waste pump -> waste
-        self.log.debug("Connecting Waste Pump to waste.")
-        self.pump_selector_valve.energize()
-        self.waste_pump_selector_valve.energize()
-        self.waste_pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
+        self.pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
         # Restore deenergized state.
         self.deenergize_all_valves()
 
     def deenergize_all_valves(self):
         self.log.debug("Deenergizing all solenoid valves.")
-        self.pump_selector_valve.deenergize()
-        self.source_pump_selector_valve.deenergize()
-        self.waste_pump_selector_valve.deenergize()
+        self.rv_source_valve.deenergize()
+        self.rv_exhaust_valve.deenergize()
+        self.drain_exhaust_valve.deenergize()
+        self.drain_waste_valve.deenergize()
 
     def prime_reservoir_line(self, chemical: str,
-                             max_pump_displacement_ul: int = 50000):
+                             max_pump_displacement_ul: int = 25000):
         """Fill the specified chemical's flowpath up to the port of the
            selector valve. Bail if we exceed max pump distance and no chemical
            is detected."""
-        # Configure syringe path to dump air to waste
-        self.log.debug(f"Opening source pump path to waste.")
-        self.pump_selector_valve.deenergize()
-        self.source_pump_selector_valve.deenergize()
-        # TODO: purge_source_pump and source pump line
-
         # Bail-early if we're already primed.
         if self.selector_lds_map[chemical].tripped():
+            self.log.debug(f"{chemical} already primed. Exiting early.")
             return
+        # Configure syringe path to dump air to waste
+        self.log.debug(f"Opening pump path to waste.")
+        self.rv_source_valve.deenergize()
+        self.rv_exhaust_valve.deenergize()
+        self.drain_exhaust_valve.energize()
         # Set selector to corresponding chemical port
         self.selector.move_to_position(chemical)
-        syringe_volume_ul = self.source_pump.syringe_volume_ul
+        syringe_volume_ul = self.pump.syringe_volume_ul
         remaining_volume_ul = max_pump_displacement_ul
         # Withdraw (100%) until reservoir line is tripped.
         # Track how much total volume we displaced so we can bail on fail.
         while self.selector_lds_map[chemical].untripped() and remaining_volume_ul:
             # Withdraw another stroke.
-            self.log.debug("Withdrawing reservoir contents.")
             stroke_volume_ul = min(remaining_volume_ul, syringe_volume_ul)
-            self.source_pump.withdraw(stroke_volume_ul)
+            self.log.debug("Polling prime sensor while withdrawing up to "
+                           f"{stroke_volume_ul}[uL] of {chemical}.")
+            self.pump.withdraw(stroke_volume_ul, wait=False)
+            # Temporarily remove pump log message spam.
+            old_log_level = logging.getLevelName() # save current log level.
+            self.pump.log.setLevel(INFO) # Unset Debug level (if set) for pump.
             # Poll syringe for lds state change. Kill if sensor is tripped.
-            while self.syringe_pump.is_busy():
+            while self.pump.is_busy():
                 if self.selector_lds_map[chemical].untripped():
                     continue
-                self.source_pump.halt()
-                remaining_volume_ul -= self.syringe_pump.get_position_ul()
+                self.pump.halt()
+                # subtact off however much volume we actually withdrew.
+                remaining_volume_ul -= self.pump.get_position_ul()
                 break
-            remaining_volume_ul -= stroke_volume_ul
+            self.pump.log.setLevel(old_log_level) # Restore pump log level.
             # Reset syringe stroke by purging displaced air to waste.
-            self.log.debug("Resetting source pump stroke.")
+            self.log.debug("Resetting pump stroke.")
             self.selector.move_to_position("OUTLET")
-            self.source_pump.move_absolute_in_percent(0) # Plunge
+            self.pump.move_absolute_in_percent(0) # Plunge to starting position.
             # Return to chemical line.
             self.selector.move_to_position(chemical)
         if not remaining_volume_ul and self.selector_lds_map[chemical].untripped():
-            raise RuntimeError("Withdrew maximum volume and no liquid detected.")
+            raise RuntimeError("Withdrew maximum volume "
+                f"({max_pump_displacement_ul}[uL]) and no liquid detected.")
         displaced_volume_ul = max_pump_displacement_ul - remaining_volume_ul
         self.prime_volumes_ul[chemical] = displaced_volume_ul
         self.log.debug(f"Priming {chemical} complete. "
-                       f"Function displaced {displaced_volume_ul}[uL].")
+                       f"Function displaced {displaced_volume_ul:.3f}[uL].")
 
-    def prime_source_pump_line(self, chemical):
+    def prime_pump_line(self, chemical):
         """Fill the selector-to-syringe line flowpath with the specified
             chemical."""
         self.prime_reservoir_line(chemical)
-        if self.source_pump_lds.tripped():
+        if self.pump_lds.tripped():
+            # Edge case: what happens if another chemical is in the line?
+            self.log.debug("Exiting early. {chemical} already primed.")
             return
         # Withdraw to source pump sensor.
         # We can do this in <1 full stroke after the chemical is primed.
         self.log.debug("Withdrawing reservoir contents.")
-        self.source_pump.withdraw(stroke_volume_ul/2) # FIXME: magic number
-        while self.syringe_pump.is_busy():
-            if self.source_pump_lds.untripped():
+        self.pump.withdraw(stroke_volume_ul/2) # FIXME: magic number
+        while self.pump.is_busy():
+            if self.pump.untripped():
                 continue
-            self.source_pump.halt()
-        if self.source_pump_lds.untripped():
+            self.pump.halt()
+        if self.pump_lds.untripped():
             raise RuntimeError("Did not detect any liquid after attempting "
                                "to prime up to the start of the source pump.")
 
-    def purge_source_pump(self, dest="waste"):
+    def purge_pump(self, dest="waste"):
         """Empty contents of source pump to waste. Fully plunge pump."""
         # If the source pump is fully plunged, exit.
         # Select dest line.
         # Fully plunge syringe.
         pass
 
-    def purge_source_pump_line(self, dest="waste"):
+    def purge_pump_line(self, dest="waste"):
         """Purge the current contents of the pump-to-select line flowpath
             to the appropriate waste. Fully plunge pump."""
-        self.purge_source_pump(dest) # Do this first, or the line will remain
+        self.purge_pump(dest) # Do this first, or the line will remain
                                      # full until the source pump is empty.
         # If source pump line is clear at this point, exit.
         # Set selector to air.

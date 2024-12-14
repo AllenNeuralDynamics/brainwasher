@@ -50,7 +50,7 @@ There are two strategies for editing code on the Raspberry Pi.
 
 ### Developing Remotely
 Since the Raspberry Pi doesn't have all the text editing bells-and-whistles of your PC, you can develop all the code on your PC and synchronize the code folder with the Pi to execute the result.
-To do so, in Linux, use the `watch` command
+To do so, in Linux, use the `rsync` command
 
 ```
 rsync -a /path/to/source_folder pi@raspberrypi.local:/path/to/destination_folder
