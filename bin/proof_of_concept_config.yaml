@@ -40,28 +40,28 @@ devices:
         class: ThreeTwoValve
         kwds:
             name: rv_source
-            board_address: 0
+            board_address: 2
             channel: 2
     rv_exhaust_valve:
         module: brainwasher.devices.sequent_microsystems.valve
         class: ThreeTwoValve
         kwds:
             name: rv_source
-            board_address: 0
+            board_address: 2
             channel: 1
     drain_exhaust_valve:
         module: brainwasher.devices.sequent_microsystems.valve
         class: ThreeTwoValve
         kwds:
             name: rv_exhaust
-            board_address: 0
+            board_address: 2
             channel: 3
     drain_waste_valve:
         module: brainwasher.devices.sequent_microsystems.valve
         class: ThreeTwoValve
         kwds:
             name: drain_waste
-            board_address: 0
+            board_address: 2
             channel: 4
     selector_lds_map:
         module: builtins
