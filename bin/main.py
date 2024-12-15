@@ -3,14 +3,18 @@
 
 from device_spinner.config import Config
 from device_spinner.device_spinner import DeviceSpinner
+from coloredlogs import ColoredFormatter
 
 import logging
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
-logger.handlers[-1].setFormatter(
-    logging.Formatter(fmt='%(asctime)s:%(name)s:%(levelname)s: %(message)s'))
+
+fmt='%(asctime)s.%(msecs)03d:%(name)s:%(levelname)s: %(message)s'
+datefmt = '%Y-%m-%d,%H:%M:%S'
+log_formatter = ColoredFormatter(fmt=fmt, datefmt=datefmt)
+logger.handlers[-1].setFormatter(log_formatter)
 
 
 device_config = Config("proof_of_concept_config.yaml")
@@ -29,8 +33,8 @@ instrument = device_trees['flow_chamber']
 logger.info("Success!")
 logger.info("Resetting Instrument.")
 instrument.reset()
-#logger.info("priming DI WATER.")
-#instrument.prime_reservoir_line("CLEAR")
+logger.info("priming DI WATER.")
+instrument.prime_reservoir_line("CLEAR")
 
 #import matplotlib.pyplot as plt
 #import igraph as ig

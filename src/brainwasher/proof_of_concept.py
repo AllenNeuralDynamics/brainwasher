@@ -71,6 +71,12 @@ class FlowChamber:
         if self.selector_lds_map[chemical].tripped():
             self.log.debug(f"{chemical} already primed. Exiting early.")
             return
+        # Error if the pump is not reset to 0 position.
+        starting_pump_volume_ul = self.pump.get_position_ul()
+        if starting_pump_volume_ul != 0:
+            self.log.error("Error. Pump is not starting from reset position "
+                           "and may contain another chemical.")
+            return
         # Configure syringe path to dump air to waste
         self.log.debug(f"Opening pump path to waste.")
         self.rv_source_valve.deenergize()
@@ -89,19 +95,20 @@ class FlowChamber:
                            f"{stroke_volume_ul}[uL] of {chemical}.")
             self.pump.withdraw(stroke_volume_ul, wait=False)
             # Temporarily remove pump log message spam.
-            old_log_level = logging.getLevelName() # save current log level.
-            self.pump.log.setLevel(INFO) # Unset Debug level (if set) for pump.
+            old_log_level = self.pump.log.level # save current log level.
+            self.pump.log.setLevel(logging.INFO) # Unset Debug level (if set) for pump.
             # Poll syringe for lds state change. Kill if sensor is tripped.
             while self.pump.is_busy():
                 if self.selector_lds_map[chemical].untripped():
                     continue
+                self.log.debug("Halting pump mid-stroke.")
                 self.pump.halt()
-                # subtact off however much volume we actually withdrew.
-                remaining_volume_ul -= self.pump.get_position_ul()
                 break
             self.pump.log.setLevel(old_log_level) # Restore pump log level.
+            # subtact off however much volume we actually withdrew.
+            remaining_volume_ul -= self.pump.get_position_ul()
             # Reset syringe stroke by purging displaced air to waste.
-            self.log.debug("Resetting pump stroke.")
+            self.log.debug("Removing displaced gas.")
             self.selector.move_to_position("OUTLET")
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
             # Return to chemical line.
@@ -112,7 +119,7 @@ class FlowChamber:
         displaced_volume_ul = max_pump_displacement_ul - remaining_volume_ul
         self.prime_volumes_ul[chemical] = displaced_volume_ul
         self.log.debug(f"Priming {chemical} complete. "
-                       f"Function displaced {displaced_volume_ul:.3f}[uL].")
+                       f"Function displaced {displaced_volume_ul:.3f}[uL] of gas.")
 
     def prime_pump_line(self, chemical):
         """Fill the selector-to-syringe line flowpath with the specified
