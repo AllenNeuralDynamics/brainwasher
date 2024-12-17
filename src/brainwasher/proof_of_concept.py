@@ -77,6 +77,7 @@ class FlowChamber:
             self.log.error("Error. Pump is not starting from reset position "
                            "and may contain another chemical.")
             return
+        self.log.info(f"Priming {chemical} reservoir line.")
         # Configure syringe path to dump air to waste
         self.log.debug(f"Opening pump path to waste.")
         self.rv_source_valve.deenergize()
@@ -88,8 +89,13 @@ class FlowChamber:
         remaining_volume_ul = max_pump_displacement_ul
         # Withdraw (100%) until reservoir line is tripped.
         # Track how much total volume we displaced so we can bail on fail.
-        while self.selector_lds_map[chemical].untripped() and remaining_volume_ul:
+        # Note: add small fudge factor since we can be +/- 1 step (~2.0833uL).
+        liquid_detected = False
+        while (not liquid_detected) and (remaining_volume_ul > 5):
             # Withdraw another stroke.
+            if self.selector_lds_map[chemical].tripped():
+                liquid_detected = True
+                break
             stroke_volume_ul = min(remaining_volume_ul, syringe_volume_ul)
             self.log.debug("Polling prime sensor while withdrawing up to "
                            f"{stroke_volume_ul}[uL] of {chemical}.")
@@ -103,6 +109,7 @@ class FlowChamber:
                     continue
                 self.log.debug("Halting pump mid-stroke.")
                 self.pump.halt()
+                liquid_detected = True
                 break
             self.pump.log.setLevel(old_log_level) # Restore pump log level.
             # subtact off however much volume we actually withdrew.
@@ -113,13 +120,49 @@ class FlowChamber:
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
             # Return to chemical line.
             self.selector.move_to_position(chemical)
-        if not remaining_volume_ul and self.selector_lds_map[chemical].untripped():
+        if not remaining_volume_ul and not liquid_detected:
             raise RuntimeError("Withdrew maximum volume "
                 f"({max_pump_displacement_ul}[uL]) and no liquid detected.")
+        self.drain_exhaust_valve.deenergize()
         displaced_volume_ul = max_pump_displacement_ul - remaining_volume_ul
+        # Save displaced volume.
         self.prime_volumes_ul[chemical] = displaced_volume_ul
-        self.log.debug(f"Priming {chemical} complete. "
-                       f"Function displaced {displaced_volume_ul:.3f}[uL] of gas.")
+        self.log.info(f"Priming {chemical} complete. Function displaced "
+            f"{displaced_volume_ul:.3f}[uL] of gas.")
+
+    def unprime_reservoir_line(self, chemical: str,
+                               max_pump_displacement_ul: int = 25000):
+        """Unprime reservoir line by using N2 to push back volume used to prime
+           (+10%) or max_pump_displacement_ul if unspecified."""
+        # Error if the pump is not reset to 0 position.
+        starting_pump_volume_ul = self.pump.get_position_ul()
+        if starting_pump_volume_ul != 0:
+            error_msg = "Error. Pump is not starting from its reset position " \
+                "and may contain another chemical."
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
+        self.log.info(f"Unpriming {chemical} reservoir line.")
+        if chemical not in self.prime_volumes_ul:
+            self.log.warning(f"{chemical} has never been primed before. "
+                f"Unpriming will displace {max_pump_displacement_ul}[uL].")
+        unprime_volume_ul = self.prime_volumes_ul.get(chemical,
+                                                      max_pump_displacement_ul)
+        # Add 5% for good measure, but stay below alotted maximum.
+        unprime_volume_ul = min(unprime_volume_ul*1.05, # FIXME: magic number
+                                max_pump_displacement_ul)
+        # Displace volume in discrete pump strokes.
+        syringe_volume_ul = self.pump.syringe_volume_ul
+        remaining_volume_ul = unprime_volume_ul
+        while remaining_volume_ul:
+            # Withdraw another stroke.
+            stroke_volume_ul = min(remaining_volume_ul, syringe_volume_ul)
+            self.log.debug("Withdrawing N2.")
+            self.selector.move_to_position("AMBIENT") # Select gas.
+            self.pump.withdraw(stroke_volume_ul) # Withdraw gas.
+            self.selector.move_to_position(chemical) # Select chemical.
+            self.pump.move_absolute_in_percent(0) # Plunge to starting position.
+            remaining_volume_ul -= stroke_volume_ul
+        self.log.info(f"Unpriming {chemical} complete.")
 
     def prime_pump_line(self, chemical):
         """Fill the selector-to-syringe line flowpath with the specified

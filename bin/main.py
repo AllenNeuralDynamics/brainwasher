@@ -4,6 +4,7 @@
 from device_spinner.config import Config
 from device_spinner.device_spinner import DeviceSpinner
 from coloredlogs import ColoredFormatter
+from time import sleep
 
 import logging
 logger = logging.getLogger()
@@ -33,8 +34,9 @@ instrument = device_trees['flow_chamber']
 logger.info("Success!")
 logger.info("Resetting Instrument.")
 instrument.reset()
-logger.info("priming DI WATER.")
 instrument.prime_reservoir_line("CLEAR")
+sleep(1.0)
+instrument.unprime_reservoir_line("CLEAR")
 
 #import matplotlib.pyplot as plt
 #import igraph as ig
