@@ -43,12 +43,14 @@ class FlowChamber:
                                    # can "unprime" it if necessary.
 
         self.nominal_pump_speed_percent = 10
+        self.slow_pump_speed_percent = 5
         self.pump_unprime_speed_percent = 30
 
 
     def reset(self):
         """Initialize all hardware while ensuring that the system can bleed any
         pressure pockets created to waste."""
+        self.log.info("Resetting instrument.")
         self.deenergize_all_valves()
         self.log.debug("Connecting Source Pump to waste.")
         # Connect: source pump -> waste.
@@ -174,45 +176,69 @@ class FlowChamber:
     def prime_pump_line(self, chemical):
         """Fill the selector-to-syringe line flowpath with the specified
             chemical."""
+        if self.pump.get_position_ul() != 0:
+            error_msg = "Error. Pump is not starting from its reset position " \
+                "and may contain another chemical."
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
         self.prime_reservoir_line(chemical)
-        if self.pump_lds.tripped():
+        if self.pump_prime_lds.tripped():
             # Edge case: what happens if another chemical is in the line?
-            self.log.debug("Exiting early. {chemical} already primed.")
+            self.log.warning("Exiting early. {chemical} already primed.")
             return
+        self.selector.move_to_position(chemical) # Select chemical.
         # Withdraw to source pump sensor.
         # We can do this in <1 full stroke after the chemical is primed.
-        self.log.debug("Withdrawing reservoir contents.")
-        self.pump.withdraw(stroke_volume_ul/2) # FIXME: magic number
+        self.log.debug(f"Withdrawing {chemical} from reservoir.")
+        self.pump.set_speed_percent(self.slow_pump_speed_percent)
+        self.pump.withdraw(self.pump.syringe_volume_ul/3) # FIXME: magic number
         while self.pump.is_busy():
-            if self.pump.untripped():
+            if self.pump_prime_lds.untripped():
                 continue
             self.pump.halt()
-        if self.pump_lds.untripped():
-            raise RuntimeError("Did not detect any liquid after attempting "
-                               "to prime up to the start of the source pump.")
+            self.log.debug("Priming pump line detected liquid after displacing "
+                f"{self.pump.get_position_ul()}[uL].")
+            # Restore speed
+            self.pump.set_speed_percent(self.nominal_pump_speed_percent)
+            return
+        raise RuntimeError(f"Did not detect any liquid ({chemical}) after "
+            "attempting to aspirate to the start of the pump.")
 
-    def purge_pump(self, dest="waste"):
-        """Empty contents of source pump to waste. Fully plunge pump."""
-        # If the source pump is fully plunged, exit.
-        # Select dest line.
-        # Fully plunge syringe.
-        pass
+    def purge_pump_line(self):
+        """Empty selector-to-pump line by purging contents to waste.
+        It is OK if the pump does not enter this function fully-plunged.
+        """
+        self.log.debug("Purging pump line.")
+        # Configure syringe path to dump air to waste
+        self.log.debug(f"Opening pump path to waste.")
+        self.rv_source_valve.deenergize()
+        self.rv_exhaust_valve.deenergize()
+        self.drain_exhaust_valve.energize()
+        try:
+            # Purge all starting contents of the syringe.
+            if self.pump.get_position_ul() != 0:
+                self.log.warning("Syringe is not empty. Directing existing "
+                    "contents to waste.")
+                # Select dest line.
+                self.selector.move_to_position("OUTLET")
+                # Fully plunge syringe.
+                self.pump.move_absolute_in_percent(0)
+            self.log.debug("Pulling residual pump line contents into syringe "
+                "with N2.")
+            # Select N2
+            self.selector.move_to_position("AMBIENT")
+            # Fully withdraw syringe to bring primed liquid into syringe.
+            self.pump.move_absolute_in_percent(100)
+            # Select dest line.
+            self.log.debug("Purging pump line contents to waste.")
+            self.selector.move_to_position("OUTLET")
+            # Fully plunge syringe.
+            self.pump.move_absolute_in_percent(0)
+        finally:
+            # Close waste flowpath.
+            self.drain_exhaust_valve.deenergize()
+        self.log.debug("Purging pump line complete.")
 
-    def purge_pump_line(self, dest="waste"):
-        """Purge the current contents of the pump-to-select line flowpath
-            to the appropriate waste. Fully plunge pump."""
-        self.purge_pump(dest) # Do this first, or the line will remain
-                                     # full until the source pump is empty.
-        # If source pump line is clear at this point, exit.
-        # Set selector to air.
-        # Withdraw full volume of air + liquid.
-        # Note: we *must* con
-        # Select dest line.
-        # If destination is not waste:
-        #   Identify syringe line chemical.
-        #   Select corresponding reservoir line.
-        #   Purge syringe line contents back into reservoir.
-        pass
 
     def transfer(self, volume_ul, source, destination):
         """Transfer the specified amount of liquid from source to destination.

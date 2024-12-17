@@ -8,8 +8,7 @@ from time import sleep
 
 import logging
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-#logger.setLevel(logging.INFO)
+logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 fmt='%(asctime)s.%(msecs)03d:%(name)s:%(levelname)s: %(message)s'
@@ -29,14 +28,16 @@ device_specs = dict(device_config.cfg)
 factory = DeviceSpinner()
 device_trees = factory.create_devices_from_specs(device_specs["devices"])
 
-# run prime routine.
 instrument = device_trees['flow_chamber']
-logger.info("Success!")
-logger.info("Resetting Instrument.")
 instrument.reset()
-instrument.prime_reservoir_line("CLEAR")
+
+logger.setLevel(logging.DEBUG)
+#instrument.prime_reservoir_line("CLEAR")
+#instrument.unprime_reservoir_line("CLEAR")
 sleep(1.0)
-instrument.unprime_reservoir_line("CLEAR")
+instrument.prime_pump_line("CLEAR")
+input("Press enter to purge.")
+instrument.purge_pump_line()
 
 #import matplotlib.pyplot as plt
 #import igraph as ig
