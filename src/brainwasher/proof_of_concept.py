@@ -42,6 +42,9 @@ class FlowChamber:
                                    # prime a particular chemical so that we
                                    # can "unprime" it if necessary.
 
+        self.nominal_pump_speed_percent = 10
+        self.pump_unprime_speed_percent = 30
+
 
     def reset(self):
         """Initialize all hardware while ensuring that the system can bleed any
@@ -52,6 +55,8 @@ class FlowChamber:
         self.drain_exhaust_valve.energize()
         self.selector.move_to_position("OUTLET")
         self.pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
+        # TODO: slow down pump speed here.
+        self.pump.set_speed_percent(self.nominal_pump_speed_percent)
         # Restore deenergized state.
         self.deenergize_all_valves()
 
@@ -63,7 +68,7 @@ class FlowChamber:
         self.drain_waste_valve.deenergize()
 
     def prime_reservoir_line(self, chemical: str,
-                             max_pump_displacement_ul: int = 25000):
+                             max_pump_displacement_ul: int = 12500):
         """Fill the specified chemical's flowpath up to the port of the
            selector valve. Bail if we exceed max pump distance and no chemical
            is detected."""
@@ -83,8 +88,6 @@ class FlowChamber:
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()
         self.drain_exhaust_valve.energize()
-        # Set selector to corresponding chemical port
-        self.selector.move_to_position(chemical)
         syringe_volume_ul = self.pump.syringe_volume_ul
         remaining_volume_ul = max_pump_displacement_ul
         # Withdraw (100%) until reservoir line is tripped.
@@ -99,6 +102,8 @@ class FlowChamber:
             stroke_volume_ul = min(remaining_volume_ul, syringe_volume_ul)
             self.log.debug("Polling prime sensor while withdrawing up to "
                            f"{stroke_volume_ul}[uL] of {chemical}.")
+            # Select chemical line.
+            self.selector.move_to_position(chemical)
             self.pump.withdraw(stroke_volume_ul, wait=False)
             # Temporarily remove pump log message spam.
             old_log_level = self.pump.log.level # save current log level.
@@ -118,8 +123,6 @@ class FlowChamber:
             self.log.debug("Removing displaced gas.")
             self.selector.move_to_position("OUTLET")
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
-            # Return to chemical line.
-            self.selector.move_to_position(chemical)
         if not remaining_volume_ul and not liquid_detected:
             raise RuntimeError("Withdrew maximum volume "
                 f"({max_pump_displacement_ul}[uL]) and no liquid detected.")
@@ -153,6 +156,8 @@ class FlowChamber:
         # Displace volume in discrete pump strokes.
         syringe_volume_ul = self.pump.syringe_volume_ul
         remaining_volume_ul = unprime_volume_ul
+        # Speed up pump for purging.
+        self.pump.set_speed_percent(self.pump_unprime_speed_percent)
         while remaining_volume_ul:
             # Withdraw another stroke.
             stroke_volume_ul = min(remaining_volume_ul, syringe_volume_ul)
@@ -162,6 +167,8 @@ class FlowChamber:
             self.selector.move_to_position(chemical) # Select chemical.
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
             remaining_volume_ul -= stroke_volume_ul
+        # Reset speed.
+        self.pump.set_speed_percent(self.nominal_pump_speed_percent)
         self.log.info(f"Unpriming {chemical} complete.")
 
     def prime_pump_line(self, chemical):
