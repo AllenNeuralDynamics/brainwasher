@@ -56,6 +56,7 @@ class FlowChamber:
         # Connect: source pump -> waste.
         self.drain_exhaust_valve.energize()
         self.selector.move_to_position("OUTLET")
+        self.pump.set_speed_percent(60) # ignored if freshly powered on.
         self.pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
         # TODO: slow down pump speed here.
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
@@ -133,7 +134,7 @@ class FlowChamber:
         # Save displaced volume.
         self.prime_volumes_ul[chemical] = displaced_volume_ul
         self.log.info(f"Priming {chemical} complete. Function displaced "
-            f"{displaced_volume_ul:.3f}[uL] of gas.")
+            f"{displaced_volume_ul:.3f}[uL] of volume.")
 
     def unprime_reservoir_line(self, chemical: str,
                                max_pump_displacement_ul: int = 25000):
@@ -184,14 +185,17 @@ class FlowChamber:
         self.prime_reservoir_line(chemical)
         if self.pump_prime_lds.tripped():
             # Edge case: what happens if another chemical is in the line?
-            self.log.warning("Exiting early. {chemical} already primed.")
+            self.log.warning("Pump line already primed.")
             return
         self.selector.move_to_position(chemical) # Select chemical.
         # Withdraw to source pump sensor.
         # We can do this in <1 full stroke after the chemical is primed.
         self.log.debug(f"Withdrawing {chemical} from reservoir.")
         self.pump.set_speed_percent(self.slow_pump_speed_percent)
-        self.pump.withdraw(self.pump.syringe_volume_ul/3) # FIXME: magic number
+        # Temporarily remove pump log message spam.
+        old_log_level = self.pump.log.level # save current log level.
+        self.pump.log.setLevel(logging.INFO) # Unset Debug level (if set) for pump.
+        self.pump.withdraw(self.pump.syringe_volume_ul/3, wait=False) # FIXME: magic number
         while self.pump.is_busy():
             if self.pump_prime_lds.untripped():
                 continue
@@ -200,6 +204,7 @@ class FlowChamber:
                 f"{self.pump.get_position_ul()}[uL].")
             # Restore speed
             self.pump.set_speed_percent(self.nominal_pump_speed_percent)
+            self.pump.log.setLevel(old_log_level) # Restore pump log level.
             return
         raise RuntimeError(f"Did not detect any liquid ({chemical}) after "
             "attempting to aspirate to the start of the pump.")

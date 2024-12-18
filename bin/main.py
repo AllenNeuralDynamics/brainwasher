@@ -32,12 +32,13 @@ instrument = device_trees['flow_chamber']
 instrument.reset()
 
 logger.setLevel(logging.DEBUG)
+#instrument.selector.move_to_position("CLEAR")
 #instrument.prime_reservoir_line("CLEAR")
-#instrument.unprime_reservoir_line("CLEAR")
-sleep(1.0)
-instrument.prime_pump_line("CLEAR")
-input("Press enter to purge.")
-instrument.purge_pump_line()
+instrument.unprime_reservoir_line("CLEAR")
+#sleep(1.0)
+#instrument.prime_pump_line("CLEAR")
+#input("Press enter to purge.")
+#instrument.purge_pump_line()
 
 #import matplotlib.pyplot as plt
 #import igraph as ig
