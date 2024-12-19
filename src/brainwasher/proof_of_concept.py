@@ -1,9 +1,24 @@
 """Tissue-clearing proof-of-concept"""
 
 import logging
+from functools import wraps
 from runze_control.syringe_pump import SY08
 from time import perf_counter as now
 from typing import Union
+
+
+def syringe_empty(func):
+    """Ensure that the syringe is empty (i.e: fully plunged)."""
+
+    @wraps(func) # required for sphinx doc generation
+    def inner(self, *args, **kwds):
+        if self.pump.get_position_ul() != 0:
+            error_msg = "Error. Pump is not starting from its reset position " \
+                "and contains liquid or gas!"
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
+        return func(self, *args, **kwds)
+    return inner
 
 
 class FlowChamber:
@@ -56,7 +71,6 @@ class FlowChamber:
         # Connect: source pump -> waste.
         self.drain_exhaust_valve.energize()
         self.selector.move_to_position("OUTLET")
-        self.pump.set_speed_percent(60) # ignored if freshly powered on.
         self.pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
         # TODO: slow down pump speed here.
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
@@ -70,20 +84,20 @@ class FlowChamber:
         self.drain_exhaust_valve.deenergize()
         self.drain_waste_valve.deenergize()
 
+    @syringe_empty
     def prime_reservoir_line(self, chemical: str,
                              max_pump_displacement_ul: int = 12500):
         """Fill the specified chemical's flowpath up to the port of the
            selector valve. Bail if we exceed max pump distance and no chemical
            is detected."""
+        # TODO: consider a force parameter to prime anyway up to a fixed volume.
+        # Bail-early if we're already primed.
+        if chemical in self.prime_volumes_ul:
+            self.log.warning(f"{chemical} was previously primed. Aborting.")
+            return
         # Bail-early if we're already primed.
         if self.selector_lds_map[chemical].tripped():
-            self.log.debug(f"{chemical} already primed. Exiting early.")
-            return
-        # Error if the pump is not reset to 0 position.
-        starting_pump_volume_ul = self.pump.get_position_ul()
-        if starting_pump_volume_ul != 0:
-            self.log.error("Error. Pump is not starting from reset position "
-                           "and may contain another chemical.")
+            self.log.warning(f"{chemical} already primed. Aborting.")
             return
         self.log.info(f"Priming {chemical} reservoir line.")
         # Configure syringe path to dump air to waste
@@ -136,17 +150,11 @@ class FlowChamber:
         self.log.info(f"Priming {chemical} complete. Function displaced "
             f"{displaced_volume_ul:.3f}[uL] of volume.")
 
+    @syringe_empty
     def unprime_reservoir_line(self, chemical: str,
                                max_pump_displacement_ul: int = 25000):
         """Unprime reservoir line by using N2 to push back volume used to prime
            (+10%) or max_pump_displacement_ul if unspecified."""
-        # Error if the pump is not reset to 0 position.
-        starting_pump_volume_ul = self.pump.get_position_ul()
-        if starting_pump_volume_ul != 0:
-            error_msg = "Error. Pump is not starting from its reset position " \
-                "and may contain another chemical."
-            self.log.error(error_msg)
-            raise RuntimeError(error_msg)
         self.log.info(f"Unpriming {chemical} reservoir line.")
         if chemical not in self.prime_volumes_ul:
             self.log.warning(f"{chemical} has never been primed before. "
@@ -164,29 +172,25 @@ class FlowChamber:
         while remaining_volume_ul:
             # Withdraw another stroke.
             stroke_volume_ul = min(remaining_volume_ul, syringe_volume_ul)
-            self.log.debug("Withdrawing N2.")
-            self.selector.move_to_position("AMBIENT") # Select gas.
-            self.pump.withdraw(stroke_volume_ul) # Withdraw gas.
+            self.fast_gas_charge_syringe()
             self.selector.move_to_position(chemical) # Select chemical.
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
             remaining_volume_ul -= stroke_volume_ul
         # Reset speed.
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
+        del self.prime_volumes_ul[chemical] # Remove record of chemical.
         self.log.info(f"Unpriming {chemical} complete.")
 
+    @syringe_empty
     def prime_pump_line(self, chemical):
         """Fill the selector-to-syringe line flowpath with the specified
             chemical."""
-        if self.pump.get_position_ul() != 0:
-            error_msg = "Error. Pump is not starting from its reset position " \
-                "and may contain another chemical."
-            self.log.error(error_msg)
-            raise RuntimeError(error_msg)
         self.prime_reservoir_line(chemical)
         if self.pump_prime_lds.tripped():
             # Edge case: what happens if another chemical is in the line?
             self.log.warning("Pump line already primed.")
             return
+        self.log.info(f"Priming pump line with {chemical}.")
         self.selector.move_to_position(chemical) # Select chemical.
         # Withdraw to source pump sensor.
         # We can do this in <1 full stroke after the chemical is primed.
@@ -209,6 +213,7 @@ class FlowChamber:
         raise RuntimeError(f"Did not detect any liquid ({chemical}) after "
             "attempting to aspirate to the start of the pump.")
 
+    # It is OK if the pump does not enter this function with an empty syringe.
     def purge_pump_line(self):
         """Empty selector-to-pump line by purging contents to waste.
         It is OK if the pump does not enter this function fully-plunged.
@@ -230,10 +235,8 @@ class FlowChamber:
                 self.pump.move_absolute_in_percent(0)
             self.log.debug("Pulling residual pump line contents into syringe "
                 "with N2.")
-            # Select N2
-            self.selector.move_to_position("AMBIENT")
-            # Fully withdraw syringe to bring primed liquid into syringe.
-            self.pump.move_absolute_in_percent(100)
+            # Charge pump with N2.
+            self.fast_gas_charge_syringe()
             # Select dest line.
             self.log.debug("Purging pump line contents to waste.")
             self.selector.move_to_position("OUTLET")
@@ -245,107 +248,66 @@ class FlowChamber:
         self.log.debug("Purging pump line complete.")
 
 
-    def transfer(self, volume_ul, source, destination):
-        """Transfer the specified amount of liquid from source to destination.
+    def dispense_to_vessel(self, microliters: float, chemical: str):
+        """Withdraw specified chemical from the appropriate container and
+        dispense it into the reaction vessel."""
+        if chemical not in self.selector_lds_map:
+            raise ValueError(f"{chemical} is not a valid chemical.")
+        if chemical not in self.prime_volumes_ul:
+            self.log.warning(f"{chemical} has not yet been primed. Priming now.")
+            self.prime_reservoir_line(chemical)
+        self.prime_pump_line(chemical) # Prime pump line.
+        # Set outlet flowpath starting configuration.
+        self.rv_source_valve.energize()
+        self.rv_exhaust_valve.energize()
+        self.drain_exhaust_valve.energize()
+        self.selector.move_to_position(chemical)
+        pump_to_common_dv_ul = 10.0 # FIXME: magic number. get this from a graph.
+        # Subtract off pump-to-common dead volume because we will introduce
+        # this volume back when we fully purge the pump-to-vessel flowpath.
+        self.pump.withdraw(microliters - pump_to_common_dv_ul)
+        self.selector.move_to_position("OUTLET")
+        # Fully plunge. Note: some liquid will be remain in the pump-to-vessel
+        # path at this point.
+        self.pump.move_absolute_in_percent(0)
+        # Now push residual liquid out of pump-to-vessel line using gas.
+        self.fast_gas_charge_syringe()
+        # Select dest line.
+        self.selector.move_to_position("OUTLET")
+        # Fully plunge syringe.
+        self.pump.move_absolute_in_percent(0)
+        # Seal reaction vessel.
+        self.rv_source_valve.deenergize()
+        self.rv_exhaust_valve.deenergize()
+        self.drain_exhaust_valve.deenergize()
 
-        .. code-block:: python
-
-            bw.transfer(volume_ul=10000,
-                        source=bw.reservoirs["isopropyl alchohol"],
-                        dest=bw.reaction_vessel)
-
-        """
-        # TODO: account for path lengths.
-        # TODO: push stirring state. Stop stirring. Pop Stirring state when done.
-        pass
-
-    #def safe_replace_vessel_solution(self, total_volume_ul: float,
-    #    chemical: str, dilution_factor: Union[int, None] = 100,
-    #    prev_solution_volume_ul: Union[int, None] = None):
-    #    """Similar to :meth:`replace_vessel_solution` except always keep the
-    #    minimum volume of liquid in the reaction vessel above its minimum
-    #    volume."""
-    #    self.replace_vessel_solution(**kwargs,
-    #        min_volume_ul=self.rxn_vessel.min_volume_ul)
-
-    #def replace_vessel_solution(self, total_volume_ul: float, chemical: str,
-    #    prev_solution_volume_ul: Union[int, None] = None,
-    #    dilution_factor: Union[int, None] = 100,
-    #    min_volume_ul: float = 0):
-    #    """Replace the solution in the vessel with the specified volume of the
-    #    new chemical. Old solution is dumped to waste.
-
-    #    :param min_volume_ul: minimum volume that can exist in the reaction
-    #        vessel at any time.
-
-    #    .. code-block:: python
-
-    #        # Fill the vessel with 3000uL of isopropyl alcohol and 2000uL of
-    #        # the previous solution.
-    #        bw.replace_vessel_solution(prev_solution_volume=2000,
-    #                                   total_volume_ul=5000,
-    #                                   chemical='isopropyl alcohol')
-
-    #        # or
-
-    #        # Fill the vessel up to the 5000uL mark with 100:1 ratio of
-    #        # isopropyl alcohol to the previous solution.
-    #        bw.replace_vessel_solution(dilution_factor=100,
-    #                                   volume_ul=5000,
-    #                                   chemical='isopropyl alcohol')
-
-    #    """
-    #    start_time_s = now()
-    #    log_data = dict()
-    #    log_data.update(locals()) # Log function args.
-    #    log_data['total_chemical_volume_consumed'] = 0 # Total volume consumed
-    #                                                   # during the chemical
-    #                                                   # exchange.
-    #    # Consolidate representation to prev_solution_volume_ul
-    #    if dilution_factor is not None:
-    #        prev_solution_volume_ul = total_volume_ul / dilution_factor
-
-    #    # TODO: total volume < reaction vessel max volume.
-    #    if total_volume_ul < min_volume_ul:
-    #        raise ValueError(f"Cannot fill the vessel with {chemical}. "
-    #            f"Specified volume ({total_volume_ul} [uL]) < "
-    #            f"minimum volume ({min_volume_ul} [uL])")
-    #    if all(r is None for r in [dilution_factor, prev_solution_volume]):
-    #        raise ValueError(f"Cannot specify volume exchange in terms of "
-    #            "both dilution_factor and prev_solution_volume")
-    #    if prev_solution_volume_ul is not None:
-    #        if self.rxn_vessel.curr_volume_ul < prev_solution_volume_ul:
-    #            raise ValueError(f"Reaction vessel starting volume is too low.")
-    #    if self.rxn_vessel.curr_volume_ul < prev_solution_volume_ul:
-    #        spec = 'dilution_factor' if dilution_factor is not None else 'prev_solution_volume_ul'
-    #        raise ValueError(f"Previous solution in reaction vessel is too "
-    #            f"low to hit the specified {spec}."
-    #        # FIXME: check if we can't hit the dilution factor with the
-    #        # specified chemistry.
-    #        pass
-
-    #    new_solution_volume_ul = total_volume_ul - prev_solution_volume_ul
-
-    #    # FIXME: actually implement this function.
-    #    # Note: if prev_solution_volume_ul < self.rxn_vessel.min_volume_ul, this
-    #    # requires more work.
-
-    #    # Convert to general representation to extract all "transfers".
-    #    # Consolidate dilution factor and prev_solution_volume_ul
-    #    # FIXME: dilution_factor = 0 (not None)
+    @syringe_empty
+    def drain_vessel(self):
+        # Set outlet flowpath starting configuration.
+        self.rv_source_valve.energize()
+        self.rv_exhaust_valve.deenergize() # Lock out the rv top exhaust port.
+        self.drain_waste_valve.energize() # Open rv lower drain path.
+        # Push out the vessel contents with gas.
+        self.fast_gas_charge_syringe()
+        # TODO: cache that we sent this so we don't send it twice?
+        self.pump.set_speed_percent(self.nominal_pump_speed_percent)
+        # Select dest line.
+        self.selector.move_to_position("OUTLET")
+        # Fully plunge syringe.
+        self.pump.move_absolute_in_percent(0)
+        # Close valves
+        self.rv_source_valve.deenergize()
+        self.rv_exhaust_valve.deenergize()
+        self.drain_waste_valve.deenergize()
 
 
-    #    log_data['execution_time_s'] = now() - start_time_s
-    #    self.log.info("Metrics.", data=log_data)
-
-
-
-    def aspirate(self, microliters):
-        pass
-
-    def dispense(self, microliters):
-        pass
-
+    def fast_gas_charge_syringe(self):
+        """quickly charge the syringe with gas."""
+        self.selector.move_to_position("AMBIENT")
+        old_speed = self.pump.get_speed_percent()
+        self.pump.set_speed_percent(100) # draw up gas quickly.
+        self.pump.move_absolute_in_percent(100)
+        self.pump.set_speed_percent(old_speed) # restore original speed.
 
     #@liquid_level_check
     def dispense_reservoir_to_chamber(self, microliters, chemical):
