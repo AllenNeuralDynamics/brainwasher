@@ -4,6 +4,7 @@ import logging
 from functools import wraps
 from runze_control.syringe_pump import SY08
 from time import perf_counter as now
+from time import sleep
 from typing import Union
 
 
@@ -282,12 +283,15 @@ class FlowChamber:
                        f"fully dispense {microliters}[uL].")
         # Now push residual liquid out of pump-to-vessel line using gas.
         # This adds pump_to_common_dv_ul.
-        self.fast_gas_charge_syringe()
-        # Select dest line.
-        self.selector.move_to_position("OUTLET")
-        # Fully plunge syringe.
-        self.pump.move_absolute_in_percent(0)
+        for i in range(2):
+            self.fast_gas_charge_syringe(20)  # FIXME: should be function of dead volume
+            # Select dest line.
+            self.selector.move_to_position("OUTLET")
+            # Fully plunge syringe.
+            self.pump.move_absolute_in_percent(0)
+        # Update State:
         self.pump_is_primed_with = None  # Clear prime line state.
+        self.rxn_vessel.curr_volume_ul = microliters
         # Seal reaction vessel and all other flowpaths.
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()
@@ -297,30 +301,35 @@ class FlowChamber:
 
     @syringe_empty
     def drain_vessel(self):
+        """Drain the reaction vessel."""
+        # Compute how much to dispense
         # Set outlet flowpath starting configuration.
         self.rv_source_valve.energize()
         self.rv_exhaust_valve.deenergize()  # Lock out the rv top exhaust port.
         self.drain_waste_valve.energize()  # Open rv lower drain path.
         # Push out the vessel contents with gas.
-        self.fast_gas_charge_syringe()
+        self.fast_gas_charge_syringe(100)
         # Select dest line.
         self.selector.move_to_position("OUTLET")
         # Fully plunge syringe.
         self.pump.set_speed_percent(100)
         self.pump.move_absolute_in_percent(0)
+        sleep(1.0)  # Wait for liquid to finish moving (system to hit equilibrium).
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
+        # Update State:
+        self.rxn_vessel.curr_volume_ul = 0
         # Close valves
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()
         self.drain_waste_valve.deenergize()
 
-
-    def fast_gas_charge_syringe(self):
+    def fast_gas_charge_syringe(self, percent: float = 100):
         """quickly charge the syringe with gas."""
+        self.log.debug(f"Fast-charging pump to {percent}% volume with gas.")
         self.selector.move_to_position("AMBIENT")
         old_speed = self.pump.get_speed_percent()
-        self.pump.set_speed_percent(100) # draw up gas quickly.
-        self.pump.move_absolute_in_percent(100)
+        self.pump.set_speed_percent(100)  # draw up gas quickly.
+        self.pump.move_absolute_in_percent(percent)
         self.pump.set_speed_percent(old_speed) # restore original speed.
 
     #@liquid_level_check
