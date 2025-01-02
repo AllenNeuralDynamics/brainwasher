@@ -284,12 +284,14 @@ class FlowChamber:
                        f"fully dispense {microliters}[uL].")
         # Now push residual liquid out of pump-to-vessel line using gas.
         # This adds pump_to_common_dv_ul.
-        for i in range(2):
-            self.fast_gas_charge_syringe(20)  # FIXME: should be function of dead volume
+        self.pump.set_speed_percent(100)
+        for i in range(3):
+            self.fast_gas_charge_syringe(10)  # FIXME: should be function of dead volume
             # Select dest line.
             self.selector.move_to_position("OUTLET")
             # Fully plunge syringe.
             self.pump.move_absolute_in_percent(0)
+        self.pump.set_speed_percent(self.nominal_pump_speed_percent)
         # Update State:
         self.pump_is_primed_with = None  # Clear prime line state.
         self.rxn_vessel.curr_volume_ul = microliters
