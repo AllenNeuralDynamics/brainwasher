@@ -5,7 +5,6 @@ from functools import wraps
 from runze_control.syringe_pump import SY08
 from time import perf_counter as now
 from time import sleep
-from typing import Union
 
 
 def syringe_empty(func):
@@ -35,12 +34,13 @@ class FlowChamber:
     def __init__(self, selector, selector_lds_map,
                  pump,
                  reaction_vessel,
+                 mixer,
                  rv_source_valve,
                  rv_exhaust_valve,
                  drain_exhaust_valve,
                  drain_waste_valve,
                  pump_prime_lds,
-                 #tube_length_grap
+                 #tube_length_graph
                  ):
         """"""
         self.log = logging.getLogger(__name__)
@@ -48,6 +48,7 @@ class FlowChamber:
         self.selector_lds_map = selector_lds_map
         self.pump = pump
         self.rxn_vessel = reaction_vessel
+        self.mixer = mixer
         self.rv_source_valve = rv_source_valve
         self.rv_exhaust_valve = rv_exhaust_valve
         self.drain_exhaust_valve = drain_exhaust_valve
@@ -331,22 +332,3 @@ class FlowChamber:
         self.pump.set_speed_percent(100)  # draw up gas quickly.
         self.pump.move_absolute_in_percent(percent)
         self.pump.set_speed_percent(old_speed) # restore original speed.
-
-    #@liquid_level_check
-    def dispense_reservoir_to_chamber(self, microliters, chemical):
-        """Withdraw specified chemical from the appropriate container and
-        dispense it into the reaction vessel."""
-        pass
-
-    def dispense_chamber_to_waste(self):
-        pass
-
-    def run_schedule(self):
-        pass
-
-    def load_state(self, state):
-        pass
-
-    def save_state(self):
-        pass
-

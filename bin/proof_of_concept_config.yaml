@@ -36,6 +36,13 @@ devices:
             curr_volume_ul: 0
             max_volume_ul: 12000
             name: reaction-vessel
+    mixer:
+        module: brainwasher.devices.sequent_microsystems.mixer
+        class: OnOffMixer
+        kwds:
+            board_address: 2
+            channel: 7
+            rpm: 5000
     rv_source_valve:
         module: brainwasher.devices.sequent_microsystems.valve
         class: ThreeTwoValve
@@ -117,6 +124,7 @@ devices:
             selector: selector
             selector_lds_map: selector_lds_map
             pump: source_pump
+            mixer: mixer
             reaction_vessel: reaction_vessel
             rv_source_valve: rv_source_valve
             rv_exhaust_valve: rv_exhaust_valve

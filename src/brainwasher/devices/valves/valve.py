@@ -10,6 +10,7 @@ class Valve:
         logger_name = self.__class__.__name__ + (f".{name}" if name else "")
         self.log = logging.getLogger(logger_name)
 
+
 class SolenoidValve(Valve):
     """Valve base class."""
 
