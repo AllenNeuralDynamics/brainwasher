@@ -34,21 +34,18 @@ instrument.reset()
 logger.setLevel(logging.DEBUG)
 
 
-input("Press enter to mix for 1 second")
+input("Press enter to dispense liquid into the reaction vessel.")
+instrument.dispense_to_vessel(4000, "PURPLE")
+instrument.dispense_to_vessel(4000, "YELLOW")
+
+input("Press enter to start mixing.")
 instrument.mixer.start_mixing()
-sleep(1)
+sleep(5)
 instrument.mixer.stop_mixing()
-sleep(1)
 
+input("Press enter to purge reaction vessel.")
+instrument.drain_vessel()
 
-
-#input("Press enter to dispense liquid into the reaction vessel.")
-#instrument.dispense_to_vessel(5000, "CLEAR")
-#input("Press enter to purge reaction vessel.")
-#instrument.drain_vessel()
-
-#input("Press enter to purge.")
-#instrument.purge_pump_line()
 
 #import matplotlib.pyplot as plt
 #import igraph as ig
