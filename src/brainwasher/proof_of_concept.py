@@ -56,11 +56,11 @@ class FlowChamber:
         self.prime_volumes_ul = {} # Store how much volume was displaced to
                                    # prime a particular chemical so that we
                                    # can "unprime" it if necessary.
+        self.pump_is_primed_with = None
 
         self.nominal_pump_speed_percent = 10
         self.slow_pump_speed_percent = 5
         self.pump_unprime_speed_percent = 30
-
 
     def reset(self):
         """Initialize all hardware while ensuring that the system can bleed any
@@ -176,19 +176,24 @@ class FlowChamber:
             self.selector.move_to_position(chemical) # Select chemical.
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
             remaining_volume_ul -= stroke_volume_ul
+        self.pump_is_primed_with = None  # Clear prime line state.
         # Reset speed.
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
-        del self.prime_volumes_ul[chemical] # Remove record of chemical.
+        if chemical in self.prime_volumes_ul:
+            del self.prime_volumes_ul[chemical] # Remove record of chemical.
         self.log.info(f"Unpriming {chemical} complete.")
 
     @syringe_empty
-    def prime_pump_line(self, chemical):
+    def prime_pump_line(self, chemical: str):
         """Fill the selector-to-syringe line flowpath with the specified
             chemical."""
         self.prime_reservoir_line(chemical)
-        if self.pump_prime_lds.tripped():
+        # FIXME: store this state in software in case we are at the edge
+        #  of the sensor trip threshold.
+        if self.pump_is_primed_with: #self.pump_prime_lds.tripped():
             # Edge case: what happens if another chemical is in the line?
-            self.log.warning("Pump line already primed.")
+            self.log.warning(f"Pump line already primed with "
+                             f"{self.pump_is_primed_with}.")
             return
         self.log.info(f"Priming pump line with {chemical}.")
         self.selector.move_to_position(chemical) # Select chemical.
@@ -212,6 +217,7 @@ class FlowChamber:
             return
         raise RuntimeError(f"Did not detect any liquid ({chemical}) after "
             "attempting to aspirate to the start of the pump.")
+        self.pump_is_primed_with = f"{chemical}"
 
     # It is OK if the pump does not enter this function with an empty syringe.
     def purge_pump_line(self):
@@ -246,7 +252,7 @@ class FlowChamber:
             # Close waste flowpath.
             self.drain_exhaust_valve.deenergize()
         self.log.debug("Purging pump line complete.")
-
+        self.pump_is_primed_with = None
 
     def dispense_to_vessel(self, microliters: float, chemical: str):
         """Withdraw specified chemical from the appropriate container and
@@ -269,32 +275,40 @@ class FlowChamber:
         self.selector.move_to_position("OUTLET")
         # Fully plunge. Note: some liquid will be remain in the pump-to-vessel
         # path at this point.
+        self.log.debug(f"Plunging initial {microliters - pump_to_common_dv_ul}[uL].")
         self.pump.move_absolute_in_percent(0)
+        self.log.debug(f"Plunging remaining {pump_to_common_dv_ul}[uL]"
+                       f"(pump-to-vessel dead volume) to clear line and "
+                       f"fully dispense {microliters}[uL].")
         # Now push residual liquid out of pump-to-vessel line using gas.
+        # This adds pump_to_common_dv_ul.
         self.fast_gas_charge_syringe()
         # Select dest line.
         self.selector.move_to_position("OUTLET")
         # Fully plunge syringe.
         self.pump.move_absolute_in_percent(0)
-        # Seal reaction vessel.
+        self.pump_is_primed_with = None  # Clear prime line state.
+        # Seal reaction vessel and all other flowpaths.
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()
         self.drain_exhaust_valve.deenergize()
+        self.log.debug(f"Dispensed {microliters}[uL] into reaction vessel. "
+                       f"Prime line is now cleared.")
 
     @syringe_empty
     def drain_vessel(self):
         # Set outlet flowpath starting configuration.
         self.rv_source_valve.energize()
-        self.rv_exhaust_valve.deenergize() # Lock out the rv top exhaust port.
-        self.drain_waste_valve.energize() # Open rv lower drain path.
+        self.rv_exhaust_valve.deenergize()  # Lock out the rv top exhaust port.
+        self.drain_waste_valve.energize()  # Open rv lower drain path.
         # Push out the vessel contents with gas.
         self.fast_gas_charge_syringe()
-        # TODO: cache that we sent this so we don't send it twice?
-        self.pump.set_speed_percent(self.nominal_pump_speed_percent)
         # Select dest line.
         self.selector.move_to_position("OUTLET")
         # Fully plunge syringe.
+        self.pump.set_speed_percent(100)
         self.pump.move_absolute_in_percent(0)
+        self.pump.set_speed_percent(self.nominal_pump_speed_percent)
         # Close valves
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()

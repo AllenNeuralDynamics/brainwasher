@@ -33,13 +33,18 @@ instrument.reset()
 
 logger.setLevel(logging.DEBUG)
 #instrument.selector.move_to_position("CLEAR")
-instrument.prime_reservoir_line("CLEAR")
-sleep(1.0)
 #instrument.unprime_reservoir_line("CLEAR")
-logger.warning("Priming pump line with CLEAR.")
-instrument.prime_pump_line("CLEAR")
-input("Press enter to purge.")
-instrument.purge_pump_line()
+#sleep(1.0)
+#instrument.prime_reservoir_line("CLEAR")
+#logger.warning("Priming pump line with CLEAR.")
+#instrument.prime_pump_line("CLEAR")
+input("Press enter to dispense liquid into the reaction vessel.")
+instrument.dispense_to_vessel(5000, "CLEAR")
+input("Press enter to purge reaction vessel.")
+instrument.drain_vessel()
+
+#input("Press enter to purge.")
+#instrument.purge_pump_line()
 
 #import matplotlib.pyplot as plt
 #import igraph as ig
