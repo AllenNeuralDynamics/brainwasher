@@ -4,12 +4,14 @@
 ![Python](https://img.shields.io/badge/python->=3.7-blue?logo=python)
 
 Note that this package is intended to run on a Raspberry Pi with a particular hardware configuration.
-This package can only be simulated if running on a different system.
 
 ## Quick Links
 * [Reaction Vessel CAD model](https://cad.onshape.com/documents/f1bf5f3ce34b965e5212d1ac/w/45b1dd7d9365ece513829b77/e/7736ee8ab9b2b1e217084778)
 * [P&ID Diagram Source link](https://alleninstitute.sharepoint.com/:u:/s/Instrumentation/ERyxjmhmVwZOke5AnwQ4NG0Bue9zIMbGMNcaT-wdS2hT9w?e=ZHAdRq)
 * [Project Design Folder](https://alleninstitute.sharepoint.com/:f:/s/Instrumentation/Emw6bMGQgo5Pgin2Gb3EXEcBvJux_NXnwFN3A5khlz1pbA?e=NgBTAY)
+
+## Wiring Setup
+See the [hardware configuration](https://github.com/AllenNeuralDynamics/brainwasher/blob/main/bin/proof_of_concept_config.yaml) for the device's wiring configuration.
 
 
 ## Raspberry Pi Setup
