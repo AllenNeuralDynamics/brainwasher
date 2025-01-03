@@ -284,9 +284,10 @@ class FlowChamber:
                        f"fully dispense {microliters}[uL].")
         # Now push residual liquid out of pump-to-vessel line using gas.
         # This adds pump_to_common_dv_ul.
-        self.pump.set_speed_percent(100)
-        for i in range(3):
-            self.fast_gas_charge_syringe(10)  # FIXME: should be function of dead volume
+        self.pump.set_speed_percent(self.nominal_pump_speed_percent)
+        purge_volumes = [15, 5]  # FIXME: magic numbers.
+        for purge_volume in purge_volumes:
+            self.fast_gas_charge_syringe(purge_volume)
             # Select dest line.
             self.selector.move_to_position("OUTLET")
             # Fully plunge syringe.

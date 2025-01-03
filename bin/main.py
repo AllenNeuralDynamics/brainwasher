@@ -35,15 +35,16 @@ logger.setLevel(logging.DEBUG)
 
 
 input("Press enter to dispense liquid into the reaction vessel.")
-instrument.dispense_to_vessel(2000, "PURPLE")
-instrument.dispense_to_vessel(2000, "YELLOW")
+instrument.dispense_to_vessel(5000, "PURPLE")
+instrument.dispense_to_vessel(5000, "YELLOW")
+#instrument.dispense_to_vessel(10000, "CLEAR")
 
-input("Press enter to start mixing.")
+#input("Press enter to start mixing.")
 instrument.mixer.start_mixing()
 sleep(5)
 instrument.mixer.stop_mixing()
 
-input("Press enter to purge reaction vessel.")
+#input("Press enter to purge reaction vessel.")
 instrument.drain_vessel()
 
 
