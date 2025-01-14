@@ -43,6 +43,15 @@ devices:
             board_address: 2
             channel: 7
             rpm: 5000
+    pressure_sensor:
+        module: brainwasher.devices.sequent_microsystems.pressure_sensor
+        class: PX409
+        kwds:
+            stack: 0
+            bus: 1
+            channel: 1
+            min_voltage: 0.004
+            max_voltage: 5.010
     rv_source_valve:
         module: brainwasher.devices.sequent_microsystems.valve
         class: ThreeTwoValve
