@@ -34,7 +34,7 @@ devices:
         class: ReactionVessel
         kwds:
             curr_volume_ul: 0
-            max_volume_ul: 12000
+            max_volume_ul: 10000
             name: reaction-vessel
     mixer:
         module: brainwasher.devices.sequent_microsystems.mixer

@@ -1,10 +1,13 @@
 """Tissue-clearing proof-of-concept"""
 
 import logging
+from brainwasher.protocol import Protocol
 from functools import wraps
+from pathlib import Path
 from runze_control.syringe_pump import SY08
 from time import perf_counter as now
 from time import sleep
+from typing import Union
 
 
 def syringe_empty(func):
@@ -216,10 +219,10 @@ class FlowChamber:
             # Restore speed
             self.pump.set_speed_percent(self.nominal_pump_speed_percent)
             self.pump.log.setLevel(old_log_level) # Restore pump log level.
+            self.pump_is_primed_with = f"{chemical}"
             return
         raise RuntimeError(f"Did not detect any liquid ({chemical}) after "
             "attempting to aspirate to the start of the pump.")
-        self.pump_is_primed_with = f"{chemical}"
 
     # It is OK if the pump does not enter this function with an empty syringe.
     def purge_pump_line(self):
@@ -259,6 +262,10 @@ class FlowChamber:
     def dispense_to_vessel(self, microliters: float, chemical: str):
         """Withdraw specified chemical from the appropriate container and
         dispense it into the reaction vessel."""
+        # Safety checks:
+        if microliters + self.rxn_vessel.curr_volume_ul > self.rxn_vessel.max_volume_ul:
+            raise ValueError("Requested dispense amount would exceed vessel capacity.")
+        # State checks:
         if chemical not in self.selector_lds_map:
             raise ValueError(f"{chemical} is not a valid chemical.")
         if chemical not in self.prime_volumes_ul:
@@ -275,7 +282,7 @@ class FlowChamber:
         # this volume back when we fully purge the pump-to-vessel flowpath.
         self.pump.withdraw(microliters - pump_to_common_dv_ul)
         self.selector.move_to_position("OUTLET")
-        # Fully plunge. Note: some liquid will be remain in the pump-to-vessel
+        # Fully plunge. Note: some liquid will remain in the pump-to-vessel
         # path at this point.
         self.log.debug(f"Plunging initial {microliters - pump_to_common_dv_ul}[uL].")
         self.pump.move_absolute_in_percent(0)
@@ -295,7 +302,7 @@ class FlowChamber:
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
         # Update State:
         self.pump_is_primed_with = None  # Clear prime line state.
-        self.rxn_vessel.curr_volume_ul = microliters
+        self.rxn_vessel.curr_volume_ul += microliters
         # Seal reaction vessel and all other flowpaths.
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()
@@ -304,21 +311,30 @@ class FlowChamber:
                        f"Prime line is now cleared.")
 
     @syringe_empty
-    def drain_vessel(self):
+    def drain_vessel(self, drain_volume_ul: float = 40000):
         """Drain the reaction vessel."""
-        # Compute how much to dispense
         # Set outlet flowpath starting configuration.
         self.rv_source_valve.energize()
         self.rv_exhaust_valve.deenergize()  # Lock out the rv top exhaust port.
         self.drain_waste_valve.energize()  # Open rv lower drain path.
-        # Push out the vessel contents with gas.
-        self.fast_gas_charge_syringe(100)
-        # Select dest line.
-        self.selector.move_to_position("OUTLET")
-        # Fully plunge syringe.
         self.pump.set_speed_percent(100)
-        self.pump.move_absolute_in_percent(0)
-        sleep(1.0)  # Wait for liquid to finish moving (system to hit equilibrium).
+        # Pump the pump through the specified volume with gas.
+        # Note: gas is compressible, so the volume displaced is less than
+        #   the volume movement of the pump.
+        syringe_volume_ul = self.pump.syringe_volume_ul
+        remaining_volume_ul = drain_volume_ul
+        while remaining_volume_ul:
+            # Withdraw another stroke.
+            stroke_volume_ul = min(remaining_volume_ul, syringe_volume_ul)
+            stroke_percent = stroke_volume_ul/syringe_volume_ul * 100.
+            # Push out the vessel contents with gas.
+            self.fast_gas_charge_syringe(stroke_percent)
+            # Select dest line.
+            self.selector.move_to_position("OUTLET")
+            # Fully plunge syringe.
+            self.pump.move_absolute_in_percent(0)
+            remaining_volume_ul -= stroke_volume_ul
+            sleep(0.5)  # Wait for liquid to finish moving (system to hit equilibrium).
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
         # Update State:
         self.rxn_vessel.curr_volume_ul = 0
@@ -335,3 +351,79 @@ class FlowChamber:
         self.pump.set_speed_percent(100)  # draw up gas quickly.
         self.pump.move_absolute_in_percent(percent)
         self.pump.set_speed_percent(old_speed) # restore original speed.
+
+    def run_wash_step(self, duration_s: float, mix_speed_percent: float = 100.,
+                      start_empty: bool = True, end_empty: bool = False,
+                      **chemical_volumes_ul: float):
+        """Drain (optional), mix, and empty (opt) the reaction vessel to
+        complete one wash cycle.
+
+        :param duration_s: time in seconds to mix.
+        :param mix_speed_percent: percent [0-100.0] to mix the chemicals during
+            the mix step.
+        :param start_empty: if True, drain the vessel before introducing new
+            liquids.
+        :param end_empty: if True, draing the vessel after mixing.
+        :param chemical_volumes: dict, keyed by chemical name of chemical
+            amount in microliters.
+
+        .. note::
+           It is possible to call this function with *no* chemicals specified
+           and `start_empty=False` i.e: for a pure-mixing step.
+
+        .. note::
+           It is possible to call this function with *no* mixing time and
+           `end_empty=False` i.e: a pure fill step.
+
+        .. note::
+           It is possible to call this function with *no* mixing speed i.e:
+           a pure passive exposure step.
+        """
+        # Validate chemicals.
+        common_chemicals = self.selector_lds_map.keys() & chemical_volumes_ul.keys()
+        used_chemicals = set(chemical_volumes_ul.keys())
+        if len(common_chemicals) < len(used_chemicals):
+            unrecognized_chemicals = common_chemicals ^ used_chemicals
+            raise ValueError(f"Unrecognized chemicals: {unrecognized_chemicals}.")
+        # Drain if requested.
+        if start_empty and self.rxn_vessel.curr_volume_ul > 0:
+            self.drain_vessel()
+        # Fill
+        for chemical_name, ul in chemical_volumes_ul:
+            self.dispense_to_vessel(ul, chemical_name)
+        self.mixer.set_mixing_speed(mix_speed_percent)
+        if mix_speed_percent > 0:
+            self.mixer.start_mixing()
+        # Wait.
+        sleep(duration_s)
+        if mix_speed_percent > 0:
+            self.mixer.stop_mixing()
+        # Drain (if required).
+        if end_empty:
+            self.drain_vessel()
+
+    def mix(self, duration_s: int, mix_speed_percent: float = 100.0):
+        self.run_wash_step(duration_s=duration_s, mix_speed_percent=mix_speed_percent,
+                           start_empty=False, end_empty=False)
+
+    def fill(self, empty_first=False, **chemical_volumes_ul: float):
+        self.run_wash_step(duration_s=0, mix_speed_percent=0, start_empty=empty_first,
+                           end_empty=False, **chemical_volumes_ul)
+
+    def run_protocol(self, path: Path):
+        protocol = Protocol(path)
+        protocol.validate()
+        for step in range(protocol.step_count):
+            self.log.info("Conducting step[{index}]: {*row}")
+            chemical_volumes_ul = protocol.get_chemicals(step)
+            duration_s = protocol.get_duration_s(step)
+            chemicals = protocol.get_solution(step,
+                                              max_volume_ul=self.rxn_vessel.max_volume_ul)
+            mix_speed_percent = protocol.get_mix_speed_percent(step)
+            self.run_wash_step(duration_s=duration_s,
+                               mix_speed_percent=mix_speed_percent,
+                               start_empty=True, end_empty=False,
+                               **chemical_volumes_ul)
+
+    def clean_system(self):
+        pass

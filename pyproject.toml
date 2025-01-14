@@ -20,6 +20,7 @@ dependencies = [
 #    "device-spinner @ git+ssh://git@github.com/AllenNeuralDynamics/device-spinner.git@main#egg=device_spinner",
 #    "vicivalve @ git+ssh://git@gitlab.com:Poofjunior/vicivalve.git@dev/cmds_and_directional_moves#egg=vicivalve",
 #    "runze_control",
+    "Pint>=0.21.1",
     "igraph>=0.11.5",
     "SM16inpind>=1.0.1",
     "SM8mosind>=1.0.1",
