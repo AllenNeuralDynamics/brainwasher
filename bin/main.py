@@ -18,7 +18,6 @@ logger.handlers[-1].setFormatter(log_formatter)
 
 
 device_config = Config("proof_of_concept_config.yaml")
-# TODO: make a to_dict function.
 device_specs = dict(device_config.cfg)
 
 #import pprint
@@ -35,9 +34,9 @@ logger.setLevel(logging.DEBUG)
 
 
 input("Press enter to dispense liquid into the reaction vessel.")
-instrument.dispense_to_vessel(4000, "PURPLE")
-instrument.dispense_to_vessel(4000, "YELLOW")
-#instrument.dispense_to_vessel(10000, "CLEAR")
+#instrument.dispense_to_vessel(4000, "PURPLE")
+#instrument.dispense_to_vessel(4000, "YELLOW")
+instrument.dispense_to_vessel(10000, "CLEAR")
 
 #input("Press enter to start mixing.")
 instrument.mixer.start_mixing()
