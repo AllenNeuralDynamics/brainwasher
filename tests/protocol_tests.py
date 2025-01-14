@@ -7,8 +7,8 @@ from pint import UnitRegistry
 
 csv_str = \
     ('"Mix Speed",Chemicals,Solution,Duration\n'
-     '100%,"THF, DCM","30% THF, 70% DCM", "1hr"\n'
-     '100,"SBiP","100% SBiP", "2.5hr"')
+     '100%,"THF, DCM","30% THF, 70% DCM", 1hr\n'
+     '100,"SBiP","100% SBiP", 2.5hr')
 
 test_csv = StringIO(csv_str)
 protocol = Protocol(test_csv)
@@ -35,6 +35,11 @@ def test_solution_parsing_simple():
 
 def test_step_count():
     assert protocol.step_count == 2
+
+
+def test_get_duration():
+    assert protocol.get_duration_s(0) == 3600
+    assert protocol.get_duration_s(1) == 3600 * 2.5
 
 
 def test_get_mix_speed():

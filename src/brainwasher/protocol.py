@@ -74,12 +74,12 @@ class Protocol:
                         raise ValueError("Solution specification for step "
                                          f"{step} has no units!")
                     if qty.units == self.ureg.percent:
-                        ul = (qty.magnitude / 100.) * max_volume_ul
+                        ul = float((qty.magnitude / 100.) * max_volume_ul)
                     else:
-                        ul = qty.to('uL')
+                        ul = float(qty.to('uL').magnitude)
                     solution[chemical] = ul
             if not all([found_chemical, qty]):
-                raise RuntimeError("Cannot parse solution on step {step}.")
+                raise RuntimeError(f"Cannot parse solution on step {step}.")
         # TODO: Infer remaining percents if any are missing.
         ## If any quantities are specified as a percent, infer any missing qty.
         #if any([i.units == self.ureg.percent for i in solution.values()]):

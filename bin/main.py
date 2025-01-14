@@ -4,7 +4,7 @@
 from device_spinner.config import Config
 from device_spinner.device_spinner import DeviceSpinner
 from coloredlogs import ColoredFormatter
-from time import sleep
+from io import StringIO
 
 import logging
 logger = logging.getLogger()
@@ -26,26 +26,22 @@ device_specs = dict(device_config.cfg)
 # Create the objects
 factory = DeviceSpinner()
 device_trees = factory.create_devices_from_specs(device_specs["devices"])
-
 instrument = device_trees['flow_chamber']
 instrument.reset()
 
 logger.setLevel(logging.DEBUG)
 
+### Sample Protocol
+csv_str = \
+    ('"Mix Speed",Chemicals,Solution,Duration\n'
+     '100%,"YELLOW, CLEAR","500uL YELLOW, 3500uL CLEAR", 3sec\n'
+     '100,"CLEAR","100% CLEAR", 3sec')
+sample_protocol = StringIO(csv_str)
 
-input("Press enter to dispense liquid into the reaction vessel.")
-#instrument.dispense_to_vessel(4000, "PURPLE")
-#instrument.dispense_to_vessel(4000, "YELLOW")
-instrument.dispense_to_vessel(10000, "CLEAR")
-
-#input("Press enter to start mixing.")
-instrument.mixer.start_mixing()
-sleep(5)
-instrument.mixer.stop_mixing()
-
-#input("Press enter to purge reaction vessel.")
-instrument.drain_vessel()
-
+input("Press enter to run the sample_protocol.")
+instrument.run_protocol(sample_protocol)
+# Purge
+instrument.run_wash_step(duration_s=0, start_empty=False, end_empty=True)
 
 #import matplotlib.pyplot as plt
 #import igraph as ig

@@ -290,7 +290,7 @@ class FlowChamber:
                        f"(pump-to-vessel dead volume) to clear line and "
                        f"fully dispense {microliters}[uL].")
         # Now push residual liquid out of pump-to-vessel line using gas.
-        # This adds pump_to_common_dv_ul.
+        # This adds pump_to_common_dv_ul and bypasses any dead volume.
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
         purge_volumes = [15, 5]  # FIXME: magic numbers.
         for purge_volume in purge_volumes:
@@ -389,9 +389,12 @@ class FlowChamber:
         if start_empty and self.rxn_vessel.curr_volume_ul > 0:
             self.drain_vessel()
         # Fill
-        for chemical_name, ul in chemical_volumes_ul:
+        for chemical_name, ul in chemical_volumes_ul.items():
             self.dispense_to_vessel(ul, chemical_name)
-        self.mixer.set_mixing_speed(mix_speed_percent)
+        try:
+            self.mixer.set_mixing_speed(mix_speed_percent)
+        except NotImplementedError:
+            self.log.debug("Mixer does not support speed control. Skipping.")
         if mix_speed_percent > 0:
             self.mixer.start_mixing()
         # Wait.
@@ -414,11 +417,10 @@ class FlowChamber:
         protocol = Protocol(path)
         protocol.validate()
         for step in range(protocol.step_count):
-            self.log.info("Conducting step[{index}]: {*row}")
-            chemical_volumes_ul = protocol.get_chemicals(step)
             duration_s = protocol.get_duration_s(step)
-            chemicals = protocol.get_solution(step,
-                                              max_volume_ul=self.rxn_vessel.max_volume_ul)
+            chemical_volumes_ul = protocol.get_solution(step,
+                                                        max_volume_ul=self.rxn_vessel.max_volume_ul)
+            self.log.info(f"Conducting step: {step}/{protocol.step_count} with {chemical_volumes_ul}")
             mix_speed_percent = protocol.get_mix_speed_percent(step)
             self.run_wash_step(duration_s=duration_s,
                                mix_speed_percent=mix_speed_percent,
