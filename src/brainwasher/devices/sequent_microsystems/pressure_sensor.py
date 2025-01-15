@@ -10,7 +10,7 @@ class PressureSensor(BasePressureSensor):
                  min_pressure_psia: float, max_pressure_psia: float,
                  min_voltage: float, max_voltage: float):
         super().__init__()
-        self.card = lib16univin.SM16univin(stack=stack, i2c_bus=i2c_bus)
+        self.card = lib16univin.SM16univin(stack=stack, i2c=i2c_bus)
         self.channel = channel
         self.slope = ((max_pressure_psia - min_pressure_psia)
                       / (max_voltage - min_voltage))
@@ -38,4 +38,4 @@ class PX409030A5V(PressureSensor):
                          min_voltage=min_voltage, max_voltage=max_voltage)
 
     def get_pressure_psig(self):
-        return self.get_pressure_psia() + self.PSIG_NOMINAL_OFFSET
+        return self.get_pressure_psia() - self.PSIG_NOMINAL_OFFSET

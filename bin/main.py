@@ -5,6 +5,7 @@ from device_spinner.config import Config
 from device_spinner.device_spinner import DeviceSpinner
 from coloredlogs import ColoredFormatter
 from io import StringIO
+from time import sleep
 
 import logging
 logger = logging.getLogger()
@@ -38,6 +39,9 @@ csv_str = \
      '100,"CLEAR","100% CLEAR", 3sec')
 sample_protocol = StringIO(csv_str)
 
+#instrument.start_pressure_monitor()
+#while True:
+#    sleep(1)
 input("Press enter to run the sample_protocol.")
 instrument.run_protocol(sample_protocol)
 # Purge

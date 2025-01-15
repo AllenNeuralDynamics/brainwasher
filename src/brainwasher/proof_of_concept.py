@@ -7,6 +7,7 @@ from pathlib import Path
 from runze_control.syringe_pump import SY08
 from time import perf_counter as now
 from time import sleep
+from threading import Event, Thread
 from typing import Union
 
 
@@ -38,6 +39,7 @@ class FlowChamber:
                  pump,
                  reaction_vessel,
                  mixer,
+                 pressure_sensor,
                  rv_source_valve,
                  rv_exhaust_valve,
                  drain_exhaust_valve,
@@ -52,6 +54,7 @@ class FlowChamber:
         self.pump = pump
         self.rxn_vessel = reaction_vessel
         self.mixer = mixer
+        self.pressure_sensor = pressure_sensor
         self.rv_source_valve = rv_source_valve
         self.rv_exhaust_valve = rv_exhaust_valve
         self.drain_exhaust_valve = drain_exhaust_valve
@@ -66,6 +69,9 @@ class FlowChamber:
         self.nominal_pump_speed_percent = 10
         self.slow_pump_speed_percent = 5
         self.pump_unprime_speed_percent = 30
+        # Thread control
+        self.monitoring_pressure = Event()
+        self.pressure_monitor_thread = None
 
     def reset(self):
         """Initialize all hardware while ensuring that the system can bleed any
@@ -88,6 +94,26 @@ class FlowChamber:
         self.rv_exhaust_valve.deenergize()
         self.drain_exhaust_valve.deenergize()
         self.drain_waste_valve.deenergize()
+
+    def start_pressure_monitor(self):
+        if self.monitoring_pressure.is_set():
+            return
+        self.monitoring_pressure.set()
+        self.pressure_monitor_thread = Thread(target=self._monitor_pressure_worker,
+                                              daemon=True)
+        self.pressure_monitor_thread.start()
+
+    def stop_pressure_monitor(self):
+        if not self.monitoring_pressure.is_set():
+            return
+        self.monitoring_pressure.clear()
+        self.pressure_monitor_thread.join()
+        self.pressure_monitor_thread = None
+
+    def _monitor_pressure_worker(self):
+        while self.monitoring_pressure.is_set():
+            print(self.pressure_sensor.get_pressure_psig())
+            sleep(0.5)
 
     @syringe_empty
     def prime_reservoir_line(self, chemical: str,

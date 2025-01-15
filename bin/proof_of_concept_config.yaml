@@ -45,10 +45,10 @@ devices:
             rpm: 5000
     pressure_sensor:
         module: brainwasher.devices.sequent_microsystems.pressure_sensor
-        class: PX409
+        class: PX409030A5V
         kwds:
             stack: 0
-            bus: 1
+            i2c_bus: 1
             channel: 1
             min_voltage: 0.004
             max_voltage: 5.010
@@ -133,6 +133,7 @@ devices:
             selector: selector
             selector_lds_map: selector_lds_map
             pump: source_pump
+            pressure_sensor: pressure_sensor
             mixer: mixer
             reaction_vessel: reaction_vessel
             rv_source_valve: rv_source_valve
