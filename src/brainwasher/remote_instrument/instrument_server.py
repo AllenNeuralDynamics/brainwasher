@@ -67,3 +67,12 @@ class InstrumentServer:
                         reply = str(e)
                     self.socket.send(pickle.dumps(reply))
             sleep(1.0/frequency_hz)
+
+    def close(self):
+        self.keep_broadcasting.clear()
+        try:
+            for thread in self.broadcast_threads.values():
+                thread.join()
+        finally:
+            self.socket.close()
+            self.context.term()

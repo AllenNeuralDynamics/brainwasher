@@ -13,9 +13,11 @@ class InstrumentClient:
         self.socket = self.context.socket(zmq.SUB)
         self.full_address = "tcp://localhost:%s" % port
         self.socket.connect(self.full_address)
-        self.socket.subscribe("") # Subscribe to all topics.
+        self.socket.subscribe("")  # Subscribe to all topics.
 
     def receive(self):
         # Publish message
         return pickle.loads(self.socket.recv())
 
+    def close(self):
+        self.socket.close()

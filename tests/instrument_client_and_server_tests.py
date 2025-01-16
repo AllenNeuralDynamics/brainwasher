@@ -19,17 +19,18 @@ class TestInstrument:
         return sensor_index
 
 
-#def test_server_creation():
-#    instrument_server = InstrumentServer()  # Create a server.
+def test_server_creation():
+    instrument_server = InstrumentServer()  # Create a server.
 
 
-#def test_server_broadcast():
-#    instrument = TestInstrument()  # Create an object
-#    instrument_server = InstrumentServer()  # Create a server.
-#    # broadcast a method at 100[Hz].
-#    instrument_server.broadcast(100, instrument.get_sensor_data, 0)
-#    instrument_server.broadcast(100, instrument.get_sensor_data, 1)
-#    sleep(0.1)
+def test_server_broadcast():
+    instrument = TestInstrument()  # Create an object
+    instrument_server = InstrumentServer()  # Create a server.
+    # broadcast a method at 100[Hz].
+    instrument_server.broadcast(100, instrument.get_sensor_data, 0)
+    instrument_server.broadcast(100, instrument.get_sensor_data, 1)
+    sleep(0.05)
+    instrument_server.close()
 
 
 def test_client_receive():
@@ -45,4 +46,5 @@ def test_client_receive():
     while received_data is None and ((now() - start_time) < 1):
         received_data = instrument_client.receive()
     print(f"received: {received_data}")
+    instrument_server.close()
     assert received_data == 0
