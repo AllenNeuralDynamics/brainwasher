@@ -8,6 +8,7 @@ from brainwasher.devices.mixer import Mixer
 from brainwasher.devices.liquid_presence_detection import BubbleDetectionSensor
 from brainwasher.devices.valves.valve import NCValve
 from brainwasher.devices.pressure_sensor import PressureSensor
+from brainwasher.errors.instrument_errors import LeakCheckError
 from brainwasher.protocol import Protocol
 from functools import wraps
 from pathlib import Path
@@ -42,10 +43,11 @@ class FlowChamber:
 
     """
 
-    MAX_SAFE_PRESSURE_PSIG = 10.0
+    MAX_SAFE_PRESSURE_PSIG = 13.0
+    MAX_LEAK_CHECK_PRESSURE_DELTA = 0.25
 
     def __init__(self, selector: VICI,
-                 selector_lds_map: dict[BubbleDetectionSensor],
+                 selector_lds_map: dict[str],
                  pump: SyringePump,
                  reaction_vessel,
                  mixer: Mixer,
@@ -81,7 +83,14 @@ class FlowChamber:
         self.pump_unprime_speed_percent = 30
         # Thread control
         self.monitoring_pressure = Event()
+        self.buffer_samples = Event()
+        self.pressure_sample_buffer = []
         self.pressure_monitor_thread = None
+        self.pressure_avg_start_time_s = 0
+        self.pressure_avg_duration_s = 0
+        self.pressure_psig = 0
+        # Launch pressure monitor thread.
+        self.start_pressure_monitor()
 
     def reset(self):
         """Initialize all hardware while ensuring that the system can bleed any
@@ -120,19 +129,36 @@ class FlowChamber:
         self.pressure_monitor_thread.join()
         self.pressure_monitor_thread = None
 
+    def get_average_psig(self, duration_s: float):
+        # Set event to stuff samples into an array.
+        self.pressure_sample_buffer = []  # clear old samples.
+        self.pressure_avg_start_time_s = now()
+        self.pressure_avg_duration_s = duration_s
+        self.buffer_samples.set()
+        # Wait for event to clear.
+        while self.buffer_samples.is_set():
+            sleep(0.01)
+        return sum(self.pressure_sample_buffer)/len(self.pressure_sample_buffer)
+
     def _monitor_pressure_worker(self):
         """Pressure monitor thread that ensures system stays below maximum
         pressure and aborts otherwise.
         """
         while self.monitoring_pressure.is_set():
             pressure_psig = self.pressure_sensor.get_pressure_psig()
-            sleep(0.05)
-            if pressure_psig > self.MAX_SAFE_PRESSURE_PSIG:
+            self.pressure_psig = pressure_psig
+            if self.buffer_samples.is_set():
+                self.pressure_sample_buffer.append(pressure_psig)
+                if (now() - self.pressure_avg_start_time_s)\
+                        > self.pressure_avg_duration_s:
+                    self.buffer_samples.clear()
+            if self.pressure_psig > self.MAX_SAFE_PRESSURE_PSIG:
                 error_msg = "Jam detected!! Aborting syringe movement."
                 self.log.critical(error_msg)
                 self.pump.halt()
                 self.deenergize_all_valves()
                 sys.exit(error_msg)
+            sleep(0.01)
 
     @syringe_empty
     def prime_reservoir_line(self, chemical: str,
@@ -283,14 +309,14 @@ class FlowChamber:
         try:
             # Purge all starting contents of the syringe.
             if self.pump.get_position_ul() != 0:
-                self.log.warning("Directing existing "
-                    "contents to waste.")
+                self.log.warning("Directing existing contents to waste.")
                 # Select dest line.
                 self.selector.move_to_position("OUTLET")
                 # Fully plunge syringe.
                 self.pump.move_absolute_in_percent(0)
-            self.log.debug("Pulling residual pump line contents into syringe "
-                "with N2.")
+            if full_cycles:
+                self.log.debug("Pulling residual pump line contents into "
+                               "syringe with N2.")
             for cycle in range(full_cycles):
                 # Charge pump with N2.
                 self.fast_gas_charge_syringe()
@@ -475,9 +501,14 @@ class FlowChamber:
 
     def run_leak_checks(self):
         """Leak check the entire system.
+
         :raises RuntimeError: upon the leak check that failed.
         """
-        pass
+        # Leak checks are ordered.
+        self.leak_check_syringe_to_selector_common_path()
+        self.leak_check_syringe_to_drain_exaust_normally_open_path()
+        self.leak_check_syringe_to_drain_waste_path()
+        self.leak_check_syringe_to_reaction_vessel()
 
     @syringe_empty
     def leak_check_syringe_to_selector_common_path(self):
@@ -485,18 +516,18 @@ class FlowChamber:
         # Withdraw N2.
         self.fast_gas_charge_syringe()
         try:
-            self.log.debug("Sealing volume.")
-            # FIXME: close/open the rest of the valves.
+            self.log.debug("Creating closed volume.")
+            self.deenergize_all_valves()
             # Seal volume by putting selector in an interstitial position
             interstitial_position = self.selector._position_dict["AMBIENT"] * 2 - 1
             self.selector.set_num_positions(selector_num_positions*2)
             self.selector.move_to_position(interstitial_position)
             # Measure:
             self._squeeze_and_measure(15)
-        except RuntimeError:
+        except LeakCheckError:
             msg = "Flowpath between syringe pump and selector common outlet is leaking."
             self.log.error(msg)
-            raise RuntimeError(msg)
+            raise
         finally:
             # Move to a valid position in the original position configuration.
             outlet_position = self.selector._position_dict["OUTLET"] * 2
@@ -508,13 +539,14 @@ class FlowChamber:
 
     def leak_check_syringe_to_drain_exaust_normally_open_path(self):
         try:
+            self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             self.rv_exhaust_valve.energize()
             self.fast_gas_charge_syringe()
             self.selector.move_to_position("OUTLET")
             # Measure:
             self._squeeze_and_measure(15)
-        except RuntimeError:
+        except LeakCheckError:
             msg = "Flowpath between syringe pump and normally-open position of" \
                   "drain exhaust valve is leaking."
             self.log.error(msg)
@@ -524,12 +556,13 @@ class FlowChamber:
 
     def leak_check_syringe_to_drain_waste_path(self):
         try:
+            self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             self.fast_gas_charge_syringe()
             self.selector.move_to_position("OUTLET")
             # Measure:
             self._squeeze_and_measure(15)
-        except RuntimeError:
+        except LeakCheckError:
             msg = "Flowpath between syringe pump and closed drain waste valve" \
                   "is leaking."
             self.log.error(msg)
@@ -539,13 +572,14 @@ class FlowChamber:
 
     def leak_check_syringe_to_reaction_vessel(self):
         try:
+            self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             self.rv_source_valve.energize()
             self.fast_gas_charge_syringe()
             self.selector.move_to_position("OUTLET")
             # Measure:
             self._squeeze_and_measure(15)
-        except RuntimeError:
+        except LeakCheckError:
             msg = "Flowpath between syringe pump and sealed reaction vessel" \
                   "is leaking."
             self.log.error(msg)
@@ -558,7 +592,7 @@ class FlowChamber:
         """Compress the syringe by `pump_compression_percent` and
         measure the chnage in pressure to flag if a leak is present.
 
-        :raises RuntimeError: upon detecting a leak.
+        :raises LeakCheckError: upon detecting a leak.
         """
         # Get uncompressed pressure volume.
         pump_position_percent = self.pump.get_position_percent()
@@ -566,19 +600,22 @@ class FlowChamber:
                                             - pump_compression_percent)
         if pump_compressed_position_percent < 0:
             raise ValueError("Cannot compress pump beyond full travel range.")
-        uncompressed_pressure = 0
-        starting_pressure = 0
-        # FIXME: average a few samples.
-        uncompressed_pressure = self.pressure_sensor.get_pressure_psig()
+        uncompressed_pressure = self.get_average_psig(1)
+        self.log.debug(f"Uncompressed pressure: {uncompressed_pressure:.3f}")
         # Compress N2.
         self.log.debug("Squeezing closed volume.")
         self.pump.move_absolute_in_percent(pump_compressed_position_percent)
         # Monitor starting pressure and pressure change.
-        # FIXME: average a few samples
-        uncompressed_pressure[0] = self.pressure_sensor.get_pressure_psig()
+        sleep(1)
+        compressed_pressure = self.get_average_psig(1)
+        self.log.debug(f"Compressed pressure: {compressed_pressure:.3f}")
         start_time_s = now()
         while now() - start_time_s > measurement_time_s:
-            pass
+            curr_pressure = self.get_average_psig(0.5)
+            delta = abs(compressed_pressure - curr_pressure)
+            if delta > self.MAX_LEAK_CHECK_PRESSURE_DELTA:
+                raise LeakCheckError("Pressure change is significant enough"
+                                     "to indicate a leak.")
 
     def _purge_gas_filled_syringe(self):
         self.purge_pump_line(full_cycles=0)
