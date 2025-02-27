@@ -1,12 +1,12 @@
 """Tissue-clearing proof-of-concept"""
 from __future__ import annotations
 
+import _thread
 import logging
-import sys
 
 from brainwasher.devices.mixer import Mixer
 from brainwasher.devices.liquid_presence_detection import BubbleDetectionSensor
-from brainwasher.devices.valves.valve import NCValve
+from brainwasher.devices.sequent_microsystems.valve import NCValve, ThreeTwoValve
 from brainwasher.devices.pressure_sensor import PressureSensor
 from brainwasher.errors.instrument_errors import LeakCheckError
 from brainwasher.protocol import Protocol
@@ -52,8 +52,8 @@ class FlowChamber:
                  reaction_vessel,
                  mixer: Mixer,
                  pressure_sensor: PressureSensor,
-                 rv_source_valve: NCValve,
-                 rv_exhaust_valve: NCValve,
+                 rv_source_valve: ThreeTwoValve,
+                 rv_exhaust_valve: ThreeTwoValve,
                  drain_exhaust_valve: NCValve,
                  drain_waste_valve: NCValve,
                  pump_prime_lds: BubbleDetectionSensor,
@@ -99,13 +99,14 @@ class FlowChamber:
         self.deenergize_all_valves()
         self.log.debug("Connecting Source Pump to waste.")
         # Connect: source pump -> waste.
-        self.drain_exhaust_valve.energize()
-        self.selector.move_to_position("OUTLET")
-        self.pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
-        # TODO: slow down pump speed here.
-        self.pump.set_speed_percent(self.nominal_pump_speed_percent)
-        # Restore deenergized state.
-        self.deenergize_all_valves()
+        try:
+            self.drain_exhaust_valve.energize()
+            self.selector.move_to_position("OUTLET")
+            self.pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
+            self.pump.set_speed_percent(self.nominal_pump_speed_percent)
+            # Restore deenergized state.
+        finally:
+            self.deenergize_all_valves()
 
     def deenergize_all_valves(self):
         self.log.debug("Deenergizing all solenoid valves.")
@@ -157,7 +158,7 @@ class FlowChamber:
                 self.log.critical(error_msg)
                 self.pump.halt()
                 self.deenergize_all_valves()
-                sys.exit(error_msg)
+                _thread.interrupt_main()
             sleep(0.01)
 
     @syringe_empty

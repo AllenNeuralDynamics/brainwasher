@@ -63,19 +63,19 @@ devices:
         module: brainwasher.devices.sequent_microsystems.valve
         class: ThreeTwoValve
         kwds:
-            name: rv_source
+            name: rv_exhaust
             board_address: 2
             channel: 1
     drain_exhaust_valve:
         module: brainwasher.devices.sequent_microsystems.valve
-        class: ThreeTwoValve
+        class: NCValve
         kwds:
-            name: rv_exhaust
+            name: drain_exhaust
             board_address: 2
             channel: 3
     drain_waste_valve:
         module: brainwasher.devices.sequent_microsystems.valve
-        class: ThreeTwoValve
+        class: NCValve
         kwds:
             name: drain_waste
             board_address: 2

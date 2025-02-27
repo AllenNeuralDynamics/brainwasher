@@ -28,9 +28,9 @@ device_specs = dict(device_config.cfg)
 factory = DeviceSpinner()
 device_trees = factory.create_devices_from_specs(device_specs["devices"])
 instrument = device_trees['flow_chamber']
+logger.setLevel(logging.DEBUG)
 instrument.reset()
 
-logger.setLevel(logging.DEBUG)
 
 ### Sample Protocol
 csv_str = \
@@ -39,13 +39,35 @@ csv_str = \
      '100,"CLEAR","100% CLEAR", 3sec')
 sample_protocol = StringIO(csv_str)
 
-#instrument.start_pressure_monitor()
-#while True:
-#    sleep(1)
 input("Press enter to run the sample_protocol.")
 instrument.run_protocol(sample_protocol)
-# Purge
 instrument.run_wash_step(duration_s=0, start_empty=False, end_empty=True)
+
+#for i in range(10):
+#    print(f"pressure: {instrument.pressure_psig}.")
+#    sleep(0.1)
+
+#while True:
+    #input("press enter to toggle the drain waste valve.")
+    #instrument.drain_waste_valve.energize()
+    #sleep(.5)
+    #instrument.drain_waste_valve.deenergize()
+
+    #input("press enter to toggle the drain exhaust valve.")
+    #instrument.drain_exhaust_valve.energize()
+    #sleep(.5)
+    #instrument.drain_exhaust_valve.deenergize()
+
+    #input("press enter to toggle the rv source valve.")
+    #instrument.rv_source_valve.energize()
+    #sleep(1.0)
+    #instrument.rv_source_valve.deenergize()
+
+    #input("press enter to toggle the rv exhaust valve.")
+    #instrument.rv_exhaust_valve.energize()
+    #sleep(.5)
+    #instrument.rv_exhaust_valve.deenergize()
+
 
 #import matplotlib.pyplot as plt
 #import igraph as ig
