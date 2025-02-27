@@ -44,7 +44,8 @@ class FlowChamber:
     """
 
     MAX_SAFE_PRESSURE_PSIG = 13.0
-    MAX_LEAK_CHECK_PRESSURE_DELTA = 0.25
+    MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG = 1.0
+    MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.25
 
     def __init__(self, selector: VICI,
                  selector_lds_map: dict[str],
@@ -515,7 +516,7 @@ class FlowChamber:
     def leak_check_syringe_to_selector_common_path(self):
         selector_num_positions = self.selector.get_num_positions()
         # Withdraw N2.
-        self.fast_gas_charge_syringe()
+        self.fast_gas_charge_syringe(30)
         try:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
@@ -525,6 +526,7 @@ class FlowChamber:
             self.selector.move_to_position(interstitial_position)
             # Measure:
             self._squeeze_and_measure(15)
+            self.log.debug("Leak check passed.")
         except LeakCheckError:
             msg = "Flowpath between syringe pump and selector common outlet is leaking."
             self.log.error(msg)
@@ -543,10 +545,11 @@ class FlowChamber:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             self.rv_exhaust_valve.energize()
-            self.fast_gas_charge_syringe()
+            self.fast_gas_charge_syringe(30)
             self.selector.move_to_position("OUTLET")
             # Measure:
             self._squeeze_and_measure(15)
+            self.log.debug("Leak check passed.")
         except LeakCheckError:
             msg = "Flowpath between syringe pump and normally-open position of" \
                   "drain exhaust valve is leaking."
@@ -559,10 +562,11 @@ class FlowChamber:
         try:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
-            self.fast_gas_charge_syringe()
+            self.fast_gas_charge_syringe(30)
             self.selector.move_to_position("OUTLET")
             # Measure:
             self._squeeze_and_measure(15)
+            self.log.debug("Leak check passed.")
         except LeakCheckError:
             msg = "Flowpath between syringe pump and closed drain waste valve" \
                   "is leaking."
@@ -576,10 +580,11 @@ class FlowChamber:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             self.rv_source_valve.energize()
-            self.fast_gas_charge_syringe()
+            self.fast_gas_charge_syringe(30)
             self.selector.move_to_position("OUTLET")
             # Measure:
             self._squeeze_and_measure(15)
+            self.log.debug("Leak check passed.")
         except LeakCheckError:
             msg = "Flowpath between syringe pump and sealed reaction vessel" \
                   "is leaking."
@@ -610,11 +615,16 @@ class FlowChamber:
         sleep(1)
         compressed_pressure = self.get_average_psig(1)
         self.log.debug(f"Compressed pressure: {compressed_pressure:.3f}")
+        if ((compressed_pressure - uncompressed_pressure)
+                < self.MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG):
+            raise LeakCheckError("Syringe cannot create a positive relative "
+                                 "pressure within the starting volume.")
         start_time_s = now()
-        while now() - start_time_s > measurement_time_s:
+        while now() - start_time_s < measurement_time_s:
             curr_pressure = self.get_average_psig(0.5)
             delta = abs(compressed_pressure - curr_pressure)
-            if delta > self.MAX_LEAK_CHECK_PRESSURE_DELTA:
+            self.log.debug(f"Pressure delta: {delta}")
+            if delta > self.MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG:
                 raise LeakCheckError("Pressure change is significant enough"
                                      "to indicate a leak.")
 

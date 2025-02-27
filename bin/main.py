@@ -39,13 +39,14 @@ csv_str = \
      '100,"CLEAR","100% CLEAR", 3sec')
 sample_protocol = StringIO(csv_str)
 
-input("Press enter to run the sample_protocol.")
-instrument.run_protocol(sample_protocol)
-instrument.run_wash_step(duration_s=0, start_empty=False, end_empty=True)
+#input("Press enter to run the sample_protocol.")
+#instrument.run_protocol(sample_protocol)
+#instrument.run_wash_step(duration_s=0, start_empty=False, end_empty=True)
 
-#for i in range(10):
-#    print(f"pressure: {instrument.pressure_psig}.")
-#    sleep(0.1)
+#instrument.leak_check_syringe_to_selector_common_path() # TODO
+#instrument.leak_check_syringe_to_drain_exaust_normally_open_path()  # works
+#instrument.leak_check_syringe_to_drain_waste_path()  # works
+#instrument.leak_check_syringe_to_reaction_vessel()  # works
 
 #while True:
     #input("press enter to toggle the drain waste valve.")
