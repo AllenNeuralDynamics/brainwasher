@@ -44,6 +44,7 @@ class FlowChamber:
     """
 
     MAX_SAFE_PRESSURE_PSIG = 13.0
+    LEAK_CHECK_SQUEEZE_PERCENT = 15.
     MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG = 1.0
     MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.25
 
@@ -506,7 +507,8 @@ class FlowChamber:
 
         :raises RuntimeError: upon the leak check that failed.
         """
-        # Leak checks are ordered.
+        # Leak checks run in order can isolate leaks down to a small number
+        # of fittings/seals that need to be checked.
         self.leak_check_syringe_to_selector_common_path()
         self.leak_check_syringe_to_drain_exaust_normally_open_path()
         self.leak_check_syringe_to_drain_waste_path()
@@ -514,6 +516,10 @@ class FlowChamber:
 
     @syringe_empty
     def leak_check_syringe_to_selector_common_path(self):
+        """Test for leaks between the syringe pump and selector common position.
+
+        :raises LeakCheckError: upon failure.
+        """
         selector_num_positions = self.selector.get_num_positions()
         # Withdraw N2.
         self.fast_gas_charge_syringe(30)
@@ -521,11 +527,16 @@ class FlowChamber:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             # Seal volume by putting selector in an interstitial position
-            interstitial_position = self.selector._position_dict["AMBIENT"] * 2 - 1
+            # Tell the pump that it has 2x the number of positions it actually
+            # has; then move in between a "real" position, creating a seal.
+            self.log.debug("Altering VICI configuration.")
+            self.selector._positions = selector_num_positions * 2
+            interstitial_position = (self.selector._position_dict["AMBIENT"] * 2 + 1) \
+                                    % (selector_num_positions * 2)
             self.selector.set_num_positions(selector_num_positions*2)
             self.selector.move_to_position(interstitial_position)
             # Measure:
-            self._squeeze_and_measure(15)
+            self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
         except LeakCheckError:
             msg = "Flowpath between syringe pump and selector common outlet is leaking."
@@ -533,10 +544,12 @@ class FlowChamber:
             raise
         finally:
             # Move to a valid position in the original position configuration.
+            self.log.debug("Restoring VICI configuration.")
             outlet_position = self.selector._position_dict["OUTLET"] * 2
             self.selector.move_to_position(outlet_position)
             # Restore position configuration.
             self.selector.set_num_positions(selector_num_positions)
+            self.selector._positions = selector_num_positions
             # Reset syringe
             self._purge_gas_filled_syringe()
 
@@ -548,7 +561,7 @@ class FlowChamber:
             self.fast_gas_charge_syringe(30)
             self.selector.move_to_position("OUTLET")
             # Measure:
-            self._squeeze_and_measure(15)
+            self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
         except LeakCheckError:
             msg = "Flowpath between syringe pump and normally-open position of" \
@@ -565,7 +578,7 @@ class FlowChamber:
             self.fast_gas_charge_syringe(30)
             self.selector.move_to_position("OUTLET")
             # Measure:
-            self._squeeze_and_measure(15)
+            self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
         except LeakCheckError:
             msg = "Flowpath between syringe pump and closed drain waste valve" \
@@ -583,7 +596,7 @@ class FlowChamber:
             self.fast_gas_charge_syringe(30)
             self.selector.move_to_position("OUTLET")
             # Measure:
-            self._squeeze_and_measure(15)
+            self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
         except LeakCheckError:
             msg = "Flowpath between syringe pump and sealed reaction vessel" \
@@ -593,13 +606,16 @@ class FlowChamber:
         finally:
             self._purge_gas_filled_syringe()
 
-    def _squeeze_and_measure(self, pump_compression_percent: float,
+    def _squeeze_and_measure(self, pump_compression_percent: float = None,
                              measurement_time_s: float = 4.0):
         """Compress the syringe by `pump_compression_percent` and
         measure the chnage in pressure to flag if a leak is present.
 
         :raises LeakCheckError: upon detecting a leak.
         """
+        # Apply defaults.
+        if pump_compression_percent is None:
+            pump_compression_percent = self.LEAK_CHECK_SQUEEZE_PERCENT
         # Get uncompressed pressure volume.
         pump_position_percent = self.pump.get_position_percent()
         pump_compressed_position_percent = (pump_position_percent
@@ -623,7 +639,7 @@ class FlowChamber:
         while now() - start_time_s < measurement_time_s:
             curr_pressure = self.get_average_psig(0.5)
             delta = abs(compressed_pressure - curr_pressure)
-            self.log.debug(f"Pressure delta: {delta}")
+            self.log.debug(f"Pressure delta: {delta:.3f}")
             if delta > self.MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG:
                 raise LeakCheckError("Pressure change is significant enough"
                                      "to indicate a leak.")
