@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import sys
+
 """Compcooler chiller driver"""
 
 from dataclasses import dataclass, field, fields
@@ -39,6 +42,15 @@ class D2Request(BitArray):
     @pump.setter
     def pump(self, value):
         self.set(value, 5)
+
+    @property
+    def enable(self):
+        """aka "quickstart" bit."""
+        return bool(self[4])
+
+    @enable.setter
+    def enable(self, value):
+        self.set(value, 4)
 
 
 class D3Request(BitArray):
@@ -91,6 +103,14 @@ class D3Request(BitArray):
 
 @dataclass
 class Request:
+    """Dataclass to enable changing of individual fields within the packet.
+
+    .. code-block:: python
+        request = Request()
+        request.enable = True  # start the system.
+        request.temperature.int = 33  # Set temperature field.
+
+    """
     frame_head: Bits = Bits(hex="0x80", length=8)  # immutable
     chiller_status: D2Request = field(default_factory=D2Request)
     operation_mode: D3Request = field(default_factory=D3Request)
@@ -99,10 +119,16 @@ class Request:
     frame_tail: Bits = Bits(hex="0x78", length=8)  # immutable
 
     def to_bytes(self):
+        """Return a bytes representation of the Request packet for easy
+        dispatch over an open serial port."""
         aggregate = BitArray()
         for f in fields(self):
             aggregate.append(getattr(self, f.name))
-        return BitArray(aggregate)
+        bit_array = BitArray(aggregate)
+        # Convert to big-endian for dispatch as-is from a serial port.
+        if sys.byteorder == 'little':
+            bit_array.byteswap()
+        return bytes(bit_array)
 
 
 class D2Reply(BitArray):
@@ -178,24 +204,38 @@ class D3Reply(BitArray):
 
 @dataclass
 class Reply:
-    frame_head: Bits = Bits(hex="0xC0", length=8)  # immutable.
+    """Dataclass to enable changing of individual fields within the packet.
+
+    .. code-block:: python
+        reply = Reply()
+        print(reply.chiller_status.chiller)  # If True, we are chilling.
+        print(reply.measured_temperature)
+
+    """
+    frame_head: BitArray = BitArray(hex="0xC0", length=8)
     chiller_status: D2Reply = field(default_factory=lambda: D2Reply)
     operation_mode: D3Reply = field(default_factory=lambda: D3Reply)
-    liquid_temperature: BitArray = field(default_factory=lambda: BitArray(int=0, length=0))
+    measured_temperature: BitArray = field(default_factory=lambda: BitArray(int=0, length=8))
     duration: BitArray = field(default_factory=lambda: BitArray(int=0, length=8))
-    frame_tail: Bits = Bits(hex="0x3F", length=8)  # immutable.
+    frame_tail: BitArray = BitArray(hex="0x3F", length=8)
 
     @classmethod
-    def reply_from_bytes(cls, reply_bytes: bytes) -> Reply:
+    def from_bytes(cls, reply_bytes: bytes) -> Reply:
         """Parse a raw reply into a Reply instance."""
         reply = Reply()  # Empty reply
         bit_stream = BitStream(reply_bytes)
+        # Convert to big-endian for dispatch as-is from a serial port.
+        if sys.byteorder == 'little':
+            bit_stream.byteswap()
         for f in fields(reply):
             attribute = getattr(reply, f.name)
-            constructor = type(attribute)
-            new_attr = constructor(bit_stream.read(f"bits{attribute.length}"))
+            constructor = eval(f.type)
+            # Note: cannot do attribute.length because inheritance from  BitArray is buggy.
+            new_word = hex(bit_stream.read(f"bits8").uint)
+            new_attr = constructor(new_word)
             # Check Packet signature.
-            if f.name in("frame_head", "frame_tail") and attribute != new_attr:
-                raise ValueError(f"{f.name} does not match expected value.")
+            if f.name in ("frame_head", "frame_tail") and attribute != new_attr:
+                raise ValueError(f"{f.name} does not match expected value."
+                                 f"Expected: {attribute}, actual: {new_attr}")
             attribute = new_attr
         return reply

@@ -10,10 +10,11 @@ from brainwasher.devices.sequent_microsystems.valve import NCValve, ThreeTwoValv
 from brainwasher.devices.pressure_sensor import PressureSensor
 from brainwasher.errors.instrument_errors import LeakCheckError
 from brainwasher.protocol import Protocol
+from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 from runze_control.syringe_pump import SyringePump
-from time import sleep
+from time import sleep, strftime
 from time import perf_counter as now
 from threading import Event, Thread
 from vicivalve import VICI
@@ -488,7 +489,9 @@ class FlowChamber:
         self.run_wash_step(duration_s=0, mix_speed_percent=0, start_empty=empty_first,
                            end_empty=False, **chemical_volumes_ul)
 
-    def run_protocol(self, path: Path):
+    def run_protocol(self, path: Path, local_storage_path: Path,
+                     target_storage_path: Path = None,
+                     record: bool = False):
         protocol = Protocol(path)
         protocol.validate()
         for step in range(protocol.step_count):
@@ -497,10 +500,38 @@ class FlowChamber:
                                                         max_volume_ul=self.rxn_vessel.max_volume_ul)
             self.log.info(f"Conducting step: {step}/{protocol.step_count} with {chemical_volumes_ul}")
             mix_speed_percent = protocol.get_mix_speed_percent(step)
-            self.run_wash_step(duration_s=duration_s,
-                               mix_speed_percent=mix_speed_percent,
-                               start_empty=True, end_empty=False,
-                               **chemical_volumes_ul)
+            if not record:
+                self.run_wash_step(duration_s=duration_s,
+                                    mix_speed_percent=mix_speed_percent,
+                                    start_empty=True, end_empty=False,
+                                    **chemical_volumes_ul)
+                continue
+            # TODO: Check if we are busy transferring files.
+            with self.record(local_storage_path):
+                self.run_wash_step(duration_s=duration_s,
+                                    mix_speed_percent=mix_speed_percent,
+                                    start_empty=True, end_empty=False,
+                                    **chemical_volumes_ul)
+            # TODO: transfer the file. Delete the local copy.
+            if (target_storage_path is not None
+                and local_storage_path != target_storage_path):
+                # TODO: transfer the files here!
+                pass
+
+    @contextmanager
+    def record(self, directory: Union[Path, str], overwrite: bool = False):
+        date = strftime("%Y%m%d_%H%M%S")
+        vessel_cam_path = Path(directory) + Path(f"vessel_cam_{date}.h264")
+        overhead_cam_path = Path(directory) + Path(f"overhead_cam_{date}.h264")
+        try:
+            self.log.debug(f"Starting dual camera recording.")
+            self.vessel_cam.start_recording(vessel_cam_path)
+            self.overhead_cam.start_recording(overhead_cam_path)
+            yield
+        finally:
+            self.log.debug(f"Stopping dual camera recording.")
+            self.vessel_cam.stop_recording()
+            self.overhead_cam.stop_recording()
 
     def run_leak_checks(self):
         """Leak check the entire system.
