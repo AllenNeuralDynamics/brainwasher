@@ -40,10 +40,15 @@ csv_str = \
 sample_protocol = StringIO(csv_str)
 
 #input("Press enter to run the sample_protocol.")
+instrument.unprime_reservoir_line("YELLOW")
+instrument.unprime_reservoir_line("CLEAR")
+instrument.unprime_reservoir_line("PURPLE")
+
+instrument.drain_vessel()
 #instrument.run_protocol(sample_protocol)
 #instrument.run_wash_step(duration_s=0, start_empty=False, end_empty=True)
 
-instrument.leak_check_syringe_to_selector_common_path() # TODO
+#instrument.leak_check_syringe_to_selector_common_path() # TODO
 #instrument.leak_check_syringe_to_drain_exaust_normally_open_path()  # works
 #instrument.leak_check_syringe_to_drain_waste_path()  # works
 #instrument.leak_check_syringe_to_reaction_vessel()  # works

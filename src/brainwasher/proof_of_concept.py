@@ -24,7 +24,7 @@ def syringe_empty(func):
 
     @wraps(func) # required for sphinx doc generation
     def inner(self, *args, **kwds):
-        if self.pump.get_position_ul() != 0:
+        if abs(self.pump.get_position_steps()) > 5:
             error_msg = "Error. Pump is not starting from its reset position " \
                 "and contains liquid or gas!"
             self.log.error(error_msg)
@@ -46,7 +46,7 @@ class FlowChamber:
     MAX_SAFE_PRESSURE_PSIG = 13.0
     LEAK_CHECK_SQUEEZE_PERCENT = 15.
     MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG = 1.0
-    MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.25
+    MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.20
 
     def __init__(self, selector: VICI,
                  selector_lds_map: dict[str],
@@ -80,9 +80,9 @@ class FlowChamber:
                                    # can "unprime" it if necessary.
         self.pump_is_primed_with = None
 
-        self.nominal_pump_speed_percent = 10
-        self.slow_pump_speed_percent = 5
-        self.pump_unprime_speed_percent = 30
+        self.nominal_pump_speed_percent = 20
+        self.slow_pump_speed_percent = 10
+        self.pump_unprime_speed_percent = 60
         # Thread control
         self.monitoring_pressure = Event()
         self.buffer_samples = Event()
@@ -461,7 +461,7 @@ class FlowChamber:
             unrecognized_chemicals = common_chemicals ^ used_chemicals
             raise ValueError(f"Unrecognized chemicals: {unrecognized_chemicals}.")
         # Drain if requested.
-        if start_empty and self.rxn_vessel.curr_volume_ul > 0:
+        if start_empty: # and self.rxn_vessel.curr_volume_ul > 0:
             self.drain_vessel()
         # Fill
         for chemical_name, ul in chemical_volumes_ul.items():
