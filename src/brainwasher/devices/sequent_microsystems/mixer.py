@@ -27,16 +27,16 @@ class PWMMixer(Mixer):
         super().__init__()
         self.board_address = board_address
         self.channel = channel
+        self.duty_cycle = 0
         self.max_rpm = max_rpm
         self.set_mixing_speed(max_rpm)  # Default to max speed.
 
     def set_mixing_speed(self, rpm: float):
-        #duty_cycle = min(rpm/self.max_rpm * 100, 100)  # Set value in percent
-        #lib8mosind.set_pwm(self.board_address, self.channel, duty_cycle)
-        raise NotImplementedError
+        duty_cycle = min(rpm/self.max_rpm * 100, 100)  # Set value in percent
+        self.duty_cycle = duty_cycle
 
     def start_mixing(self):
-        raise NotImplementedError
+        lib8mosind.set_pwm(self.board_address, self.channel, self.duty_cycle)
 
     def stop_mixing(self):
-        raise NotImplementedError
+        lib8mosind.set_pwm(self.board_address, self.channel, 0)

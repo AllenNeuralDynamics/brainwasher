@@ -38,11 +38,11 @@ devices:
             name: reaction-vessel
     mixer:
         module: brainwasher.devices.sequent_microsystems.mixer
-        class: OnOffMixer
+        class: PWMMixer
         kwds:
             board_address: 2
             channel: 7
-            rpm: 5000
+            max_rpm: 1000
     pressure_sensor:
         module: brainwasher.devices.sequent_microsystems.pressure_sensor
         class: PX409030A5V

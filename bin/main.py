@@ -40,11 +40,16 @@ csv_str = \
 sample_protocol = StringIO(csv_str)
 
 #input("Press enter to run the sample_protocol.")
-instrument.unprime_reservoir_line("YELLOW")
-instrument.unprime_reservoir_line("CLEAR")
-instrument.unprime_reservoir_line("PURPLE")
 
+#instrument.unprime_reservoir_line("YELLOW")
+#instrument.unprime_reservoir_line("CLEAR")
+#instrument.unprime_reservoir_line("PURPLE")
+
+instrument.fill(CLEAR=5000.0)
+instrument.mix(3.0, 500.0)
+instrument.mix(3.0, 1000.0)
 instrument.drain_vessel()
+
 #instrument.run_protocol(sample_protocol)
 #instrument.run_wash_step(duration_s=0, start_empty=False, end_empty=True)
 
