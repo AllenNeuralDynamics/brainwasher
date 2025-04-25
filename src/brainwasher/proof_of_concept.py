@@ -24,6 +24,7 @@ def syringe_empty(func):
 
     @wraps(func) # required for sphinx doc generation
     def inner(self, *args, **kwds):
+        self.log.debug("Ensuring syringe is empty.")
         if abs(self.pump.get_position_steps()) > 5:
             error_msg = "Error. Pump is not starting from its reset position " \
                 "and contains liquid or gas!"
@@ -172,11 +173,12 @@ class FlowChamber:
         # TODO: consider a force parameter to prime anyway up to a fixed volume.
         # Bail-early if we're already primed.
         if chemical in self.prime_volumes_ul:
-            self.log.warning(f"{chemical} was previously primed. Aborting.")
+            self.log.warning(f"{chemical} reservoir line already primed. Aborting.")
             return
         # Bail-early if we're already primed.
         if self.selector_lds_map[chemical].tripped():
-            self.log.warning(f"{chemical} already primed. Aborting.")
+            self.log.warning(f"{chemical} reservoir line detected prematurely as primed. "
+                             "Aborting.")
             return
         self.log.info(f"Priming {chemical} reservoir line.")
         # Configure syringe path to dump air to waste
@@ -196,7 +198,7 @@ class FlowChamber:
                 liquid_detected = True
                 break
             stroke_volume_ul = min(remaining_volume_ul, syringe_volume_ul)
-            self.log.debug("Polling prime sensor while withdrawing up to "
+            self.log.debug("Polling prime-reservoir sensor while withdrawing up to "
                            f"{stroke_volume_ul}[uL] of {chemical}.")
             # Select chemical line.
             self.selector.move_to_position(chemical)
@@ -337,6 +339,7 @@ class FlowChamber:
     def dispense_to_vessel(self, microliters: float, chemical: str):
         """Withdraw specified chemical from the appropriate container and
         dispense it into the reaction vessel."""
+        self.log.info(f"Dispensing {microliters}uL of {chemical} to vessel.")
         # Safety checks:
         if microliters + self.rxn_vessel.curr_volume_ul > self.rxn_vessel.max_volume_ul:
             raise ValueError("Requested dispense amount would exceed vessel capacity.")
@@ -388,6 +391,7 @@ class FlowChamber:
     @syringe_empty
     def drain_vessel(self, drain_volume_ul: float = 40000):
         """Drain the reaction vessel."""
+        self.log.info("Draining vessel.")
         # Set outlet flowpath starting configuration.
         self.rv_source_valve.energize()
         self.rv_exhaust_valve.deenergize()  # Lock out the rv top exhaust port.
@@ -467,7 +471,7 @@ class FlowChamber:
         for chemical_name, ul in chemical_volumes_ul.items():
             self.dispense_to_vessel(ul, chemical_name)
         try:
-            self.mixer.set_mixing_speed(mix_speed_percent)
+            self.mixer.set_mixing_speed_percent(mix_speed_percent)
         except NotImplementedError:
             self.log.debug("Mixer does not support speed control. Skipping.")
         if mix_speed_percent > 0:
@@ -481,21 +485,23 @@ class FlowChamber:
             self.drain_vessel()
 
     def mix(self, duration_s: int, mix_speed_percent: float = 100.0):
+        self.log.info(f"Mixing for {duration_s} seconds at {mix_speed_percent}% speed.")
         self.run_wash_step(duration_s=duration_s, mix_speed_percent=mix_speed_percent,
                            start_empty=False, end_empty=False)
 
     def fill(self, empty_first=False, **chemical_volumes_ul: float):
+        self.log.info(f"Filling vessel with solution: {chemical_volumes_ul}.")
         self.run_wash_step(duration_s=0, mix_speed_percent=0, start_empty=empty_first,
                            end_empty=False, **chemical_volumes_ul)
 
     def run_protocol(self, path: Path):
         protocol = Protocol(path)
-        protocol.validate()
+        protocol.validate(self.rxn_vessel.max_volume_ul)
         for step in range(protocol.step_count):
             duration_s = protocol.get_duration_s(step)
             chemical_volumes_ul = protocol.get_solution(step,
                                                         max_volume_ul=self.rxn_vessel.max_volume_ul)
-            self.log.info(f"Conducting step: {step}/{protocol.step_count} with {chemical_volumes_ul}")
+            self.log.info(f"Conducting step: {step+1}/{protocol.step_count} with {chemical_volumes_ul}")
             mix_speed_percent = protocol.get_mix_speed_percent(step)
             self.run_wash_step(duration_s=duration_s,
                                mix_speed_percent=mix_speed_percent,

@@ -31,6 +31,10 @@ class PWMMixer(Mixer):
         self.max_rpm = max_rpm
         self.set_mixing_speed(max_rpm)  # Default to max speed.
 
+    def set_mixing_speed_percent(self, percent):
+        percent = min(percent, 100)  # Set value in percent
+        self.duty_cycle = percent
+
     def set_mixing_speed(self, rpm: float):
         duty_cycle = min(rpm/self.max_rpm * 100, 100)  # Set value in percent
         self.duty_cycle = duty_cycle

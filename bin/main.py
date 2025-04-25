@@ -1,20 +1,36 @@
 #!/usr/bin/env python3
 """Instantiate objects from list of dicts."""
 
+from datetime import datetime
 from device_spinner.config import Config
 from device_spinner.device_spinner import DeviceSpinner
-from coloredlogs import ColoredFormatter
+from coloredlogs import ColoredFormatter, DEFAULT_FIELD_STYLES
 from io import StringIO
 from time import sleep
 
 import logging
+fmt='%(asctime)s:%(name)s:%(levelname)s: %(message)s'
+datefmt="%Y-%m-%d %H:%M:%S.%f"
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler())
 
-fmt='%(asctime)s.%(msecs)03d:%(name)s:%(levelname)s: %(message)s'
-datefmt = '%Y-%m-%d,%H:%M:%S'
-log_formatter = ColoredFormatter(fmt=fmt, datefmt=datefmt)
+# Add file handler
+now = datetime.now()
+date_str = now.strftime("%Y-%m-%d-%H:%M:%S")
+logger.addHandler(logging.FileHandler(filename=f"logs-{date_str}.log", mode="a"))
+
+# Add file handler formatter.
+log_file_formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
+logger.handlers[-1].setFormatter(log_file_formatter)
+
+# Add stream handler
+logger.addHandler(logging.StreamHandler())
+# Add stream handler formatter.
+field_styles = DEFAULT_FIELD_STYLES
+field_styles["levelname"]["color"] = "magenta"
+log_formatter = ColoredFormatter(fmt=fmt, datefmt=datefmt,
+                                 field_styles=field_styles)
 logger.handlers[-1].setFormatter(log_formatter)
 
 
@@ -28,29 +44,30 @@ device_specs = dict(device_config.cfg)
 factory = DeviceSpinner()
 device_trees = factory.create_devices_from_specs(device_specs["devices"])
 instrument = device_trees['flow_chamber']
+
 logger.setLevel(logging.DEBUG)
 instrument.reset()
 
 
 ### Sample Protocol
+#csv_str = \
+#    ('"Mix Speed",Chemicals,Solution,Duration\n'
+#     '100%,"YELLOW, CLEAR","500uL YELLOW, 3500uL CLEAR", 3sec\n'
+#     '100,"CLEAR","100% CLEAR", 3sec')
 csv_str = \
     ('"Mix Speed",Chemicals,Solution,Duration\n'
-     '100%,"YELLOW, CLEAR","500uL YELLOW, 3500uL CLEAR", 3sec\n'
-     '100,"CLEAR","100% CLEAR", 3sec')
+     '100%,"YELLOW, PURPLE","2500uL PURPLE, 2500uL YELLOW", 1sec\n'
+     '100%,"CLEAR","100% CLEAR", 1sec')
 sample_protocol = StringIO(csv_str)
 
 #input("Press enter to run the sample_protocol.")
 
-#instrument.unprime_reservoir_line("YELLOW")
-#instrument.unprime_reservoir_line("CLEAR")
-#instrument.unprime_reservoir_line("PURPLE")
+#instrument.fill(CLEAR=5000.0)
+#instrument.mix(3.0, 500.0)
+#instrument.mix(3.0, 1000.0)
+#instrument.drain_vessel()
 
-instrument.fill(CLEAR=5000.0)
-instrument.mix(3.0, 500.0)
-instrument.mix(3.0, 1000.0)
-instrument.drain_vessel()
-
-#instrument.run_protocol(sample_protocol)
+instrument.run_protocol(sample_protocol)
 #instrument.run_wash_step(duration_s=0, start_empty=False, end_empty=True)
 
 #instrument.leak_check_syringe_to_selector_common_path() # TODO
