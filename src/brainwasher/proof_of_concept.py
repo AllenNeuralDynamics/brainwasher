@@ -111,6 +111,16 @@ class FlowChamber:
         finally:
             self.deenergize_all_valves()
 
+    def halt(self):
+        self.log.warning("Halting and disabling all active components.")
+        try:
+            if self.pump.is_busy():
+                self.pump.halt()
+        except Exception:
+            self.log.critical("Error halting pump.")
+        self.deenergize_all_valves()
+        self.mixer.stop_mixing()
+
     def deenergize_all_valves(self):
         self.log.debug("Deenergizing all solenoid valves.")
         self.rv_source_valve.deenergize()
@@ -159,8 +169,7 @@ class FlowChamber:
             if self.pressure_psig > self.MAX_SAFE_PRESSURE_PSIG:
                 error_msg = "Jam detected!! Aborting syringe movement."
                 self.log.critical(error_msg)
-                self.pump.halt()
-                self.deenergize_all_valves()
+                self.halt()
                 _thread.interrupt_main()
             sleep(0.01)
 

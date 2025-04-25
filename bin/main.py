@@ -67,7 +67,11 @@ sample_protocol = StringIO(csv_str)
 #instrument.mix(3.0, 1000.0)
 #instrument.drain_vessel()
 
-instrument.run_protocol(sample_protocol)
+try:
+    instrument.run_protocol(sample_protocol)
+except KeyboardInterrupt:
+    instrument.halt()
+
 #instrument.run_wash_step(duration_s=0, start_empty=False, end_empty=True)
 
 #instrument.leak_check_syringe_to_selector_common_path() # TODO
