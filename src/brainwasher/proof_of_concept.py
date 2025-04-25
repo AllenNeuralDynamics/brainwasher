@@ -285,7 +285,7 @@ class FlowChamber:
             self.log.warning(f"Pump line already primed with "
                              f"{self.pump_is_primed_with}.")
             return
-        self.log.info(f"Priming pump line with {chemical}.")
+        self.log.debug(f"Priming pump line with {chemical}.")
         self.selector.move_to_position(chemical) # Select chemical.
         # Withdraw to source pump sensor.
         # We can do this in <1 full stroke after the chemical is primed.
@@ -477,13 +477,16 @@ class FlowChamber:
         if start_empty: # and self.rxn_vessel.curr_volume_ul > 0:
             self.drain_vessel()
         # Fill
+        self.log.info(f"Filling vessel with solution: {chemical_volumes_ul}.")
         for chemical_name, ul in chemical_volumes_ul.items():
             self.dispense_to_vessel(ul, chemical_name)
         try:
             self.mixer.set_mixing_speed_percent(mix_speed_percent)
         except NotImplementedError:
-            self.log.debug("Mixer does not support speed control. Skipping.")
+            self.log.debug("Mixer does not support speed control. Skipping speed setting.")
+            mix_speed_percent = 100
         if mix_speed_percent > 0:
+            self.log.info(f"Mixing for {duration_s} seconds at {mix_speed_percent}% speed.")
             self.mixer.start_mixing()
         # Wait.
         sleep(duration_s)
@@ -494,12 +497,10 @@ class FlowChamber:
             self.drain_vessel()
 
     def mix(self, duration_s: int, mix_speed_percent: float = 100.0):
-        self.log.info(f"Mixing for {duration_s} seconds at {mix_speed_percent}% speed.")
         self.run_wash_step(duration_s=duration_s, mix_speed_percent=mix_speed_percent,
                            start_empty=False, end_empty=False)
 
     def fill(self, empty_first=False, **chemical_volumes_ul: float):
-        self.log.info(f"Filling vessel with solution: {chemical_volumes_ul}.")
         self.run_wash_step(duration_s=0, mix_speed_percent=0, start_empty=empty_first,
                            end_empty=False, **chemical_volumes_ul)
 
