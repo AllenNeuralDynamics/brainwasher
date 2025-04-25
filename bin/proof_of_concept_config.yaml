@@ -5,7 +5,7 @@ devices:
         kwds:
             CLEAR: 5
             YELLOW: 4
-            PURPLE: 3
+            sbip: 3
             OUTLET: 2
             AMBIENT: 1
     selector_serial_port:
@@ -86,7 +86,7 @@ devices:
         kwds:
             CLEAR: selector_clear_bds
             YELLOW: selector_yellow_bds
-            PURPLE: selector_purple_bds
+            sbip: selector_sbip_bds
             AMBIENT: selector_ambient_bds
 # Liquid Detection Sensors
     pump_bds:
@@ -113,7 +113,7 @@ devices:
         kwds:
             board_address: 0
             channel: 4
-    selector_purple_bds:
+    selector_sbip_bds:
         module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
         class: BubbleDetectionSensor
         kwds:
@@ -125,6 +125,13 @@ devices:
         kwds:
             board_address: 0
             channel: 10
+#    vessel_cam:
+#        module: brainwasher.devices.raspberry_pi.camera
+#        class: Camera
+#        args:
+#        - 0
+#        kwds:
+#            name: "braincam"
 # Full System:
     flow_chamber:
         module: brainwasher.proof_of_concept

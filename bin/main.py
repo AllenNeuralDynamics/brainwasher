@@ -13,16 +13,14 @@ import traceback
 import logging
 
 ### Sample Protocol
-#csv_str = \
+#demo_protocol_csv_str = \
 #    ('"Mix Speed",Chemicals,Solution,Duration\n'
-#     '100%,"YELLOW, CLEAR","500uL YELLOW, 3500uL CLEAR", 3sec\n'
-#     '100,"CLEAR","100% CLEAR", 3sec')
-csv_str = \
+#     '100%,"YELLOW, PURPLE","2500uL PURPLE, 2500uL YELLOW", 1sec\n'
+#     '100%,"CLEAR","100% CLEAR", 1sec')
+demo_protocol_csv_str = \
     ('"Mix Speed",Chemicals,Solution,Duration\n'
-     '100%,"YELLOW, PURPLE","2500uL PURPLE, 2500uL YELLOW", 1sec\n'
-     '100%,"CLEAR","100% CLEAR", 1sec')
-sample_protocol = StringIO(csv_str)
-
+     '100%,"sbip","100% sbip", 1sec\n'
+     '100%,"sbip","100% sbip", 1sec')
 
 #import matplotlib.pyplot as plt
 #import igraph as ig
@@ -36,6 +34,9 @@ def main():
     parser.add_argument("--config", type=str, default="proof_of_concept_config.yaml")
     parser.add_argument("--log_level", type=str, default="INFO",
                         choices=["INFO", "DEBUG"])
+    parser.add_argument("--protocol", type=str, default=None,
+                        help="Simulate hardware device connections.")
+
     parser.add_argument("--simulated", default=False, action="store_true",
                         help="Simulate hardware device connections.")
 
@@ -71,6 +72,9 @@ def main():
     factory = DeviceSpinner()
     device_trees = factory.create_devices_from_specs(device_specs["devices"])
     instrument = device_trees['flow_chamber']
+
+    #cam = device_trees['vessel_cam']
+    #cam.start_recording("test
     instrument.reset()
 
     logger.setLevel(args.log_level)
@@ -80,8 +84,12 @@ def main():
     #instrument.leak_check_syringe_to_drain_waste_path()  # works
     #instrument.leak_check_syringe_to_reaction_vessel()  # works
 
+
+    protocol = args.protocol if args.protocol is not None else StringIO(demo_protocol_csv_str)
+    if args.protocol is None:
+        logger.info("Running demo protocol")
     try:
-        instrument.run_protocol(sample_protocol)
+        instrument.run_protocol(protocol)
     except KeyboardInterrupt:
         instrument.halt()
     except Exception:
