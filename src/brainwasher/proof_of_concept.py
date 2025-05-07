@@ -1,5 +1,4 @@
 """Tissue-clearing proof-of-concept"""
-from __future__ import annotations
 
 import _thread
 import logging
@@ -84,7 +83,7 @@ class FlowChamber:
         self.nominal_pump_speed_percent = 20
         self.slow_pump_speed_percent = 10
         self.pump_unprime_speed_percent = 60
-        # Thread control
+        # Pressure Monitor Thread control
         self.monitoring_pressure = Event()
         self.buffer_samples = Event()
         self.pressure_sample_buffer = []
@@ -92,6 +91,9 @@ class FlowChamber:
         self.pressure_avg_start_time_s = 0
         self.pressure_avg_duration_s = 0
         self.pressure_psig = 0
+        # Pause Control
+        self.protocol_is_running = Event()
+        self.pause_protocol = Event()
         # Launch pressure monitor thread.
         self.start_pressure_monitor()
 
@@ -500,23 +502,44 @@ class FlowChamber:
         self.run_wash_step(duration_s=duration_s, mix_speed_percent=mix_speed_percent,
                            start_empty=False, end_empty=False)
 
-    def fill(self, empty_first=False, **chemical_volumes_ul: float):
+    def fill(self, empty_first: bool = False, **chemical_volumes_ul: float):
         self.run_wash_step(duration_s=0, mix_speed_percent=0, start_empty=empty_first,
                            end_empty=False, **chemical_volumes_ul)
 
-    def run_protocol(self, path: Path):
+    #def run_protocol(self, path: Union[Path, str]):
+    def run_protocol(self, path: str):  # FIXME: revert this later.
         protocol = Protocol(path)
         protocol.validate(self.rxn_vessel.max_volume_ul)
-        for step in range(protocol.step_count):
-            duration_s = protocol.get_duration_s(step)
-            chemical_volumes_ul = protocol.get_solution(step,
-                                                        max_volume_ul=self.rxn_vessel.max_volume_ul)
-            self.log.info(f"Conducting step: {step+1}/{protocol.step_count} with {chemical_volumes_ul}")
-            mix_speed_percent = protocol.get_mix_speed_percent(step)
-            self.run_wash_step(duration_s=duration_s,
-                               mix_speed_percent=mix_speed_percent,
-                               start_empty=True, end_empty=False,
-                               **chemical_volumes_ul)
+        try:
+            self.protocol_is_running.set()  # Update thread-aware state.
+            for step in range(protocol.step_count):
+                if self.pause_protocol.is_set():
+                    self.log.info("Pausing system.")
+                    # FIXME: write the pause/resume status somewhere.
+                    self.log.error("ignoring pause system request.")
+                duration_s = protocol.get_duration_s(step)
+                chemical_volumes_ul = protocol.get_solution(step,
+                                                            max_volume_ul=self.rxn_vessel.max_volume_ul)
+                self.log.info(f"Conducting step: {step+1}/{protocol.step_count} with {chemical_volumes_ul}")
+                mix_speed_percent = protocol.get_mix_speed_percent(step)
+                self.run_wash_step(duration_s=duration_s,
+                                   mix_speed_percent=mix_speed_percent,
+                                   start_empty=True, end_empty=False,
+                                   **chemical_volumes_ul)
+        finally:
+            self.protocol_is_running.clear()
+
+    def pause_protocol(self):
+        """Pause the system if we are running a protocol."""
+        if not self.protocol_is_running.is_set():
+            self.log.warning("Ignoring pause request. System is not running a protocol.")
+            return
+        self.log.info("Requesting system pause.")
+        self.pause_protocol.set()
+
+    def resume_protocol(self):
+        self.pause_protocol.clear()  # TODO: do we need to do this?
+        # TODO: implement this.
 
     def run_leak_checks(self):
         """Leak check the entire system.
@@ -664,4 +687,5 @@ class FlowChamber:
         self.purge_pump_line(full_cycles=0)
 
     def clean_system(self):
+        # TODO: implement this.
         pass
