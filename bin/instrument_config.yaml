@@ -186,8 +186,8 @@ devices:
 #            name: "braincam"
 # Full System:
     flow_chamber:
-        module: brainwasher.proof_of_concept
-        class: FlowChamber
+        module: brainwasher.instrument
+        class: BrainWasher
         kwds:
             selector: selector
             selector_lds_map: selector_lds_map

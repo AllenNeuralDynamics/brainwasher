@@ -61,7 +61,7 @@ def main():
 
     factory = DeviceSpinner()
     device_trees = factory.create_devices_from_specs(device_specs["devices"])
-    instrument = device_trees['flow_chamber']
+    instrument = device_trees["brain_washer"]
 
     #cam = device_trees['vessel_cam']
     #cam.start_recording("test

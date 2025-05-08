@@ -33,7 +33,7 @@ def syringe_empty(func):
     return inner
 
 
-class FlowChamber:
+class BrainWasher:
 
     """Class for controlling/maintaining the FlowChamber.
 
@@ -540,6 +540,9 @@ class FlowChamber:
     def resume_protocol(self):
         self.pause_protocol.clear()  # TODO: do we need to do this?
         # TODO: implement this.
+
+    def abort_protocol(self):
+        raise NotImplementedError
 
     def run_leak_checks(self):
         """Leak check the entire system.
