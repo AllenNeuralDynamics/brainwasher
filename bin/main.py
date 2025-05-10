@@ -10,6 +10,7 @@ from time import sleep
 
 from inpromptu.inpromptu_prompt_toolkit import Inpromptu
 
+import brainwasher.devices.instruments.brainwasher  # For SIMULATED flag
 import argparse
 import traceback
 import logging
@@ -44,9 +45,13 @@ def main():
                         help="Simulate hardware device connections.")
 
     args = parser.parse_args()
+    if args.simulated:
+        brainwasher.devices.instruments.brainwasher.SIMULATED = True
+
+    config_name = args.config if not args.simulated else "sim_instrument_config.yaml"
 
     # Create the instrument config.
-    device_config = Config(args.config)
+    device_config = Config(config_name)
     # Setup logging.
     logging.config.dictConfig(dict(device_config.cfg["logging"]))
     logger = logging.getLogger()

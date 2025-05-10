@@ -14,9 +14,20 @@ from pathlib import Path
 from runze_control.syringe_pump import SyringePump
 from time import sleep
 from time import perf_counter as now
-from threading import Event, Thread
+from threading import Event, Thread, RLock
 from vicivalve import VICI
 
+
+SIMULATED = False
+
+def lock_flowpath(func):
+    """Provide methods with exclusive access to components that alter the flowpath."""
+    @wraps(func) # required for sphinx doc generation
+    def inner(self, *args, **kwds):
+        with self.flowpath_lock:
+            self.log.debug(f"Locking flowpath to {func.__name__} fn.")
+            return func(self, *args, **kwds)
+    return inner
 
 def syringe_empty(func):
     """Ensure that the syringe is empty (i.e: fully plunged)."""
@@ -24,7 +35,8 @@ def syringe_empty(func):
     @wraps(func) # required for sphinx doc generation
     def inner(self, *args, **kwds):
         self.log.debug("Ensuring syringe is empty.")
-        if abs(self.pump.get_position_steps()) > 5:
+        # MiniSY04 does not always return exactly 0.
+        if abs(self.pump.get_position_ul()) > 10:
             error_msg = "Error. Pump is not starting from its reset position " \
                 "and contains liquid or gas!"
             self.log.error(error_msg)
@@ -91,12 +103,16 @@ class BrainWasher:
         self.pressure_avg_start_time_s = 0
         self.pressure_avg_duration_s = 0
         self.pressure_psig = 0
+        # Protocol Thread control
+        self.active_protocol_thread = None
+        # Thread-safe protection within a class instance.
+        self.flowpath_lock = RLock()
         # Pause Control
-        self.protocol_is_running = Event()
         self.pause_protocol = Event()
         # Launch pressure monitor thread.
         self.start_pressure_monitor()
 
+    @lock_flowpath
     def reset(self):
         """Initialize all hardware while ensuring that the system can bleed any
         pressure pockets created to waste."""
@@ -114,6 +130,9 @@ class BrainWasher:
             self.deenergize_all_valves()
 
     def halt(self):
+        # FIXME: do we need the flowpath_lock here??
+        # FIXME: do we need to tell child threads to stop?
+        # FIXME: do we need to check if protocol is running?
         self.log.warning("Halting and disabling all active components.")
         try:
             if self.pump.is_busy():
@@ -123,6 +142,7 @@ class BrainWasher:
         self.deenergize_all_valves()
         self.mixer.stop_mixing()
 
+    @lock_flowpath
     def deenergize_all_valves(self):
         self.log.debug("Deenergizing all solenoid valves.")
         self.rv_source_valve.deenergize()
@@ -135,6 +155,7 @@ class BrainWasher:
             return
         self.monitoring_pressure.set()
         self.pressure_monitor_thread = Thread(target=self._monitor_pressure_worker,
+                                              name="pressure_monitor_worker",
                                               daemon=True)
         self.pressure_monitor_thread.start()
 
@@ -175,6 +196,7 @@ class BrainWasher:
                 _thread.interrupt_main()
             sleep(0.01)
 
+    @lock_flowpath
     @syringe_empty
     def prime_reservoir_line(self, chemical: str,
                              max_pump_displacement_ul: int = 12500):
@@ -187,7 +209,7 @@ class BrainWasher:
             self.log.warning(f"{chemical} reservoir line already primed. Aborting.")
             return
         # Bail-early if we're already primed.
-        if self.selector_lds_map[chemical].tripped():
+        if (not SIMULATED) and self.selector_lds_map[chemical].tripped():
             self.log.warning(f"{chemical} reservoir line detected prematurely as primed. "
                              "Aborting.")
             return
@@ -204,6 +226,8 @@ class BrainWasher:
         # Note: add small fudge factor since we can be +/- 1 step (~2.0833uL).
         liquid_detected = False
         while (not liquid_detected) and (remaining_volume_ul > 5):
+            if SIMULATED:
+                break
             # Withdraw another stroke.
             if self.selector_lds_map[chemical].tripped():
                 liquid_detected = True
@@ -242,6 +266,7 @@ class BrainWasher:
         self.log.info(f"Priming {chemical} complete. Function displaced "
             f"{displaced_volume_ul:.3f}[uL] of volume.")
 
+    @lock_flowpath
     @syringe_empty
     def unprime_reservoir_line(self, chemical: str,
                                max_pump_displacement_ul: int = 25000):
@@ -257,13 +282,14 @@ class BrainWasher:
         unprime_volume_ul = min(unprime_volume_ul*1.05, # FIXME: magic number
                                 max_pump_displacement_ul)
         # Displace volume in discrete pump strokes.
-        syringe_volume_ul = self.pump.syringe_volume_ul
+        syringe_capacity_ul = self.pump.syringe_volume_ul
         remaining_volume_ul = unprime_volume_ul
         # Speed up pump for purging.
         self.pump.set_speed_percent(self.pump_unprime_speed_percent)
         while remaining_volume_ul:
+            self.log.debug(f"Remaining volume to displace: {remaining_volume_ul}[uL]")
             # Withdraw another stroke.
-            stroke_volume_ul = min(remaining_volume_ul, syringe_volume_ul)
+            stroke_volume_ul = min(remaining_volume_ul, syringe_capacity_ul)
             self.fast_gas_charge_syringe()
             self.selector.move_to_position(chemical) # Select chemical.
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
@@ -275,10 +301,14 @@ class BrainWasher:
             del self.prime_volumes_ul[chemical] # Remove record of chemical.
         self.log.info(f"Unpriming {chemical} complete.")
 
+    @lock_flowpath
     @syringe_empty
     def prime_pump_line(self, chemical: str):
         """Fill the selector-to-syringe line flowpath with the specified
             chemical."""
+        if SIMULATED:
+            self.log.warning(f"Skipping priming pump in simulation.")
+            return
         self.prime_reservoir_line(chemical)
         # FIXME: store this state in software in case we are at the edge
         #  of the sensor trip threshold.
@@ -311,7 +341,7 @@ class BrainWasher:
         raise RuntimeError(f"Did not detect any liquid ({chemical}) after "
             "attempting to aspirate to the start of the pump.")
 
-    # It is OK if the pump does not enter this function with an empty syringe.
+    @lock_flowpath
     def purge_pump_line(self, full_cycles: int = 1):
         """Empty selector-to-pump line by purging contents to waste.
         It is OK if the pump does not enter this function fully-plunged.
@@ -347,6 +377,7 @@ class BrainWasher:
         self.log.debug("Purging pump line complete.")
         self.pump_is_primed_with = None
 
+    @lock_flowpath
     def dispense_to_vessel(self, microliters: float, chemical: str):
         """Withdraw specified chemical from the appropriate container and
         dispense it into the reaction vessel."""
@@ -399,6 +430,7 @@ class BrainWasher:
         self.log.debug(f"Dispensed {microliters}[uL] into reaction vessel. "
                        f"Prime line is now cleared.")
 
+    @lock_flowpath
     @syringe_empty
     def drain_vessel(self, drain_volume_ul: float = 40000):
         """Drain the reaction vessel."""
@@ -433,6 +465,7 @@ class BrainWasher:
         self.rv_exhaust_valve.deenergize()
         self.drain_waste_valve.deenergize()
 
+    @lock_flowpath
     def fast_gas_charge_syringe(self, percent: float = 100):
         """quickly charge the syringe with gas."""
         self.log.debug(f"Fast-charging pump to {percent}% volume with gas.")
@@ -442,6 +475,7 @@ class BrainWasher:
         self.pump.move_absolute_in_percent(percent)
         self.pump.set_speed_percent(old_speed) # restore original speed.
 
+    @lock_flowpath
     def run_wash_step(self, duration_s: float, mix_speed_percent: float = 100.,
                       start_empty: bool = True, end_empty: bool = False,
                       **chemical_volumes_ul: float):
@@ -479,7 +513,8 @@ class BrainWasher:
         if start_empty: # and self.rxn_vessel.curr_volume_ul > 0:
             self.drain_vessel()
         # Fill
-        self.log.info(f"Filling vessel with solution: {chemical_volumes_ul}.")
+        if len(chemical_volumes_ul):
+            self.log.info(f"Filling vessel with solution: {chemical_volumes_ul}.")
         for chemical_name, ul in chemical_volumes_ul.items():
             self.dispense_to_vessel(ul, chemical_name)
         try:
@@ -498,57 +533,83 @@ class BrainWasher:
         if end_empty:
             self.drain_vessel()
 
+    @lock_flowpath
     def mix(self, duration_s: int, mix_speed_percent: float = 100.0):
         self.run_wash_step(duration_s=duration_s, mix_speed_percent=mix_speed_percent,
                            start_empty=False, end_empty=False)
 
+    @lock_flowpath
     def fill(self, empty_first: bool = False, **chemical_volumes_ul: float):
         self.run_wash_step(duration_s=0, mix_speed_percent=0, start_empty=empty_first,
                            end_empty=False, **chemical_volumes_ul)
 
+    @lock_flowpath
     #def run_protocol(self, path: Union[Path, str]):
-    def run_protocol(self, path: str):  # FIXME: revert this later.
-        protocol = Protocol(path)
-        protocol.validate(self.rxn_vessel.max_volume_ul)
-        try:
-            self.protocol_is_running.set()  # Update thread-aware state.
-            for step in range(protocol.step_count):
-                if self.pause_protocol.is_set():
-                    self.log.info("Pausing system.")
-                    # FIXME: write the pause/resume status somewhere.
-                    self.log.error("ignoring pause system request.")
-                duration_s = protocol.get_duration_s(step)
-                chemical_volumes_ul = protocol.get_solution(step,
-                                                            max_volume_ul=self.rxn_vessel.max_volume_ul)
-                self.log.info(f"Conducting step: {step+1}/{protocol.step_count} with {chemical_volumes_ul}")
-                mix_speed_percent = protocol.get_mix_speed_percent(step)
-                self.run_wash_step(duration_s=duration_s,
-                                   mix_speed_percent=mix_speed_percent,
-                                   start_empty=True, end_empty=False,
-                                   **chemical_volumes_ul)
-        finally:
-            self.protocol_is_running.clear()
+    def run_protocol(self, path: str):  # FIXME: revert this signature later.
+        """Run the prototocol specified in the path above. Handle pause logic
+        to be able to pause the system safely.
+        """
+        self.protocol_thread = Thread(target=self._run_protocol_worker,
+                                      name="run_protocol_worker",
+                                      daemon=True)
+        self.protocol_thread.start()
+
+        def _run_protocol_worker(self, path: str):
+            protocol = Protocol(path)
+            protocol.validate(self.rxn_vessel.max_volume_ul)
+            try:
+                self.protocol_is_running.set()  # Update thread-aware state.
+                for step in range(protocol.step_count):
+                    if self.pause_protocol.is_set():
+                        self.log.info("Pausing system at the start of step {step}.")
+                        # Write: filepath, step.
+                        pause_state = {"protocol_path": path.resolve(),
+                                       "start_step": step}
+                        # FIXME: write the pause state somewhere where we
+                        #   can recover it!
+                        self.pause_protocol.clear()
+                        return
+                    duration_s = protocol.get_duration_s(step)
+                    chemical_volumes_ul = protocol.get_solution(step,
+                                                                max_volume_ul=self.rxn_vessel.max_volume_ul)
+                    self.log.info(f"Conducting step: {step+1}/{protocol.step_count} with {chemical_volumes_ul}")
+                    mix_speed_percent = protocol.get_mix_speed_percent(step)
+                    self.run_wash_step(duration_s=duration_s,
+                                       mix_speed_percent=mix_speed_percent,
+                                       start_empty=True, end_empty=False,
+                                       **chemical_volumes_ul)
+            finally:
+                self.protocol_is_running.clear()
 
     def pause_protocol(self):
-        """Pause the system if we are running a protocol."""
-        if not self.protocol_is_running.is_set():
+        """Request that the system pause the currently running protocol and
+        save the protocol path and current step to the config."""
+        if not self.protocol_thread.is_alive():
             self.log.warning("Ignoring pause request. System is not running a protocol.")
             return
         self.log.info("Requesting system pause.")
         self.pause_protocol.set()
 
-    def resume_protocol(self):
-        self.pause_protocol.clear()  # TODO: do we need to do this?
+    def resume_protocol(self, path: str = None, resume_step: int = 0):
+        """Resume a protocol.
+        If the protocol is specified, resume from the protocol and step specified.
+        Otherwise, resume from path and start step specified in the config."""
+        if self.protocol_thread.is_alive():
+            self.log.warning("Ignoring resume request. System is running a protocol.")
+            return
+        #self.pause_protocol.clear()  # TODO: do we need to do this?
         # TODO: implement this.
 
     def abort_protocol(self):
         raise NotImplementedError
 
+    @lock_flowpath
     def run_leak_checks(self):
         """Leak check the entire system.
 
         :raises RuntimeError: upon the leak check that failed.
         """
+        self.log.info("Running leak checks in order of increasing volume.")
         # Leak checks run in order can isolate leaks down to a small number
         # of fittings/seals that need to be checked.
         self.leak_check_syringe_to_selector_common_path()
@@ -556,6 +617,7 @@ class BrainWasher:
         self.leak_check_syringe_to_drain_waste_path()
         self.leak_check_syringe_to_reaction_vessel()
 
+    @lock_flowpath
     @syringe_empty
     def leak_check_syringe_to_selector_common_path(self):
         """Test for leaks between the syringe pump and selector common position.
@@ -595,6 +657,7 @@ class BrainWasher:
             # Reset syringe
             self._purge_gas_filled_syringe()
 
+    @lock_flowpath
     def leak_check_syringe_to_drain_exaust_normally_open_path(self):
         try:
             self.log.debug("Creating closed volume.")
@@ -613,6 +676,7 @@ class BrainWasher:
         finally:
             self._purge_gas_filled_syringe()
 
+    @lock_flowpath
     def leak_check_syringe_to_drain_waste_path(self):
         try:
             self.log.debug("Creating closed volume.")
@@ -630,6 +694,7 @@ class BrainWasher:
         finally:
             self._purge_gas_filled_syringe()
 
+    @lock_flowpath
     def leak_check_syringe_to_reaction_vessel(self):
         try:
             self.log.debug("Creating closed volume.")
@@ -648,6 +713,7 @@ class BrainWasher:
         finally:
             self._purge_gas_filled_syringe()
 
+    @lock_flowpath
     def _squeeze_and_measure(self, pump_compression_percent: float = None,
                              measurement_time_s: float = 4.0):
         """Compress the syringe by `pump_compression_percent` and
@@ -686,9 +752,11 @@ class BrainWasher:
                 raise LeakCheckError("Pressure change is significant enough"
                                      "to indicate a leak.")
 
+    @lock_flowpath
     def _purge_gas_filled_syringe(self):
         self.purge_pump_line(full_cycles=0)
 
+    @lock_flowpath
     def clean_system(self):
         # TODO: implement this.
         pass

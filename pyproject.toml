@@ -23,6 +23,7 @@ dependencies = [
     "runze-control",
     "vicivalve",
     "inpromptu",
+    "mock>=5.2.0",
 ]
 
 

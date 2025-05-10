@@ -45,7 +45,7 @@ logging:
             class: logging.handlers.SocketHandler
     loggers:
         '':
-            level: INFO
+            level: DEBUG
             handlers:
             - console
             - file
@@ -133,7 +133,7 @@ devices:
         class: BubbleDetectionSensor
 # Full System:
     brain_washer:
-        module: brainwasher.instrument
+        module: brainwasher.devices.instruments.brainwasher
         class: BrainWasher
         kwds:
             selector: selector
