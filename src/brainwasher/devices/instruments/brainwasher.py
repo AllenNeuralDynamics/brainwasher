@@ -16,6 +16,7 @@ from time import sleep
 from time import perf_counter as now
 from threading import Event, Thread, RLock
 from vicivalve import VICI
+from typing import Union
 
 
 SIMULATED = False
@@ -104,7 +105,7 @@ class BrainWasher:
         self.pressure_avg_duration_s = 0
         self.pressure_psig = 0
         # Protocol Thread control
-        self.active_protocol_thread = None
+        self.protocol_thread = None
         # Thread-safe protection within a class instance.
         self.flowpath_lock = RLock()
         # Pause Control
@@ -543,62 +544,70 @@ class BrainWasher:
         self.run_wash_step(duration_s=0, mix_speed_percent=0, start_empty=empty_first,
                            end_empty=False, **chemical_volumes_ul)
 
-    @lock_flowpath
     #def run_protocol(self, path: Union[Path, str]):
     def run_protocol(self, path: str):  # FIXME: revert this signature later.
         """Run the prototocol specified in the path above. Handle pause logic
         to be able to pause the system safely.
         """
+        # Launch a thread so that we don't block and can lock out the flowpath
+        # while it is being used by the worker thread running the protocol.
+        if self.protocol_thread is not None and self.protocol_thread.is_alive():
+            raise ValueError("Cannot run another prototocol while an existing "
+                             "protocol is running.")
         self.protocol_thread = Thread(target=self._run_protocol_worker,
                                       name="run_protocol_worker",
+                                      kwargs={"path": Path(path)},
                                       daemon=True)
         self.protocol_thread.start()
 
-        def _run_protocol_worker(self, path: str):
-            protocol = Protocol(path)
-            protocol.validate(self.rxn_vessel.max_volume_ul)
-            try:
-                self.protocol_is_running.set()  # Update thread-aware state.
-                for step in range(protocol.step_count):
-                    if self.pause_protocol.is_set():
-                        self.log.info("Pausing system at the start of step {step}.")
-                        # Write: filepath, step.
-                        pause_state = {"protocol_path": path.resolve(),
-                                       "start_step": step}
-                        # FIXME: write the pause state somewhere where we
-                        #   can recover it!
-                        self.pause_protocol.clear()
-                        return
-                    duration_s = protocol.get_duration_s(step)
-                    chemical_volumes_ul = protocol.get_solution(step,
-                                                                max_volume_ul=self.rxn_vessel.max_volume_ul)
-                    self.log.info(f"Conducting step: {step+1}/{protocol.step_count} with {chemical_volumes_ul}")
-                    mix_speed_percent = protocol.get_mix_speed_percent(step)
-                    self.run_wash_step(duration_s=duration_s,
-                                       mix_speed_percent=mix_speed_percent,
-                                       start_empty=True, end_empty=False,
-                                       **chemical_volumes_ul)
-            finally:
-                self.protocol_is_running.clear()
+    @lock_flowpath
+    def _run_protocol_worker(self, path: Path):
+        protocol = Protocol(path)
+        protocol.validate(self.rxn_vessel.max_volume_ul)
+        self.log.info(f"Starting Protocol: '{path}'")
+        for step in range(protocol.step_count):
+            if self.pause_protocol.is_set():
+                self.log.warning(f"Pausing system at the start of step {step}.")
+                # Write: filepath, step.
+                pause_state = {"protocol_path": path.resolve(),
+                               "start_step": step}
+                # FIXME: write the pause state somewhere where we
+                #   can recover it!
+                self.pause_protocol.clear()
+                self.log.info(f"System paused.")
+                return
+            duration_s = protocol.get_duration_s(step)
+            chemical_volumes_ul = protocol.get_solution(step,
+                                                        max_volume_ul=self.rxn_vessel.max_volume_ul)
+            self.log.info(f"Conducting step: {step+1}/{protocol.step_count} with {chemical_volumes_ul}")
+            mix_speed_percent = protocol.get_mix_speed_percent(step)
+            self.run_wash_step(duration_s=duration_s,
+                               mix_speed_percent=mix_speed_percent,
+                               start_empty=True, end_empty=False,
+                               **chemical_volumes_ul)
+        self.log.info(f"Protocol finished.")
 
-    def pause_protocol(self):
+
+    def pause(self):
         """Request that the system pause the currently running protocol and
         save the protocol path and current step to the config."""
-        if not self.protocol_thread.is_alive():
+        if self.protocol_thread is None or not self.protocol_thread.is_alive():
             self.log.warning("Ignoring pause request. System is not running a protocol.")
             return
         self.log.info("Requesting system pause.")
         self.pause_protocol.set()
 
-    def resume_protocol(self, path: str = None, resume_step: int = 0):
+    def resume(self, path: str = None, resume_step: Union[int, None] = None):
         """Resume a protocol.
         If the protocol is specified, resume from the protocol and step specified.
         Otherwise, resume from path and start step specified in the config."""
-        if self.protocol_thread.is_alive():
+        if self.protocol_thread is not None and self.protocol_thread.is_alive():
             self.log.warning("Ignoring resume request. System is running a protocol.")
             return
-        #self.pause_protocol.clear()  # TODO: do we need to do this?
         # TODO: implement this.
+        # TODO: if protocol start step is unspecified, take it from the
+        # protocol file.
+        self.log.info(f"Resuming protocol: '{path}' at step: {resume_step}.")
 
     def abort_protocol(self):
         raise NotImplementedError

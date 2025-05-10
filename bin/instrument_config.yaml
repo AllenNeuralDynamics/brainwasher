@@ -12,9 +12,11 @@ logging:
                 asctime:
                     color: green
                 hostname:
-                    color: magenta
+                    bright: true
+                    color: blue
                 levelname:
-                    bold: true
+                    #bold: true
+                    bright: true
                     color: magenta
                 name:
                     color: cyan
