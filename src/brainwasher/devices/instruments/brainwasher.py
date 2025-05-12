@@ -109,7 +109,7 @@ class BrainWasher:
         # Thread-safe protection within a class instance.
         self.flowpath_lock = RLock()
         # Pause Control
-        self.pause_protocol = Event()
+        self.pause_requested = Event()
         # Launch pressure monitor thread.
         self.start_pressure_monitor()
 
@@ -549,6 +549,7 @@ class BrainWasher:
         """Run the prototocol specified in the path above. Handle pause logic
         to be able to pause the system safely.
         """
+        # FIXME: this should run a *job*, not a protocol.
         # Launch a thread so that we don't block and can lock out the flowpath
         # while it is being used by the worker thread running the protocol.
         if self.protocol_thread is not None and self.protocol_thread.is_alive():
@@ -566,16 +567,17 @@ class BrainWasher:
         protocol.validate(self.rxn_vessel.max_volume_ul)
         self.log.info(f"Starting Protocol: '{path}'")
         for step in range(protocol.step_count):
-            if self.pause_protocol.is_set():
-                self.log.warning(f"Pausing system at the start of step {step}.")
+            if self.pause_requested.is_set():
+                self.log.warning(f"Pausing system at the start of step {step+1}.")
                 # Write: filepath, step.
                 pause_state = {"protocol_path": path.resolve(),
                                "start_step": step}
-                # FIXME: write the pause state somewhere where we
-                #   can recover it!
-                self.pause_protocol.clear()
-                self.log.info(f"System paused.")
-                return
+                # FIXME: write the pause state to the job file!
+                self.log.critical("pause is not implemented. aborting protocol.")
+                self.pause_requested.clear()
+                raise NotImplementedError("Pause is not implemented.")
+                #self.log.info(f"System paused.")
+                #return
             duration_s = protocol.get_duration_s(step)
             chemical_volumes_ul = protocol.get_solution(step,
                                                         max_volume_ul=self.rxn_vessel.max_volume_ul)
@@ -592,19 +594,21 @@ class BrainWasher:
         """Request that the system pause the currently running protocol and
         save the protocol path and current step to the config."""
         if self.protocol_thread is None or not self.protocol_thread.is_alive():
-            self.log.warning("Ignoring pause request. System is not running a protocol.")
+            self.log.error("Ignoring pause request. System is not running a protocol.")
             return
         self.log.info("Requesting system pause.")
-        self.pause_protocol.set()
+        self.pause_requested.set()
 
     def resume(self, path: str = None, resume_step: Union[int, None] = None):
         """Resume a protocol.
         If the protocol is specified, resume from the protocol and step specified.
         Otherwise, resume from path and start step specified in the config."""
         if self.protocol_thread is not None and self.protocol_thread.is_alive():
-            self.log.warning("Ignoring resume request. System is running a protocol.")
+            self.log.error("Ignoring resume request. System is running a protocol.")
             return
         # TODO: implement this.
+        # TODO: within a session, if nothing is specified, resume the protocol
+        # most recently run. (We need a way to track the current protocol.)
         # TODO: if protocol start step is unspecified, take it from the
         # protocol file.
         self.log.info(f"Resuming protocol: '{path}' at step: {resume_step}.")

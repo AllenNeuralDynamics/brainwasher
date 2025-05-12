@@ -55,6 +55,8 @@ def main():
     # Setup logging.
     logging.config.dictConfig(dict(device_config.cfg["logging"]))
     logger = logging.getLogger()
+    if args.simulated:
+        logger.warning("System running in simulation!")
     # Override console log level if specified.
     for handler in logger.handlers:
         if handler.get_name() == 'console':
