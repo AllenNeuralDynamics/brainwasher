@@ -24,6 +24,8 @@ dependencies = [
     "vicivalve",
     "inpromptu",
     "mock>=5.2.0",
+    "pydantic>=2.11.4",
+    "datetime>=5.5",
 ]
 
 
