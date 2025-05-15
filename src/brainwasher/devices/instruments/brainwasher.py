@@ -124,6 +124,7 @@ class BrainWasher:
         pressure pockets created to waste."""
         self.log.info("Resetting instrument.")
         self.deenergize_all_valves()
+        self.mixer.stop_mixing()
         self.log.debug("Connecting Source Pump to waste.")
         # Connect: source pump -> waste.
         try:
