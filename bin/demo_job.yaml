@@ -25,5 +25,3 @@ protocol:
 source_protocol:
   accessed: null
   path: /home/brainwasher/protocols/demo_protocol.csv
-start_timestamp: null
-stop_timestamp: null

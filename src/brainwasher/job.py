@@ -3,7 +3,7 @@
 from pathlib import Path
 from pydantic import BaseModel, computed_field, field_serializer, model_serializer, AfterValidator, Field
 from datetime import datetime
-from typing import Annotated, Optional, Any, Literal
+from typing import Annotated, Optional, Any, Literal, Union
 import logging
 
 class SourceProtocol(BaseModel):
@@ -82,8 +82,6 @@ class Job(BaseModel):
     """Local job, derived from a protocol, to be run on an instrument."""
     name: str
     source_protocol: Optional[SourceProtocol] = SourceProtocol()
-    start_timestamp: Optional[datetime] = None
-    stop_timestamp: Optional[datetime] = None
     protocol: Optional[list[WashStep]] = list()
     resume_state: Optional[ResumeState] = None
     history: Optional[History] = History()
@@ -94,11 +92,39 @@ class Job(BaseModel):
         """Extract set of chemicals from all solutions across all steps"""
         return set([chemical for step in self.protocol for chemical in step.solution.keys()])
 
+    def record_start(self, timestamp: datetime = None):
+        """Record a start event to the job's history."""
+        timestamp = timestamp if timestamp else datetime.now()
+        self.history.events.append(StartEvent(timestamp=timestamp))
+
+    def record_finish(self, timestamp: datetime = None):
+        """Record a finish event to the job's history."""
+        timestamp = timestamp if timestamp else datetime.now()
+        self.history.events.append(FinishEvent(timestamp=timestamp))
+
+    def record_pause(self, timestamp: datetime = None):
+        """Record a finish event to the job's history."""
+        timestamp = timestamp if timestamp else datetime.now()
+        self.history.events.append(PauseEvent(timestamp=timestamp))
+
+    def record_resume(self, timestamp: datetime = None):
+        """Record a finish event to the job's history."""
+        timestamp = timestamp if timestamp else datetime.now()
+        self.history.events.append(ResumeEvent(timestamp=timestamp))
+
     def save_resume_state(self, step: int, **overrides: dict):
         self.resume_state = ResumeState(step=step, overrides=overrides)
 
     def clear_resume_state(self):
         self.resume_state = None
+
+    def purge_history(self):
+        self.history = History()
+
+    def set_source_protocol(self, path: Path, access_timestamp: datetime = None):
+        access_timestamp = access_timestamp if access_timestamp else datetime.now()
+        self.source_protocol = SourceProtocol(path=path,
+                                              accessed=access_timestamp)
 
     def model_dump(self, **kwargs):
         """Override model dump to always exclude empty resume_state since this field

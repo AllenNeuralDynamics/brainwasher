@@ -10,7 +10,7 @@ from brainwasher.devices.sequent_microsystems.valve import NCValve, ThreeTwoValv
 from brainwasher.devices.pressure_sensor import PressureSensor
 from brainwasher.errors.instrument_errors import LeakCheckError
 from brainwasher.protocol import Protocol
-from brainwasher.job import Job, StartEvent, PauseEvent, ResumeEvent, FinishEvent
+from brainwasher.job import Job, PauseEvent, ResumeEvent
 from datetime import datetime
 from functools import wraps
 from pydantic_core import ValidationError
@@ -110,8 +110,6 @@ class BrainWasher:
         self.pressure_avg_duration_s = 0
         self.pressure_psig = 0
         # Protocol Thread control
-        self.current_job: Job = None
-        self.current_job_path: Path = None
         self.job_worker = None
         # Thread-safe protection within a class instance.
         self.flowpath_lock = RLock()
@@ -542,44 +540,48 @@ class BrainWasher:
             self.drain_vessel()
 
     @lock_flowpath
-    def mix(self, duration_s: int, mix_speed_percent: float = 100.0):
-        self.run_wash_step(duration_s=duration_s, mix_speed_percent=mix_speed_percent,
+    def mix(self, duration_s: int, mix_speed_rpm: float = 1000):
+        self.run_wash_step(duration_s=duration_s, mix_speed_rpm=mix_speed_rpm,
                            start_empty=False, end_empty=False)
 
     @lock_flowpath
     def fill(self, empty_first: bool = False, **solution: float):
-        self.run_wash_step(duration_s=0, mix_speed_percent=0, start_empty=empty_first,
+        self.run_wash_step(duration_s=0, mix_speed_rpm=0, start_empty=empty_first,
                            end_empty=False, **solution)
 
-    def load_job(self):
-        """Load a job from the job source specified (file or URL)."""
-        pass
-
     def create_job(self, job_path: str, source: str = None):
-        """Create a job file from url or path pointing to a protocol or existing job.
+        """Create a job file from path pointing to a protocol or existing job.
         If not source is specified, create and return an empty job.
 
         :param job_path: the filepath to save the job
         :param source: the url or path pointing to an existing protocol from which
             to create the job or None to create an empty job file.
         """
-        # Open the output
-        with open(job_path) as job_file:
-            # Start with empty job.
-            job = Job(name=job_path)
-            # Load an existing job file.
-            # TODO: handle URL case
-            source_path = Path(source)  # Assumes filepath for now.
-            if source_path.suffix.lower() in ["yaml", "yml"]:
-                with open(job_path) as yaml_stream:
-                    job_dict = yaml.safe_load(yaml_stream)
-                    logging.debug(f"Loading job file from: {job_path.absolute()}")
-                    job = Job(**job_dict)  # validate
-                    # FIXME: remove history from previous job file and change source.
-            elif source_path.lower() == "csv":
-                protocol = Protocol(source_path)
-                raise NotImplementedError("Cannot convert csv files to jobs yet!")
-            yaml.dump(job.model_dump(), job_path)
+        job_path = Path(job_path)
+        source_path = Path(source)
+        # Create from an empty job (default).
+        if not job_path.exists():
+            job = Job(name=job_path.stem)  # Name without suffix
+            with open(job_path) as job_file:
+                yaml.dump(job.model_dump(), job_file)
+            self.log.info(f"Created an empty job file.")
+            return
+        # Create from an existing job.
+        if source_path.suffix.lower() in ["yaml", "yml"]:
+            with open(source_path) as source_job, open(job_path) as job_file:
+                job_dict = yaml.safe_load(source_job)
+                job = Job(**job_dict)  # validate
+                job.purge_history()
+                job.set_source_protocol(source_path)
+                yaml.dump(job.model_dump(), job_file)
+                self.log.info(f"Created job file from an existing job file.")
+                return
+        # Create from a csv-style protocol.
+        if job_path.suffix.lower() == "csv":
+            protocol = Protocol(job_path)
+            # TODO: create a job from the protocol
+            raise NotImplementedError("Cannot convert csv files to jobs yet!")
+            #yaml.dump(job.model_dump(), job_path)
 
     def validate_job_against_instrument(self, job: Job):
         """Validate that the job can be executed on the instrument"""
@@ -607,65 +609,64 @@ class BrainWasher:
                              "job is running.")
         job = self._load_job(job_path)
         self.validate_job_against_instrument(job)
-        self.current_job = job
-        self.current_job_path = Path(job_path)
-        ## Ensure this job doesn't need to be resumed
-        #if self.current_job.resume_state is not None:
-        #    msg = ("Cannot run job that was previously paused. "
-        #           "This job must be run with resume instead.")
-        #    self.log.error(msg)
-        #    raise ValueError(msg)
         logging.debug(f"Launching job worker thread.")
         # Run job in a separate thread to lock out flowpath
         # and support pause/resume control.
-        thread_kwargs = {}
-        if job.resume_state:
-            thread_kwargs = {"start_step": self.current_job.resume_state.step}
-            thread_kwargs.update(self.current_job.resume_state.overrides)
-        self.current_job.resume_state = None   # Clear resume state.
         self.job_worker = Thread(target=self._run_job_worker,
                                  name="run_job_worker_thread",
-                                 kwargs=thread_kwargs,
+                                 args=[job, Path(job_path)],
                                  daemon=True)
         self.job_worker.start()
 
     @lock_flowpath
-    def _run_job_worker(self, start_step: int = 0, **start_step_overrides):
-        """Start or resume a job."""
-        start_event_cls = StartEvent if start_step == 0 else ResumeEvent
-        log_msg = f"Starting job: '{self.current_job.name}'"
+    def _run_job_worker(self, job: Job, job_path: Path):
+        """Start or resume a job from job_path"""
+        if job.resume_state:
+            start_step = job.resume_state.step
+            start_step_overrides = job.resume_state.overrides
+            job.clear_resume_state()
+            job.record_resume()
+            starting_or_resuming_msg = "Resuming"
+        else:
+            start_step = 0
+            start_step_overrides = {}
+            starting_or_resuming_msg = "Starting"
+            job.record_start()
+        log_msg = f"{starting_or_resuming_msg} job: '{job.name}'"
         if start_step > 0:
             log_msg += f" at step {start_step+1}."  # Steps in logs are 1-indexed.
         self.log.info(log_msg)
-        self.current_job.history.events.append(start_event_cls(timestamp=datetime.now()))
-        for index, step in enumerate(self.current_job.protocol[start_step:], start=start_step):
-            if self.pause_requested.is_set():
-                self.log.warning(f"Pausing system at the start of step {index+1}.")
-                self.current_job.save_resume_state(index)
-                self.current_job.history.events.append(PauseEvent(timestamp=datetime.now()))
-                with open(self.current_job_path, "w") as job_file:
-                    yaml.dump(self.current_job.model_dump(), job_file)
-                self.log.info(f"Job saved to: {self.current_job_path}")
-                self.pause_requested.clear()
-                self.log.info(f"System paused.")
-                return
+        # Execute the protocol.
+        for index, step in enumerate(job.protocol[start_step:], start=start_step):
             self.log.info(f"Conducting step: "
-                          f"{index+1}/{len(self.current_job.protocol)} with "
+                          f"{index + 1}/{len(job.protocol)} with "
                           f"{step.solution}")
-            # FIXME: We really want a recursive dict update.
-            kwargs = {"duration_s": step.duration_s,
-                      "mix_speed_rpm": step.mix_speed_rpm}
-            if index == start_step:
-                kwargs.update(**start_step_overrides)
-            kwargs.update(step.solution)  # These aren't overrideable for now.
-            self.run_wash_step(**kwargs)
-            #self.run_wash_step(duration_s=step.duration_s,
-            #                   mix_speed_rpm=step.mix_speed_rpm,
-            #                   **step.solution)
-        self.current_job.history.events.append(FinishEvent(timestamp=datetime.now()))
-        with open(self.current_job_path, "w") as job_file:
-            yaml.dump(self.current_job.model_dump(), job_file)
-        self.log.info(f"Finished job: {self.current_job.name}")
+            try:
+                if self.pause_requested.is_set():
+                    self.log.warning(f"Pausing system at the start of step {index+1}.")
+                    job.record_pause()
+                    self.pause_requested.clear()
+                    self.log.info(f"System paused.")
+                    return  # will execute the finally clause first.
+                # Run step.
+                # FIXME: We really want a recursive dict update.
+                kwargs = {"duration_s": step.duration_s,
+                          "mix_speed_rpm": step.mix_speed_rpm}
+                kwargs.update(step.solution)  # These aren't overrideable for now.
+                if index == start_step:
+                    kwargs.update(**start_step_overrides)
+                self.run_wash_step(**kwargs)
+            finally:
+                # Save the current step in case of pause, unhandled exception, CTRL-C.
+                job.save_resume_state(index)
+                with open(job_path, "w") as job_file:
+                    yaml.dump(job.model_dump(), job_file)
+                self.log.debug(f"Job progress saved to: {job_path}")
+        job.clear_resume_state()
+        job.record_finish()
+        with open(job_path, "w") as job_file:
+            yaml.dump(job.model_dump(), job_file)
+        self.log.info(f"Finished job: {job.name} from {job_path}")
 
     def pause(self):
         """Request that the system pause the currently running protocol and
@@ -676,21 +677,7 @@ class BrainWasher:
         self.log.info("Requesting system pause.")
         self.pause_requested.set()
 
-    def resume(self, path: str = None, resume_step: Union[int, None] = None):
-        """Resume a protocol.
-        If the protocol is specified, resume from the protocol and step specified.
-        Otherwise, resume from path and start step specified in the config."""
-        if self.job_worker is not None and self.job_worker.is_alive():
-            self.log.error("Ignoring resume request. System is running a protocol.")
-            return
-        # TODO: implement this.
-        # TODO: within a session, if nothing is specified, resume the protocol
-        # most recently run. (We need a way to track the current protocol.)
-        # TODO: if protocol start step is unspecified, take it from the
-        # protocol file.
-        self.log.info(f"Resuming protocol: '{path}' at step: {resume_step}.")
-
-    def abort_protocol(self):
+    def abort(self):
         raise NotImplementedError
 
     @lock_flowpath
