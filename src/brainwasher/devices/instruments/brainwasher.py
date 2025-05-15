@@ -1,8 +1,8 @@
 """Tissue-clearing proof-of-concept"""
-from __future__ import annotations
 
 import _thread
 import logging
+import yaml
 
 from brainwasher.devices.mixer import Mixer
 from brainwasher.devices.liquid_presence_detection import BubbleDetectionSensor
@@ -10,14 +10,30 @@ from brainwasher.devices.sequent_microsystems.valve import NCValve, ThreeTwoValv
 from brainwasher.devices.pressure_sensor import PressureSensor
 from brainwasher.errors.instrument_errors import LeakCheckError
 from brainwasher.protocol import Protocol
+from brainwasher.job import Job, PauseEvent, ResumeEvent
+from datetime import datetime
 from functools import wraps
+from pydantic_core import ValidationError
 from pathlib import Path
 from runze_control.syringe_pump import SyringePump
 from time import sleep
 from time import perf_counter as now
-from threading import Event, Thread
+from threading import Event, Thread, RLock, current_thread
 from vicivalve import VICI
+from typing import Union
 
+
+SIMULATED = False
+
+def lock_flowpath(func):
+    """Provide methods with exclusive access to components that alter the flowpath."""
+    @wraps(func) # required for sphinx doc generation
+    def inner(self, *args, **kwds):
+        with self.flowpath_lock:
+            self.log.debug(f"Locking flowpath to "
+                           f"{current_thread().name} for {func.__name__} fn.")
+            return func(self, *args, **kwds)
+    return inner
 
 def syringe_empty(func):
     """Ensure that the syringe is empty (i.e: fully plunged)."""
@@ -25,7 +41,8 @@ def syringe_empty(func):
     @wraps(func) # required for sphinx doc generation
     def inner(self, *args, **kwds):
         self.log.debug("Ensuring syringe is empty.")
-        if abs(self.pump.get_position_steps()) > 5:
+        # MiniSY04 does not always return exactly 0.
+        if abs(self.pump.get_position_ul()) > 10:
             error_msg = "Error. Pump is not starting from its reset position " \
                 "and contains liquid or gas!"
             self.log.error(error_msg)
@@ -34,7 +51,7 @@ def syringe_empty(func):
     return inner
 
 
-class FlowChamber:
+class BrainWasher:
 
     """Class for controlling/maintaining the FlowChamber.
 
@@ -84,7 +101,7 @@ class FlowChamber:
         self.nominal_pump_speed_percent = 20
         self.slow_pump_speed_percent = 10
         self.pump_unprime_speed_percent = 60
-        # Thread control
+        # Pressure Monitor Thread control
         self.monitoring_pressure = Event()
         self.buffer_samples = Event()
         self.pressure_sample_buffer = []
@@ -92,19 +109,27 @@ class FlowChamber:
         self.pressure_avg_start_time_s = 0
         self.pressure_avg_duration_s = 0
         self.pressure_psig = 0
+        # Protocol Thread control
+        self.job_worker = None
+        # Thread-safe protection within a class instance.
+        self.flowpath_lock = RLock()
+        # Pause Control
+        self.pause_requested = Event()
         # Launch pressure monitor thread.
         self.start_pressure_monitor()
 
+    @lock_flowpath
     def reset(self):
         """Initialize all hardware while ensuring that the system can bleed any
         pressure pockets created to waste."""
         self.log.info("Resetting instrument.")
         self.deenergize_all_valves()
+        self.mixer.stop_mixing()
         self.log.debug("Connecting Source Pump to waste.")
         # Connect: source pump -> waste.
         try:
             self.drain_exhaust_valve.energize()
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             self.pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
             self.pump.set_speed_percent(self.nominal_pump_speed_percent)
             # Restore deenergized state.
@@ -112,6 +137,9 @@ class FlowChamber:
             self.deenergize_all_valves()
 
     def halt(self):
+        # FIXME: do we need the flowpath_lock here??
+        # FIXME: do we need to tell child threads to stop?
+        # FIXME: do we need to check if protocol is running?
         self.log.warning("Halting and disabling all active components.")
         try:
             if self.pump.is_busy():
@@ -121,6 +149,7 @@ class FlowChamber:
         self.deenergize_all_valves()
         self.mixer.stop_mixing()
 
+    @lock_flowpath
     def deenergize_all_valves(self):
         self.log.debug("Deenergizing all solenoid valves.")
         self.rv_source_valve.deenergize()
@@ -133,6 +162,7 @@ class FlowChamber:
             return
         self.monitoring_pressure.set()
         self.pressure_monitor_thread = Thread(target=self._monitor_pressure_worker,
+                                              name="pressure_monitor_worker_thread",
                                               daemon=True)
         self.pressure_monitor_thread.start()
 
@@ -173,6 +203,7 @@ class FlowChamber:
                 _thread.interrupt_main()
             sleep(0.01)
 
+    @lock_flowpath
     @syringe_empty
     def prime_reservoir_line(self, chemical: str,
                              max_pump_displacement_ul: int = 12500):
@@ -185,7 +216,7 @@ class FlowChamber:
             self.log.warning(f"{chemical} reservoir line already primed. Aborting.")
             return
         # Bail-early if we're already primed.
-        if self.selector_lds_map[chemical].tripped():
+        if (not SIMULATED) and self.selector_lds_map[chemical].tripped():
             self.log.warning(f"{chemical} reservoir line detected prematurely as primed. "
                              "Aborting.")
             return
@@ -202,6 +233,8 @@ class FlowChamber:
         # Note: add small fudge factor since we can be +/- 1 step (~2.0833uL).
         liquid_detected = False
         while (not liquid_detected) and (remaining_volume_ul > 5):
+            if SIMULATED:
+                break
             # Withdraw another stroke.
             if self.selector_lds_map[chemical].tripped():
                 liquid_detected = True
@@ -228,7 +261,7 @@ class FlowChamber:
             remaining_volume_ul -= self.pump.get_position_ul()
             # Reset syringe stroke by purging displaced air to waste.
             self.log.debug("Removing displaced gas.")
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
         if not remaining_volume_ul and not liquid_detected:
             raise RuntimeError("Withdrew maximum volume "
@@ -240,6 +273,7 @@ class FlowChamber:
         self.log.info(f"Priming {chemical} complete. Function displaced "
             f"{displaced_volume_ul:.3f}[uL] of volume.")
 
+    @lock_flowpath
     @syringe_empty
     def unprime_reservoir_line(self, chemical: str,
                                max_pump_displacement_ul: int = 25000):
@@ -255,13 +289,14 @@ class FlowChamber:
         unprime_volume_ul = min(unprime_volume_ul*1.05, # FIXME: magic number
                                 max_pump_displacement_ul)
         # Displace volume in discrete pump strokes.
-        syringe_volume_ul = self.pump.syringe_volume_ul
+        syringe_capacity_ul = self.pump.syringe_volume_ul
         remaining_volume_ul = unprime_volume_ul
         # Speed up pump for purging.
         self.pump.set_speed_percent(self.pump_unprime_speed_percent)
         while remaining_volume_ul:
+            self.log.debug(f"Remaining volume to displace: {remaining_volume_ul}[uL]")
             # Withdraw another stroke.
-            stroke_volume_ul = min(remaining_volume_ul, syringe_volume_ul)
+            stroke_volume_ul = min(remaining_volume_ul, syringe_capacity_ul)
             self.fast_gas_charge_syringe()
             self.selector.move_to_position(chemical) # Select chemical.
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
@@ -273,10 +308,14 @@ class FlowChamber:
             del self.prime_volumes_ul[chemical] # Remove record of chemical.
         self.log.info(f"Unpriming {chemical} complete.")
 
+    @lock_flowpath
     @syringe_empty
     def prime_pump_line(self, chemical: str):
         """Fill the selector-to-syringe line flowpath with the specified
             chemical."""
+        if SIMULATED:
+            self.log.warning(f"Skipping priming pump in simulation.")
+            return
         self.prime_reservoir_line(chemical)
         # FIXME: store this state in software in case we are at the edge
         #  of the sensor trip threshold.
@@ -309,7 +348,7 @@ class FlowChamber:
         raise RuntimeError(f"Did not detect any liquid ({chemical}) after "
             "attempting to aspirate to the start of the pump.")
 
-    # It is OK if the pump does not enter this function with an empty syringe.
+    @lock_flowpath
     def purge_pump_line(self, full_cycles: int = 1):
         """Empty selector-to-pump line by purging contents to waste.
         It is OK if the pump does not enter this function fully-plunged.
@@ -325,7 +364,7 @@ class FlowChamber:
             if self.pump.get_position_ul() != 0:
                 self.log.warning("Directing existing contents to waste.")
                 # Select dest line.
-                self.selector.move_to_position("OUTLET")
+                self.selector.move_to_position("outlet")
                 # Fully plunge syringe.
                 self.pump.move_absolute_in_percent(0)
             if full_cycles:
@@ -336,7 +375,7 @@ class FlowChamber:
                 self.fast_gas_charge_syringe()
                 # Select dest line.
                 self.log.debug("Purging pump line contents to waste.")
-                self.selector.move_to_position("OUTLET")
+                self.selector.move_to_position("outlet")
                 # Fully plunge syringe.
                 self.pump.move_absolute_in_percent(0)
         finally:
@@ -345,6 +384,7 @@ class FlowChamber:
         self.log.debug("Purging pump line complete.")
         self.pump_is_primed_with = None
 
+    @lock_flowpath
     def dispense_to_vessel(self, microliters: float, chemical: str):
         """Withdraw specified chemical from the appropriate container and
         dispense it into the reaction vessel."""
@@ -368,7 +408,7 @@ class FlowChamber:
         # Subtract off pump-to-common dead volume because we will introduce
         # this volume back when we fully purge the pump-to-vessel flowpath.
         self.pump.withdraw(microliters - pump_to_common_dv_ul)
-        self.selector.move_to_position("OUTLET")
+        self.selector.move_to_position("outlet")
         # Fully plunge. Note: some liquid will remain in the pump-to-vessel
         # path at this point.
         self.log.debug(f"Plunging initial {microliters - pump_to_common_dv_ul}[uL].")
@@ -383,7 +423,7 @@ class FlowChamber:
         for purge_volume in purge_volumes:
             self.fast_gas_charge_syringe(purge_volume)
             # Select dest line.
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             # Fully plunge syringe.
             self.pump.move_absolute_in_percent(0)
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
@@ -397,6 +437,7 @@ class FlowChamber:
         self.log.debug(f"Dispensed {microliters}[uL] into reaction vessel. "
                        f"Prime line is now cleared.")
 
+    @lock_flowpath
     @syringe_empty
     def drain_vessel(self, drain_volume_ul: float = 40000):
         """Drain the reaction vessel."""
@@ -418,7 +459,7 @@ class FlowChamber:
             # Push out the vessel contents with gas.
             self.fast_gas_charge_syringe(stroke_percent)
             # Select dest line.
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             # Fully plunge syringe.
             self.pump.move_absolute_in_percent(0)
             remaining_volume_ul -= stroke_volume_ul
@@ -431,28 +472,30 @@ class FlowChamber:
         self.rv_exhaust_valve.deenergize()
         self.drain_waste_valve.deenergize()
 
+    @lock_flowpath
     def fast_gas_charge_syringe(self, percent: float = 100):
         """quickly charge the syringe with gas."""
         self.log.debug(f"Fast-charging pump to {percent}% volume with gas.")
-        self.selector.move_to_position("AMBIENT")
+        self.selector.move_to_position("ambient")
         old_speed = self.pump.get_speed_percent()
         self.pump.set_speed_percent(100)  # draw up gas quickly.
         self.pump.move_absolute_in_percent(percent)
         self.pump.set_speed_percent(old_speed) # restore original speed.
 
-    def run_wash_step(self, duration_s: float, mix_speed_percent: float = 100.,
+    @lock_flowpath
+    def run_wash_step(self, duration_s: float, mix_speed_rpm: float,
                       start_empty: bool = True, end_empty: bool = False,
-                      **chemical_volumes_ul: float):
+                      **solution: dict):
         """Drain (optional), mix, and empty (opt) the reaction vessel to
         complete one wash cycle.
 
         :param duration_s: time in seconds to mix.
-        :param mix_speed_percent: percent [0-100.0] to mix the chemicals during
-            the mix step.
+        :param mix_speed_rpm: speed (in rpm) to mix the chemicals during
+            the mixing step.
         :param start_empty: if True, drain the vessel before introducing new
             liquids.
         :param end_empty: if True, draing the vessel after mixing.
-        :param chemical_volumes: dict, keyed by chemical name of chemical
+        :param solution: dict, keyed by chemical name of chemical
             amount in microliters.
 
         .. note::
@@ -468,8 +511,8 @@ class FlowChamber:
            a pure passive exposure step.
         """
         # Validate chemicals.
-        common_chemicals = self.selector_lds_map.keys() & chemical_volumes_ul.keys()
-        used_chemicals = set(chemical_volumes_ul.keys())
+        common_chemicals = self.selector_lds_map.keys() & solution.keys()
+        used_chemicals = set(solution.keys())
         if len(common_chemicals) < len(used_chemicals):
             unrecognized_chemicals = common_chemicals ^ used_chemicals
             raise ValueError(f"Unrecognized chemicals: {unrecognized_chemicals}.")
@@ -477,52 +520,174 @@ class FlowChamber:
         if start_empty: # and self.rxn_vessel.curr_volume_ul > 0:
             self.drain_vessel()
         # Fill
-        self.log.info(f"Filling vessel with solution: {chemical_volumes_ul}.")
-        for chemical_name, ul in chemical_volumes_ul.items():
+        if len(solution):
+            self.log.info(f"Filling vessel with solution: {solution}.")
+        for chemical_name, ul in solution.items():
             self.dispense_to_vessel(ul, chemical_name)
         try:
-            self.mixer.set_mixing_speed_percent(mix_speed_percent)
+            self.mixer.set_mixing_speed(mix_speed_rpm)
         except NotImplementedError:
             self.log.debug("Mixer does not support speed control. Skipping speed setting.")
-            mix_speed_percent = 100
-        if mix_speed_percent > 0:
-            self.log.info(f"Mixing for {duration_s} seconds at {mix_speed_percent}% speed.")
+            mix_speed_rpm = self.mixer.max_rpm
+        if mix_speed_rpm > 0:
+            self.log.info(f"Mixing for {duration_s} seconds at {mix_speed_rpm}[rpm].")
             self.mixer.start_mixing()
         # Wait.
         sleep(duration_s)
-        if mix_speed_percent > 0:
+        if mix_speed_rpm > 0:
             self.mixer.stop_mixing()
         # Drain (if required).
         if end_empty:
             self.drain_vessel()
 
-    def mix(self, duration_s: int, mix_speed_percent: float = 100.0):
-        self.run_wash_step(duration_s=duration_s, mix_speed_percent=mix_speed_percent,
+    @lock_flowpath
+    def mix(self, duration_s: int, mix_speed_rpm: float = 1000):
+        self.run_wash_step(duration_s=duration_s, mix_speed_rpm=mix_speed_rpm,
                            start_empty=False, end_empty=False)
 
-    def fill(self, empty_first=False, **chemical_volumes_ul: float):
-        self.run_wash_step(duration_s=0, mix_speed_percent=0, start_empty=empty_first,
-                           end_empty=False, **chemical_volumes_ul)
+    @lock_flowpath
+    def fill(self, empty_first: bool = False, **solution: float):
+        self.run_wash_step(duration_s=0, mix_speed_rpm=0, start_empty=empty_first,
+                           end_empty=False, **solution)
 
-    def run_protocol(self, path: Path):
-        protocol = Protocol(path)
-        protocol.validate(self.rxn_vessel.max_volume_ul)
-        for step in range(protocol.step_count):
-            duration_s = protocol.get_duration_s(step)
-            chemical_volumes_ul = protocol.get_solution(step,
-                                                        max_volume_ul=self.rxn_vessel.max_volume_ul)
-            self.log.info(f"Conducting step: {step+1}/{protocol.step_count} with {chemical_volumes_ul}")
-            mix_speed_percent = protocol.get_mix_speed_percent(step)
-            self.run_wash_step(duration_s=duration_s,
-                               mix_speed_percent=mix_speed_percent,
-                               start_empty=True, end_empty=False,
-                               **chemical_volumes_ul)
+    def create_job(self, job_path: str, source: str = None):
+        """Create a job file from path pointing to a protocol or existing job.
+        If not source is specified, create and return an empty job.
 
+        :param job_path: the filepath to save the job
+        :param source: the url or path pointing to an existing protocol from which
+            to create the job or None to create an empty job file.
+        """
+        job_path = Path(job_path)
+        source_path = Path(source)
+        # Create from an empty job (default).
+        if not job_path.exists():
+            job = Job(name=job_path.stem)  # Name without suffix
+            with open(job_path) as job_file:
+                yaml.dump(job.model_dump(), job_file)
+            self.log.info(f"Created an empty job file.")
+            return
+        # Create from an existing job.
+        if source_path.suffix.lower() in ["yaml", "yml"]:
+            with open(source_path) as source_job, open(job_path) as job_file:
+                job_dict = yaml.safe_load(source_job)
+                job = Job(**job_dict)  # validate
+                job.purge_history()
+                job.set_source_protocol(source_path)
+                yaml.dump(job.model_dump(), job_file)
+                self.log.info(f"Created job file from an existing job file.")
+                return
+        # Create from a csv-style protocol.
+        if job_path.suffix.lower() == "csv":
+            protocol = Protocol(job_path)
+            # TODO: create a job from the protocol
+            raise NotImplementedError("Cannot convert csv files to jobs yet!")
+            #yaml.dump(job.model_dump(), job_path)
+
+    def validate_job_against_instrument(self, job: Job):
+        """Validate that the job can be executed on the instrument"""
+        # TODO: validate all solution volumes fit in reaction vessel
+        # TODO: validate required chemicals are plumbed.
+        pass
+
+    def _load_job(self, job_path: str) -> Job:
+        job_path = Path(job_path)
+        if not job_path.exists():
+            raise FileNotFoundError(f"Job does not exist at location: "
+                                    f"{job_path.resolve()}")
+        with open(job_path) as yaml_stream:
+            self.log.debug(f"Loading job from: {job_path.absolute()}")
+            job_dict = yaml.safe_load(yaml_stream)
+            logging.debug(f"Validating job from file.")
+            job = Job(**job_dict)  # validate
+            logging.debug(f"Job is a valid job.")
+            return job
+
+    def run(self, job_path: str):
+        """Run the job specified from the specified filepath."""
+        if self.job_worker and self.job_worker.is_alive():
+            raise ValueError("Cannot run another job while an existing "
+                             "job is running.")
+        job = self._load_job(job_path)
+        self.validate_job_against_instrument(job)
+        logging.debug(f"Launching job worker thread.")
+        # Run job in a separate thread to lock out flowpath
+        # and support pause/resume control.
+        self.job_worker = Thread(target=self._run_job_worker,
+                                 name="run_job_worker_thread",
+                                 args=[job, Path(job_path)],
+                                 daemon=True)
+        self.job_worker.start()
+
+    @lock_flowpath
+    def _run_job_worker(self, job: Job, job_path: Path):
+        """Start or resume a job from job_path"""
+        if job.resume_state:
+            start_step = job.resume_state.step
+            start_step_overrides = job.resume_state.overrides
+            job.clear_resume_state()
+            job.record_resume()
+            starting_or_resuming_msg = "Resuming"
+        else:
+            start_step = 0
+            start_step_overrides = {}
+            starting_or_resuming_msg = "Starting"
+            job.record_start()
+        log_msg = f"{starting_or_resuming_msg} job: '{job.name}'"
+        if start_step > 0:
+            log_msg += f" at step {start_step+1}."  # Steps in logs are 1-indexed.
+        self.log.info(log_msg)
+        # Execute the protocol.
+        for index, step in enumerate(job.protocol[start_step:], start=start_step):
+            self.log.info(f"Conducting step: "
+                          f"{index + 1}/{len(job.protocol)} with "
+                          f"{step.solution}")
+            try:
+                if self.pause_requested.is_set():
+                    self.log.warning(f"Pausing system at the start of step {index+1}.")
+                    job.record_pause()
+                    self.pause_requested.clear()
+                    self.log.info(f"System paused.")
+                    return  # will execute the finally clause first.
+                # Run step.
+                # FIXME: We really want a recursive dict update.
+                kwargs = {"duration_s": step.duration_s,
+                          "mix_speed_rpm": step.mix_speed_rpm}
+                kwargs.update(step.solution)  # These aren't overrideable for now.
+                if index == start_step:
+                    kwargs.update(**start_step_overrides)
+                self.run_wash_step(**kwargs)
+            finally:
+                # Save the current step in case of pause, unhandled exception, CTRL-C.
+                job.save_resume_state(index)
+                with open(job_path, "w") as job_file:
+                    yaml.dump(job.model_dump(), job_file)
+                self.log.debug(f"Job progress saved to: {job_path}")
+        job.clear_resume_state()
+        job.record_finish()
+        with open(job_path, "w") as job_file:
+            yaml.dump(job.model_dump(), job_file)
+        self.log.info(f"Finished job: {job.name} from {job_path}")
+
+    def pause(self):
+        """Request that the system pause the currently running protocol and
+        save the protocol path and current step to the config."""
+        if self.job_worker is None or not self.job_worker.is_alive():
+            self.log.error("Ignoring pause request. System is not running a protocol.")
+            return
+        self.log.info("Requesting system pause.")
+        self.pause_requested.set()
+
+    def abort(self):
+        raise NotImplementedError
+
+    @lock_flowpath
     def run_leak_checks(self):
         """Leak check the entire system.
 
         :raises RuntimeError: upon the leak check that failed.
         """
+        self.log.info("Running leak checks in order of increasing volume.")
         # Leak checks run in order can isolate leaks down to a small number
         # of fittings/seals that need to be checked.
         self.leak_check_syringe_to_selector_common_path()
@@ -530,6 +695,7 @@ class FlowChamber:
         self.leak_check_syringe_to_drain_waste_path()
         self.leak_check_syringe_to_reaction_vessel()
 
+    @lock_flowpath
     @syringe_empty
     def leak_check_syringe_to_selector_common_path(self):
         """Test for leaks between the syringe pump and selector common position.
@@ -547,7 +713,7 @@ class FlowChamber:
             # has; then move in between a "real" position, creating a seal.
             self.log.debug("Altering VICI configuration.")
             self.selector._positions = selector_num_positions * 2
-            interstitial_position = (self.selector._position_dict["AMBIENT"] * 2 + 1) \
+            interstitial_position = (self.selector._position_dict["ambient"] * 2 + 1) \
                                     % (selector_num_positions * 2)
             self.selector.set_num_positions(selector_num_positions*2)
             self.selector.move_to_position(interstitial_position)
@@ -561,7 +727,7 @@ class FlowChamber:
         finally:
             # Move to a valid position in the original position configuration.
             self.log.debug("Restoring VICI configuration.")
-            outlet_position = self.selector._position_dict["OUTLET"] * 2
+            outlet_position = self.selector._position_dict["outlet"] * 2
             self.selector.move_to_position(outlet_position)
             # Restore position configuration.
             self.selector.set_num_positions(selector_num_positions)
@@ -569,13 +735,14 @@ class FlowChamber:
             # Reset syringe
             self._purge_gas_filled_syringe()
 
+    @lock_flowpath
     def leak_check_syringe_to_drain_exaust_normally_open_path(self):
         try:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             self.rv_exhaust_valve.energize()
             self.fast_gas_charge_syringe(30)
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
@@ -587,12 +754,13 @@ class FlowChamber:
         finally:
             self._purge_gas_filled_syringe()
 
+    @lock_flowpath
     def leak_check_syringe_to_drain_waste_path(self):
         try:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             self.fast_gas_charge_syringe(30)
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
@@ -604,13 +772,14 @@ class FlowChamber:
         finally:
             self._purge_gas_filled_syringe()
 
+    @lock_flowpath
     def leak_check_syringe_to_reaction_vessel(self):
         try:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             self.rv_source_valve.energize()
             self.fast_gas_charge_syringe(30)
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
@@ -622,6 +791,7 @@ class FlowChamber:
         finally:
             self._purge_gas_filled_syringe()
 
+    @lock_flowpath
     def _squeeze_and_measure(self, pump_compression_percent: float = None,
                              measurement_time_s: float = 4.0):
         """Compress the syringe by `pump_compression_percent` and
@@ -660,8 +830,11 @@ class FlowChamber:
                 raise LeakCheckError("Pressure change is significant enough"
                                      "to indicate a leak.")
 
+    @lock_flowpath
     def _purge_gas_filled_syringe(self):
         self.purge_pump_line(full_cycles=0)
 
+    @lock_flowpath
     def clean_system(self):
+        # TODO: implement this.
         pass

@@ -12,7 +12,6 @@ logging:
                 asctime:
                     color: green
                 hostname:
-                    bright: true
                     color: blue
                 levelname:
                     #bold: true
@@ -47,7 +46,7 @@ logging:
             class: logging.handlers.SocketHandler
     loggers:
         '':
-            level: INFO
+            level: DEBUG
             handlers:
             - console
             - file
@@ -62,26 +61,16 @@ devices:
             sbip: 3
             outlet: 2
             ambient: 1
-    selector_serial_port:
-        module: serial
-        class: Serial
-        args:
-        - "/dev/serial/by-path/platform-xhci-hcd.0-usb-0:1.3:1.0-port0"
-        kwds:
-            baudrate: 9600
     selector:
-        module: vicivalve
-        class: VICI
+        module: brainwasher.devices.simulated_devices.selector
+        class: SimSelector
         kwds:
-            serial: selector_serial_port
             positions: 10
             position_map: selector_position_map
     source_pump:
-        module: runze_control.syringe_pump
-        class: MiniSY04
+        module: brainwasher.devices.simulated_devices.syringe_pump
+        class: SimSyringePump
         kwds:
-            com_port: "/dev/serial/by-path/platform-xhci-hcd.0-usb-0:1.2:1.0-port0"
-            address: 0x00
             syringe_volume_ul: 20000
     reaction_vessel:
         module: brainwasher.devices.reaction_vessel
@@ -91,49 +80,33 @@ devices:
             max_volume_ul: 10000
             name: reaction-vessel
     mixer:
-        module: brainwasher.devices.sequent_microsystems.mixer
-        class: PWMMixer
+        module: brainwasher.devices.mixer
+        class: Mixer
         kwds:
-            board_address: 2
-            channel: 7
-            max_rpm: 1000
+            max_rpm: 1200
     pressure_sensor:
-        module: brainwasher.devices.sequent_microsystems.pressure_sensor
-        class: PX409030A5V
-        kwds:
-            stack: 0
-            i2c_bus: 1
-            channel: 1
-            min_voltage: 0.004
-            max_voltage: 5.010
+        module: brainwasher.devices.simulated_devices.pressure_sensor
+        class: SimPressureSensor
     rv_source_valve:
-        module: brainwasher.devices.sequent_microsystems.valve
-        class: ThreeTwoValve
+        module: brainwasher.devices.valves.valve
+        class: ThreeTwoSolenoidValve
         kwds:
             name: rv_source
-            board_address: 2
-            channel: 2
     rv_exhaust_valve:
-        module: brainwasher.devices.sequent_microsystems.valve
-        class: ThreeTwoValve
+        module: brainwasher.devices.valves.valve
+        class: ThreeTwoSolenoidValve
         kwds:
             name: rv_exhaust
-            board_address: 2
-            channel: 1
     drain_exhaust_valve:
-        module: brainwasher.devices.sequent_microsystems.valve
-        class: NCValve
+        module: brainwasher.devices.valves.valve
+        class: NCSolenoidValve
         kwds:
             name: drain_exhaust
-            board_address: 2
-            channel: 3
     drain_waste_valve:
-        module: brainwasher.devices.sequent_microsystems.valve
-        class: NCValve
+        module: brainwasher.devices.valves.valve
+        class: NCSolenoidValve
         kwds:
             name: drain_waste
-            board_address: 2
-            channel: 4
     selector_lds_map:
         module: builtins
         class: dict
@@ -144,50 +117,25 @@ devices:
             ambient: selector_ambient_bds
 # Liquid Detection Sensors
     pump_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
+        module: brainwasher.devices.liquid_presence_detection
         class: BubbleDetectionSensor
-        kwds:
-            board_address: 0
-            channel: 11
     waste_pump_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
+        module: brainwasher.devices.liquid_presence_detection
         class: BubbleDetectionSensor
-        kwds:
-            board_address: 0
-            channel: 12
     selector_clear_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
+        module: brainwasher.devices.liquid_presence_detection
         class: BubbleDetectionSensor
-        kwds:
-            board_address: 0
-            channel: 5
     selector_yellow_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
+        module: brainwasher.devices.liquid_presence_detection
         class: BubbleDetectionSensor
-        kwds:
-            board_address: 0
-            channel: 4
     selector_sbip_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
+        module: brainwasher.devices.liquid_presence_detection
         class: BubbleDetectionSensor
-        kwds:
-            board_address: 0
-            channel: 3
     selector_ambient_bds:
-        module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
+        module: brainwasher.devices.liquid_presence_detection
         class: BubbleDetectionSensor
-        kwds:
-            board_address: 0
-            channel: 10
-#    vessel_cam:
-#        module: brainwasher.devices.raspberry_pi.camera
-#        class: Camera
-#        args:
-#        - 0
-#        kwds:
-#            name: "braincam"
 # Full System:
-    flow_chamber:
+    brain_washer:
         module: brainwasher.devices.instruments.brainwasher
         class: BrainWasher
         kwds:

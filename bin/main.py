@@ -8,9 +8,13 @@ from coloredlogs import ColoredFormatter, DEFAULT_FIELD_STYLES
 from io import StringIO
 from time import sleep
 
+from inpromptu.inpromptu_prompt_toolkit import Inpromptu
+
+import brainwasher.devices.instruments.brainwasher  # For SIMULATED flag
 import argparse
 import traceback
 import logging
+import logging.config
 
 ### Sample Protocol
 #demo_protocol_csv_str = \
@@ -31,7 +35,7 @@ demo_protocol_csv_str = \
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="proof_of_concept_config.yaml")
+    parser.add_argument("--config", type=str, default="instrument_config.yaml")
     parser.add_argument("--log_level", type=str, default="INFO",
                         choices=["INFO", "DEBUG"])
     parser.add_argument("--protocol", type=str, default=None,
@@ -41,43 +45,35 @@ def main():
                         help="Simulate hardware device connections.")
 
     args = parser.parse_args()
+    if args.simulated:
+        brainwasher.devices.instruments.brainwasher.SIMULATED = True
 
+    config_name = args.config if not args.simulated else "sim_instrument_config.yaml"
+
+    # Create the instrument config.
+    device_config = Config(config_name)
     # Setup logging.
-    fmt='%(asctime)s:%(name)s:%(levelname)s: %(message)s'
-    datefmt="%Y-%m-%d %H:%M:%S.%f"
+    logging.config.dictConfig(dict(device_config.cfg["logging"]))
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    # Add file handler
-    now = datetime.now()
-    date_str = now.strftime("%Y-%m-%d-%H:%M:%S")
-    logger.addHandler(logging.FileHandler(filename=f"logs-{date_str}.log", mode="a"))
+    if args.simulated:
+        logger.warning("System running in simulation!")
+    # Override console log level if specified.
+    for handler in logger.handlers:
+        if handler.get_name() == 'console':
+            handler.setLevel(args.log_level)
+    #logger.addHandler(logging.FileHandler(filename=f"logs-{date_str}.log", mode="a"))
 
-    # Add file handler formatter.
-    log_file_formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
-    logger.handlers[-1].setFormatter(log_file_formatter)
-
-    # Add stream handler
-    logger.addHandler(logging.StreamHandler())
-    # Add stream handler formatter.
-    field_styles = DEFAULT_FIELD_STYLES
-    field_styles["levelname"]["color"] = "magenta"
-    log_formatter = ColoredFormatter(fmt=fmt, datefmt=datefmt,
-                                     field_styles=field_styles)
-    logger.handlers[-1].setFormatter(log_formatter)
-
-    # Create the instrument
-    device_config = Config(args.config)
+    # Create the instrument.
     device_specs = dict(device_config.cfg)
 
     factory = DeviceSpinner()
     device_trees = factory.create_devices_from_specs(device_specs["devices"])
-    instrument = device_trees['flow_chamber']
+    instrument = device_trees["brain_washer"]
 
     #cam = device_trees['vessel_cam']
     #cam.start_recording("test
     instrument.reset()
 
-    logger.setLevel(args.log_level)
 
     #instrument.leak_check_syringe_to_selector_common_path() # TODO
     #instrument.leak_check_syringe_to_drain_exaust_normally_open_path()  # works
@@ -85,11 +81,13 @@ def main():
     #instrument.leak_check_syringe_to_reaction_vessel()  # works
 
 
-    protocol = args.protocol if args.protocol is not None else StringIO(demo_protocol_csv_str)
-    if args.protocol is None:
-        logger.info("Running demo protocol")
+    #protocol = args.protocol if args.protocol is not None else StringIO(demo_protocol_csv_str)
+    #if args.protocol is None:
+    #    logger.info("Running demo protocol")
+    prompt = Inpromptu(instrument, methods_to_skip=[])
     try:
-        instrument.run_protocol(protocol)
+        prompt.cmdloop()
+        #instrument.run_protocol(protocol)
     except KeyboardInterrupt:
         instrument.halt()
     except Exception:

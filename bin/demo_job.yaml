@@ -1,0 +1,27 @@
+chemicals: !!set
+  clear: null
+  yellow: null
+history:
+  events: []
+  starting_solution:
+    pbs: 10000
+name: my_job
+protocol:
+- duration_s: 1.0
+  mix_speed_rpm: 1000
+  solution:
+    clear: 2500.0
+    yellow: 7500.0
+- duration_s: 1.0
+  mix_speed_rpm: 1000
+  solution:
+    clear: 5000.0
+    yellow: 5000.0
+- duration_s: 1.0
+  mix_speed_rpm: 1000
+  solution:
+    clear: 7500.0
+    yellow: 2500.0
+source_protocol:
+  accessed: null
+  path: /home/brainwasher/protocols/demo_protocol.csv

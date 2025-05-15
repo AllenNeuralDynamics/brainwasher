@@ -1,25 +1,16 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "brainwasher"
-description = "control software for AIND tissue clearing system."
+version = "0.1.0"
 license = {text = "MIT"}
-requires-python = ">=3.7"
-authors = [
-    {name = "Allen Institute for Neural Dynamics"}
-]
-classifiers = [
-    "Programming Language :: Python :: 3"
-]
 readme = "README.md"
-dynamic = ["version"]
-
+requires-python = ">=3.11"
 dependencies = [
-#    "device-spinner @ git+ssh://git@github.com/AllenNeuralDynamics/device-spinner.git@main#egg=device_spinner",
-#    "vicivalve @ git+ssh://git@gitlab.com:Poofjunior/vicivalve.git@dev/cmds_and_directional_moves#egg=vicivalve",
-#    "runze_control",
+    "pytest>=8.3.5",
+    "ruff>=0.9.9",
     "Pint>=0.21.1",
     "pandas>=2.0.3",
     "igraph>=0.11.5",
@@ -28,63 +19,22 @@ dependencies = [
     "SM16univin>=1.0.3",
     "smbus2>=0.5.0",
     "coloredlogs>=15.0.1",
+    "device-spinner",
+    "runze-control",
+    "vicivalve",
+    "inpromptu",
+    "mock>=5.2.0",
+    "pydantic>=2.11.4",
+    "datetime>=5.5",
+    "pyyaml>=6.0.2",
 ]
 
-[project.optional-dependencies]
-dev = [
-    'black',
-    'coverage',
-    'flake8',
-    'interrogate',
-    'isort',
-    'Sphinx',
-    'furo'
-]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
 
-[tool.setuptools.dynamic]
-version = {attr = "brainwasher.__version__"}
-
-[tool.black]
-line-length = 79
-target_version = ['py36']
-exclude = '''
-
-(
-  /(
-      \.eggs         # exclude a few common directories in the
-    | \.git          # root of the project
-    | \.hg
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | _build
-    | build
-    | dist
-  )/
-  | .gitignore
-)
-'''
-
-[tool.coverage.run]
-omit = ["*__init__*"]
-source = ["brainwasher", "tests"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "if __name__ == .__main__.:",
-    "from",
-    "import",
-    "pragma: no cover"
-]
-fail_under = 100
-
-[tool.isort]
-line_length = 79
-profile = "black"
-
-[tool.interrogate]
-exclude = ["setup.py", "docs", "build"]
-fail-under = 100
+[tool.uv.sources]
+device-spinner = { path = "../device-spinner", editable = true }
+runze-control = { path = "../runze-control", editable = true }
+vicivalve = { path = "../../external_projects/vicivalve", editable = true }
+inpromptu = { path = "../inpromptu", editable = true }
