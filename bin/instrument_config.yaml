@@ -187,7 +187,7 @@ devices:
 #        kwds:
 #            name: "braincam"
 # Full System:
-    flow_chamber:
+    brain_washer:
         module: brainwasher.devices.instruments.brainwasher
         class: BrainWasher
         kwds:
