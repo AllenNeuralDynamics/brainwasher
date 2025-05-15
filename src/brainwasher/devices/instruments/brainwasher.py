@@ -2,6 +2,7 @@
 
 import _thread
 import logging
+import yaml
 
 from brainwasher.devices.mixer import Mixer
 from brainwasher.devices.liquid_presence_detection import BubbleDetectionSensor
@@ -9,12 +10,15 @@ from brainwasher.devices.sequent_microsystems.valve import NCValve, ThreeTwoValv
 from brainwasher.devices.pressure_sensor import PressureSensor
 from brainwasher.errors.instrument_errors import LeakCheckError
 from brainwasher.protocol import Protocol
+from brainwasher.job import Job, StartEvent, PauseEvent, ResumeEvent, FinishEvent
+from datetime import datetime
 from functools import wraps
+from pydantic_core import ValidationError
 from pathlib import Path
 from runze_control.syringe_pump import SyringePump
 from time import sleep
 from time import perf_counter as now
-from threading import Event, Thread, RLock
+from threading import Event, Thread, RLock, current_thread
 from vicivalve import VICI
 from typing import Union
 
@@ -26,7 +30,8 @@ def lock_flowpath(func):
     @wraps(func) # required for sphinx doc generation
     def inner(self, *args, **kwds):
         with self.flowpath_lock:
-            self.log.debug(f"Locking flowpath to {func.__name__} fn.")
+            self.log.debug(f"Locking flowpath to "
+                           f"{current_thread().name} for {func.__name__} fn.")
             return func(self, *args, **kwds)
     return inner
 
@@ -105,7 +110,9 @@ class BrainWasher:
         self.pressure_avg_duration_s = 0
         self.pressure_psig = 0
         # Protocol Thread control
-        self.protocol_thread = None
+        self.current_job: Job = None
+        self.current_job_path: Path = None
+        self.job_worker = None
         # Thread-safe protection within a class instance.
         self.flowpath_lock = RLock()
         # Pause Control
@@ -123,7 +130,7 @@ class BrainWasher:
         # Connect: source pump -> waste.
         try:
             self.drain_exhaust_valve.energize()
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             self.pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
             self.pump.set_speed_percent(self.nominal_pump_speed_percent)
             # Restore deenergized state.
@@ -156,7 +163,7 @@ class BrainWasher:
             return
         self.monitoring_pressure.set()
         self.pressure_monitor_thread = Thread(target=self._monitor_pressure_worker,
-                                              name="pressure_monitor_worker",
+                                              name="pressure_monitor_worker_thread",
                                               daemon=True)
         self.pressure_monitor_thread.start()
 
@@ -255,7 +262,7 @@ class BrainWasher:
             remaining_volume_ul -= self.pump.get_position_ul()
             # Reset syringe stroke by purging displaced air to waste.
             self.log.debug("Removing displaced gas.")
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
         if not remaining_volume_ul and not liquid_detected:
             raise RuntimeError("Withdrew maximum volume "
@@ -358,7 +365,7 @@ class BrainWasher:
             if self.pump.get_position_ul() != 0:
                 self.log.warning("Directing existing contents to waste.")
                 # Select dest line.
-                self.selector.move_to_position("OUTLET")
+                self.selector.move_to_position("outlet")
                 # Fully plunge syringe.
                 self.pump.move_absolute_in_percent(0)
             if full_cycles:
@@ -369,7 +376,7 @@ class BrainWasher:
                 self.fast_gas_charge_syringe()
                 # Select dest line.
                 self.log.debug("Purging pump line contents to waste.")
-                self.selector.move_to_position("OUTLET")
+                self.selector.move_to_position("outlet")
                 # Fully plunge syringe.
                 self.pump.move_absolute_in_percent(0)
         finally:
@@ -402,7 +409,7 @@ class BrainWasher:
         # Subtract off pump-to-common dead volume because we will introduce
         # this volume back when we fully purge the pump-to-vessel flowpath.
         self.pump.withdraw(microliters - pump_to_common_dv_ul)
-        self.selector.move_to_position("OUTLET")
+        self.selector.move_to_position("outlet")
         # Fully plunge. Note: some liquid will remain in the pump-to-vessel
         # path at this point.
         self.log.debug(f"Plunging initial {microliters - pump_to_common_dv_ul}[uL].")
@@ -417,7 +424,7 @@ class BrainWasher:
         for purge_volume in purge_volumes:
             self.fast_gas_charge_syringe(purge_volume)
             # Select dest line.
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             # Fully plunge syringe.
             self.pump.move_absolute_in_percent(0)
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
@@ -453,7 +460,7 @@ class BrainWasher:
             # Push out the vessel contents with gas.
             self.fast_gas_charge_syringe(stroke_percent)
             # Select dest line.
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             # Fully plunge syringe.
             self.pump.move_absolute_in_percent(0)
             remaining_volume_ul -= stroke_volume_ul
@@ -470,26 +477,26 @@ class BrainWasher:
     def fast_gas_charge_syringe(self, percent: float = 100):
         """quickly charge the syringe with gas."""
         self.log.debug(f"Fast-charging pump to {percent}% volume with gas.")
-        self.selector.move_to_position("AMBIENT")
+        self.selector.move_to_position("ambient")
         old_speed = self.pump.get_speed_percent()
         self.pump.set_speed_percent(100)  # draw up gas quickly.
         self.pump.move_absolute_in_percent(percent)
         self.pump.set_speed_percent(old_speed) # restore original speed.
 
     @lock_flowpath
-    def run_wash_step(self, duration_s: float, mix_speed_percent: float = 100.,
+    def run_wash_step(self, duration_s: float, mix_speed_rpm: float,
                       start_empty: bool = True, end_empty: bool = False,
-                      **chemical_volumes_ul: float):
+                      **solution: dict):
         """Drain (optional), mix, and empty (opt) the reaction vessel to
         complete one wash cycle.
 
         :param duration_s: time in seconds to mix.
-        :param mix_speed_percent: percent [0-100.0] to mix the chemicals during
-            the mix step.
+        :param mix_speed_rpm: speed (in rpm) to mix the chemicals during
+            the mixing step.
         :param start_empty: if True, drain the vessel before introducing new
             liquids.
         :param end_empty: if True, draing the vessel after mixing.
-        :param chemical_volumes: dict, keyed by chemical name of chemical
+        :param solution: dict, keyed by chemical name of chemical
             amount in microliters.
 
         .. note::
@@ -505,8 +512,8 @@ class BrainWasher:
            a pure passive exposure step.
         """
         # Validate chemicals.
-        common_chemicals = self.selector_lds_map.keys() & chemical_volumes_ul.keys()
-        used_chemicals = set(chemical_volumes_ul.keys())
+        common_chemicals = self.selector_lds_map.keys() & solution.keys()
+        used_chemicals = set(solution.keys())
         if len(common_chemicals) < len(used_chemicals):
             unrecognized_chemicals = common_chemicals ^ used_chemicals
             raise ValueError(f"Unrecognized chemicals: {unrecognized_chemicals}.")
@@ -514,21 +521,21 @@ class BrainWasher:
         if start_empty: # and self.rxn_vessel.curr_volume_ul > 0:
             self.drain_vessel()
         # Fill
-        if len(chemical_volumes_ul):
-            self.log.info(f"Filling vessel with solution: {chemical_volumes_ul}.")
-        for chemical_name, ul in chemical_volumes_ul.items():
+        if len(solution):
+            self.log.info(f"Filling vessel with solution: {solution}.")
+        for chemical_name, ul in solution.items():
             self.dispense_to_vessel(ul, chemical_name)
         try:
-            self.mixer.set_mixing_speed_percent(mix_speed_percent)
+            self.mixer.set_mixing_speed(mix_speed_rpm)
         except NotImplementedError:
             self.log.debug("Mixer does not support speed control. Skipping speed setting.")
-            mix_speed_percent = 100
-        if mix_speed_percent > 0:
-            self.log.info(f"Mixing for {duration_s} seconds at {mix_speed_percent}% speed.")
+            mix_speed_rpm = self.mixer.max_rpm
+        if mix_speed_rpm > 0:
+            self.log.info(f"Mixing for {duration_s} seconds at {mix_speed_rpm}[rpm].")
             self.mixer.start_mixing()
         # Wait.
         sleep(duration_s)
-        if mix_speed_percent > 0:
+        if mix_speed_rpm > 0:
             self.mixer.stop_mixing()
         # Drain (if required).
         if end_empty:
@@ -540,60 +547,130 @@ class BrainWasher:
                            start_empty=False, end_empty=False)
 
     @lock_flowpath
-    def fill(self, empty_first: bool = False, **chemical_volumes_ul: float):
+    def fill(self, empty_first: bool = False, **solution: float):
         self.run_wash_step(duration_s=0, mix_speed_percent=0, start_empty=empty_first,
-                           end_empty=False, **chemical_volumes_ul)
+                           end_empty=False, **solution)
 
-    #def run_protocol(self, path: Union[Path, str]):
-    def run_protocol(self, path: str):  # FIXME: revert this signature later.
-        """Run the prototocol specified in the path above. Handle pause logic
-        to be able to pause the system safely.
+    def load_job(self):
+        """Load a job from the job source specified (file or URL)."""
+        pass
+
+    def create_job(self, job_path: str, source: str = None):
+        """Create a job file from url or path pointing to a protocol or existing job.
+        If not source is specified, create and return an empty job.
+
+        :param job_path: the filepath to save the job
+        :param source: the url or path pointing to an existing protocol from which
+            to create the job or None to create an empty job file.
         """
-        # FIXME: this should run a *job*, not a protocol.
-        # Launch a thread so that we don't block and can lock out the flowpath
-        # while it is being used by the worker thread running the protocol.
-        if self.protocol_thread is not None and self.protocol_thread.is_alive():
-            raise ValueError("Cannot run another prototocol while an existing "
-                             "protocol is running.")
-        self.protocol_thread = Thread(target=self._run_protocol_worker,
-                                      name="run_protocol_worker",
-                                      kwargs={"path": Path(path)},
-                                      daemon=True)
-        self.protocol_thread.start()
+        # Open the output
+        with open(job_path) as job_file:
+            # Start with empty job.
+            job = Job(name=job_path)
+            # Load an existing job file.
+            # TODO: handle URL case
+            source_path = Path(source)  # Assumes filepath for now.
+            if source_path.suffix.lower() in ["yaml", "yml"]:
+                with open(job_path) as yaml_stream:
+                    job_dict = yaml.safe_load(yaml_stream)
+                    logging.debug(f"Loading job file from: {job_path.absolute()}")
+                    job = Job(**job_dict)  # validate
+                    # FIXME: remove history from previous job file and change source.
+            elif source_path.lower() == "csv":
+                protocol = Protocol(source_path)
+                raise NotImplementedError("Cannot convert csv files to jobs yet!")
+            yaml.dump(job.model_dump(), job_path)
+
+    def validate_job_against_instrument(self, job: Job):
+        """Validate that the job can be executed on the instrument"""
+        # TODO: validate all solution volumes fit in reaction vessel
+        # TODO: validate required chemicals are plumbed.
+        pass
+
+    def _load_job(self, job_path: str) -> Job:
+        job_path = Path(job_path)
+        if not job_path.exists():
+            raise FileNotFoundError(f"Job does not exist at location: "
+                                    f"{job_path.resolve()}")
+        with open(job_path) as yaml_stream:
+            self.log.debug(f"Loading job from: {job_path.absolute()}")
+            job_dict = yaml.safe_load(yaml_stream)
+            logging.debug(f"Validating job from file.")
+            job = Job(**job_dict)  # validate
+            logging.debug(f"Job is a valid job.")
+            return job
+
+    def run(self, job_path: str):
+        """Run the job specified from the specified filepath."""
+        if self.job_worker and self.job_worker.is_alive():
+            raise ValueError("Cannot run another job while an existing "
+                             "job is running.")
+        job = self._load_job(job_path)
+        self.validate_job_against_instrument(job)
+        self.current_job = job
+        self.current_job_path = Path(job_path)
+        ## Ensure this job doesn't need to be resumed
+        #if self.current_job.resume_state is not None:
+        #    msg = ("Cannot run job that was previously paused. "
+        #           "This job must be run with resume instead.")
+        #    self.log.error(msg)
+        #    raise ValueError(msg)
+        logging.debug(f"Launching job worker thread.")
+        # Run job in a separate thread to lock out flowpath
+        # and support pause/resume control.
+        thread_kwargs = {}
+        if job.resume_state:
+            thread_kwargs = {"start_step": self.current_job.resume_state.step}
+            thread_kwargs.update(self.current_job.resume_state.overrides)
+        self.current_job.resume_state = None   # Clear resume state.
+        self.job_worker = Thread(target=self._run_job_worker,
+                                 name="run_job_worker_thread",
+                                 kwargs=thread_kwargs,
+                                 daemon=True)
+        self.job_worker.start()
 
     @lock_flowpath
-    def _run_protocol_worker(self, path: Path):
-        protocol = Protocol(path)
-        protocol.validate(self.rxn_vessel.max_volume_ul)
-        self.log.info(f"Starting Protocol: '{path}'")
-        for step in range(protocol.step_count):
+    def _run_job_worker(self, start_step: int = 0, **start_step_overrides):
+        """Start or resume a job."""
+        start_event_cls = StartEvent if start_step == 0 else ResumeEvent
+        log_msg = f"Starting job: '{self.current_job.name}'"
+        if start_step > 0:
+            log_msg += f" at step {start_step+1}."  # Steps in logs are 1-indexed.
+        self.log.info(log_msg)
+        self.current_job.history.events.append(start_event_cls(timestamp=datetime.now()))
+        for index, step in enumerate(self.current_job.protocol[start_step:], start=start_step):
             if self.pause_requested.is_set():
-                self.log.warning(f"Pausing system at the start of step {step+1}.")
-                # Write: filepath, step.
-                pause_state = {"protocol_path": path.resolve(),
-                               "start_step": step}
-                # FIXME: write the pause state to the job file!
-                self.log.critical("pause is not implemented. aborting protocol.")
+                self.log.warning(f"Pausing system at the start of step {index+1}.")
+                self.current_job.save_resume_state(index)
+                self.current_job.history.events.append(PauseEvent(timestamp=datetime.now()))
+                with open(self.current_job_path, "w") as job_file:
+                    yaml.dump(self.current_job.model_dump(), job_file)
+                self.log.info(f"Job saved to: {self.current_job_path}")
                 self.pause_requested.clear()
-                raise NotImplementedError("Pause is not implemented.")
-                #self.log.info(f"System paused.")
-                #return
-            duration_s = protocol.get_duration_s(step)
-            chemical_volumes_ul = protocol.get_solution(step,
-                                                        max_volume_ul=self.rxn_vessel.max_volume_ul)
-            self.log.info(f"Conducting step: {step+1}/{protocol.step_count} with {chemical_volumes_ul}")
-            mix_speed_percent = protocol.get_mix_speed_percent(step)
-            self.run_wash_step(duration_s=duration_s,
-                               mix_speed_percent=mix_speed_percent,
-                               start_empty=True, end_empty=False,
-                               **chemical_volumes_ul)
-        self.log.info(f"Protocol finished.")
-
+                self.log.info(f"System paused.")
+                return
+            self.log.info(f"Conducting step: "
+                          f"{index+1}/{len(self.current_job.protocol)} with "
+                          f"{step.solution}")
+            # FIXME: We really want a recursive dict update.
+            kwargs = {"duration_s": step.duration_s,
+                      "mix_speed_rpm": step.mix_speed_rpm}
+            if index == start_step:
+                kwargs.update(**start_step_overrides)
+            kwargs.update(step.solution)  # These aren't overrideable for now.
+            self.run_wash_step(**kwargs)
+            #self.run_wash_step(duration_s=step.duration_s,
+            #                   mix_speed_rpm=step.mix_speed_rpm,
+            #                   **step.solution)
+        self.current_job.history.events.append(FinishEvent(timestamp=datetime.now()))
+        with open(self.current_job_path, "w") as job_file:
+            yaml.dump(self.current_job.model_dump(), job_file)
+        self.log.info(f"Finished job: {self.current_job.name}")
 
     def pause(self):
         """Request that the system pause the currently running protocol and
         save the protocol path and current step to the config."""
-        if self.protocol_thread is None or not self.protocol_thread.is_alive():
+        if self.job_worker is None or not self.job_worker.is_alive():
             self.log.error("Ignoring pause request. System is not running a protocol.")
             return
         self.log.info("Requesting system pause.")
@@ -603,7 +680,7 @@ class BrainWasher:
         """Resume a protocol.
         If the protocol is specified, resume from the protocol and step specified.
         Otherwise, resume from path and start step specified in the config."""
-        if self.protocol_thread is not None and self.protocol_thread.is_alive():
+        if self.job_worker is not None and self.job_worker.is_alive():
             self.log.error("Ignoring resume request. System is running a protocol.")
             return
         # TODO: implement this.
@@ -648,7 +725,7 @@ class BrainWasher:
             # has; then move in between a "real" position, creating a seal.
             self.log.debug("Altering VICI configuration.")
             self.selector._positions = selector_num_positions * 2
-            interstitial_position = (self.selector._position_dict["AMBIENT"] * 2 + 1) \
+            interstitial_position = (self.selector._position_dict["ambient"] * 2 + 1) \
                                     % (selector_num_positions * 2)
             self.selector.set_num_positions(selector_num_positions*2)
             self.selector.move_to_position(interstitial_position)
@@ -662,7 +739,7 @@ class BrainWasher:
         finally:
             # Move to a valid position in the original position configuration.
             self.log.debug("Restoring VICI configuration.")
-            outlet_position = self.selector._position_dict["OUTLET"] * 2
+            outlet_position = self.selector._position_dict["outlet"] * 2
             self.selector.move_to_position(outlet_position)
             # Restore position configuration.
             self.selector.set_num_positions(selector_num_positions)
@@ -677,7 +754,7 @@ class BrainWasher:
             self.deenergize_all_valves()
             self.rv_exhaust_valve.energize()
             self.fast_gas_charge_syringe(30)
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
@@ -695,7 +772,7 @@ class BrainWasher:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             self.fast_gas_charge_syringe(30)
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
@@ -714,7 +791,7 @@ class BrainWasher:
             self.deenergize_all_valves()
             self.rv_source_valve.energize()
             self.fast_gas_charge_syringe(30)
-            self.selector.move_to_position("OUTLET")
+            self.selector.move_to_position("outlet")
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")

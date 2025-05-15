@@ -8,11 +8,10 @@ class OnOffMixer(Mixer):
     """An open loop mixing device."""
 
     def __init__(self, board_address: int, channel: int,
-                 rpm: float, name: str = None):
-        super().__init__(name=name)
+                 max_rpm: float, name: str = None):
+        super().__init__(max_rpm=max_rpm, name=name)
         self.board_address = board_address
         self.channel = channel
-        self.rpm = rpm
 
     def start_mixing(self):
         super().start_mixing()
@@ -28,11 +27,10 @@ class PWMMixer(Mixer):
 
     def __init__(self, board_address: int, channel: int, max_rpm: float,
                  name: str = None):
-        super().__init__(name=name)
+        super().__init__(max_rpm=max_rpm, name=name)
         self.board_address = board_address
         self.channel = channel
         self.duty_cycle = 0
-        self.max_rpm = max_rpm
         self.set_mixing_speed(max_rpm)  # Default to max speed.
 
     def set_mixing_speed_percent(self, percent):

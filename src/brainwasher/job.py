@@ -1,10 +1,20 @@
 """pydantic model of job instance of protocol"""
 
 from pathlib import Path
-from pydantic import BaseModel, computed_field, field_serializer, model_serializer, AfterValidator
+from pydantic import BaseModel, computed_field, field_serializer, model_serializer, AfterValidator, Field
 from datetime import datetime
-from typing import Annotated, Optional, Any
+from typing import Annotated, Optional, Any, Literal
 import logging
+
+class SourceProtocol(BaseModel):
+    path: Optional[Path] = None
+    accessed: Optional[datetime] = None
+
+    @field_serializer("path")
+    def resolve_path(self, path: Path):
+        """Coerce path output to absolute path string for serialization."""
+        return str(Path(path).resolve()) if path else None
+
 
 class WashStep(BaseModel):
     # FIXME: this should be retrieved from the function signature.
@@ -14,7 +24,7 @@ class WashStep(BaseModel):
     solution: dict[str, float]
 
     @property
-    def volume_ul(self):
+    def solution_volume_ul(self):
         """Total solution volume computed from chemical sums.
 
         Does not need to be represented in pydantic model.
@@ -24,22 +34,23 @@ class WashStep(BaseModel):
 
 class Event(BaseModel):
     timestamp: datetime
+    type: str
 
 
 class StartEvent(Event):
-    pass
+    type: Literal["start"] = "start" # TODO: how to make this fixed.
 
 
 class FinishEvent(Event):
-    pass
+    type: Literal["end"] = "end"  # TODO: how to make this fixed
 
 
 class PauseEvent(Event):
-    pass
+    type: Literal["pause"] = "pause"  # TODO: how to make this fixed
 
 
 class ResumeEvent(Event):
-    pass
+    type: Literal["resume"] = "resume"  # TODO: how to make this fixed
 
 
 class RestartEvent(Event):
@@ -64,29 +75,24 @@ class ResumeState(BaseModel):
 
 class History(BaseModel):
     starting_solution: Optional[dict[str, int]] = None
-    execution_history: Optional[list[Event]] = None
+    events: Optional[list[Event]] = list()
 
 
 class Job(BaseModel):
     """Local job, derived from a protocol, to be run on an instrument."""
     name: str
-    source_protocol: Path
+    source_protocol: Optional[SourceProtocol] = SourceProtocol()
     start_timestamp: Optional[datetime] = None
     stop_timestamp: Optional[datetime] = None
-    protocol: list[WashStep]
+    protocol: Optional[list[WashStep]] = list()
     resume_state: Optional[ResumeState] = None
-    history: Optional[History] = None
+    history: Optional[History] = History()
 
     @computed_field
     @property
     def chemicals(self) -> set[str]:
         """Extract set of chemicals from all solutions across all steps"""
         return set([chemical for step in self.protocol for chemical in step.solution.keys()])
-
-    @field_serializer("source_protocol")
-    def resolve_path(self, source_protocol: Path):
-        """Coerce path output to absolute path string for serialization."""
-        return str(Path(source_protocol).resolve())
 
     def save_resume_state(self, step: int, **overrides: dict):
         self.resume_state = ResumeState(step=step, overrides=overrides)
@@ -105,15 +111,15 @@ class Job(BaseModel):
         if default_excludes:
             default_excludes.add("resume_state")
         else:
-            kwargs["exclude"] = set(["resume_state"])
+            kwargs["exclude"] = {"resume_state"}
         return super().model_dump(**kwargs)
 
 
 if __name__ == "__main__":
 
     my_model = Job(name="test_brian",
-                   source_protocol=".",
-                   resume_state=ResumeState(step=0, overrides={"duration_s": 123}),
+                   #source_protocol=".",
+                   #resume_state=ResumeState(step=0, overrides={"duration_s": 123}),
                    protocol=[WashStep(mix_speed_rpm=1000, duration_s=1800, solution={"thf": 1000, "di_water": 4000}),
                              WashStep(mix_speed_rpm=1000, duration_s=1800, solution={"dcm": 5000})])
 

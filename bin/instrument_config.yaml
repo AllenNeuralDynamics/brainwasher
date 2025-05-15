@@ -57,11 +57,11 @@ devices:
         module: builtins
         class: dict
         kwds:
-            CLEAR: 5
-            YELLOW: 4
+            clear: 5
+            yellow: 4
             sbip: 3
-            OUTLET: 2
-            AMBIENT: 1
+            outlet: 2
+            ambient: 1
     selector_serial_port:
         module: serial
         class: Serial
@@ -138,10 +138,10 @@ devices:
         module: builtins
         class: dict
         kwds:
-            CLEAR: selector_clear_bds
-            YELLOW: selector_yellow_bds
+            clear: selector_clear_bds
+            yellow: selector_yellow_bds
             sbip: selector_sbip_bds
-            AMBIENT: selector_ambient_bds
+            ambient: selector_ambient_bds
 # Liquid Detection Sensors
     pump_bds:
         module: brainwasher.devices.sequent_microsystems.liquid_presence_detection

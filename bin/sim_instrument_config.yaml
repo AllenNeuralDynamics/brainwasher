@@ -56,11 +56,11 @@ devices:
         module: builtins
         class: dict
         kwds:
-            CLEAR: 5
-            YELLOW: 4
+            clear: 5
+            yellow: 4
             sbip: 3
-            OUTLET: 2
-            AMBIENT: 1
+            outlet: 2
+            ambient: 1
     selector:
         module: brainwasher.devices.simulated_devices.selector
         class: SimSelector
@@ -82,6 +82,8 @@ devices:
     mixer:
         module: brainwasher.devices.mixer
         class: Mixer
+        kwds:
+            max_rpm: 1200
     pressure_sensor:
         module: brainwasher.devices.simulated_devices.pressure_sensor
         class: SimPressureSensor
@@ -109,10 +111,10 @@ devices:
         module: builtins
         class: dict
         kwds:
-            CLEAR: selector_clear_bds
-            YELLOW: selector_yellow_bds
+            clear: selector_clear_bds
+            yellow: selector_yellow_bds
             sbip: selector_sbip_bds
-            AMBIENT: selector_ambient_bds
+            ambient: selector_ambient_bds
 # Liquid Detection Sensors
     pump_bds:
         module: brainwasher.devices.liquid_presence_detection
