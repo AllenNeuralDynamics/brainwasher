@@ -58,8 +58,10 @@ Since the Raspberry Pi doesn't have all the text editing bells-and-whistles of y
 To do so, in Linux, use the `rsync` command
 
 ```
-rsync -a /path/to/brainwasher pi@raspberrypi.local:/path/to/destination_folder --exclude=".*"
+rsync -a /path/to/brainwasher/ pi@raspberrypi.local:/path/to/destination_folder --exclude=".*"
 ```
+
+Note that the slash at the end of the source directory path is required.
 
 Then run
 ```
