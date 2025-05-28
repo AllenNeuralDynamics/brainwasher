@@ -135,7 +135,7 @@ devices:
         module: brainwasher.devices.liquid_presence_detection
         class: BubbleDetectionSensor
 # Full System:
-    brain_washer:
+    brainwasher:
         module: brainwasher.devices.instruments.brainwasher
         class: BrainWasher
         kwds:
