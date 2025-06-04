@@ -27,6 +27,7 @@ dependencies = [
     "pydantic>=2.11.4",
     "datetime>=5.5",
     "pyyaml>=6.0.2",
+    "pyharp",
 ]
 
 
@@ -38,3 +39,4 @@ device-spinner = { path = "../device-spinner", editable = true }
 runze-control = { path = "../runze-control", editable = true }
 vicivalve = { path = "../../external_projects/vicivalve", editable = true }
 inpromptu = { path = "../inpromptu", editable = true }
+pyharp = { git = "https://github.com/AllenNeuralDynamics/pyharp", branch = "dev/u8_array" }

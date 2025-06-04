@@ -91,12 +91,15 @@ devices:
             max_volume_ul: 10000
             name: reaction-vessel
     mixer:
-        module: brainwasher.devices.sequent_microsystems.mixer
+        module: brainwasher.devices.harp.mixer
         class: PWMMixer
         kwds:
-            board_address: 2
-            channel: 7
-            max_rpm: 1280
+            com_port: ""
+            channel: 0
+            min_rpm: 333
+            max_rpm: 6000
+            min_duty_cycle_percent: 40
+            max_duty_cycle_percent: 100
     pressure_sensor:
         module: brainwasher.devices.sequent_microsystems.pressure_sensor
         class: PX409030A5V

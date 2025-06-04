@@ -26,12 +26,14 @@ class PWMMixer(Mixer):
     """An open loop mixing device."""
 
     def __init__(self, board_address: int, channel: int, max_rpm: float,
-                 name: str = None):
+                 invert: bool = False, name: str = None):
         super().__init__(max_rpm=max_rpm, name=name)
         self.board_address = board_address
         self.channel = channel
+        self.invert = invert
         self.duty_cycle = 0
         self.set_mixing_speed(max_rpm)  # Default to max speed.
+        self.stop_mixing()
 
     def set_mixing_speed_percent(self, percent):
         percent = min(percent, 100)  # Set value in percent
@@ -43,9 +45,12 @@ class PWMMixer(Mixer):
         self.duty_cycle = duty_cycle
 
     def start_mixing(self):
-        super().start_mixing()
-        lib8mosind.set_pwm(self.board_address, self.channel, self.duty_cycle)
+        inverted = "inverted " if self.invert else ""
+        self.log.debug(f"Starting {inverted}mixer at {self.duty_cycle}% duty_cycle.")
+        duty_cycle = self.duty_cycle if not self.invert else 100 - self.duty_cycle
+        lib8mosind.set_pwm(self.board_address, self.channel, round(duty_cycle))
 
     def stop_mixing(self):
         super().stop_mixing()
-        lib8mosind.set_pwm(self.board_address, self.channel, 0)
+        duty_cycle = 0 if not self.invert else 100
+        lib8mosind.set_pwm(self.board_address, self.channel, duty_cycle)

@@ -13,7 +13,7 @@ class Mixer:
         self.log.debug("Setting mixing speed to {rpm}[rpm]")
 
     def set_mixing_speed_percent(self, percent: float):
-        self.log.debug(f"Setting mixing speed to {percent}%")
+        self.log.debug(f"Setting mixing speed to {percent:.3f}%")
 
     def start_mixing(self):
         self.log.debug("Starting mixer.")

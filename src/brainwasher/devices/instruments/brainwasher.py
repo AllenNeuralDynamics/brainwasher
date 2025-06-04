@@ -42,9 +42,10 @@ def syringe_empty(func):
     def inner(self, *args, **kwds):
         self.log.debug("Ensuring syringe is empty.")
         # MiniSY04 does not always return exactly 0.
-        if abs(self.pump.get_position_ul()) > 10:
+        pump_position_ul = self.pump.get_position_ul()
+        if abs(pump_position_ul) > 10:
             error_msg = "Error. Pump is not starting from its reset position " \
-                "and contains liquid or gas!"
+                f"and contains liquid or gas! abs(position) = {pump_position_ul}[uL]"
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
         return func(self, *args, **kwds)
@@ -92,6 +93,7 @@ class BrainWasher:
         self.drain_exhaust_valve = drain_exhaust_valve
         self.drain_waste_valve = drain_waste_valve
         self.pump_prime_lds = pump_prime_lds
+        self.selector_nominal_num_positions = self.selector.get_num_positions()
 
         self.prime_volumes_ul = {} # Store how much volume was displaced to
                                    # prime a particular chemical so that we
@@ -101,6 +103,7 @@ class BrainWasher:
         self.nominal_pump_speed_percent = 20
         self.slow_pump_speed_percent = 10
         self.pump_unprime_speed_percent = 60
+        self.pump_purge_speed_percent = 100
         # Pressure Monitor Thread control
         self.monitoring_pressure = Event()
         self.buffer_samples = Event()
@@ -349,7 +352,7 @@ class BrainWasher:
             "attempting to aspirate to the start of the pump.")
 
     @lock_flowpath
-    def purge_pump_line(self, full_cycles: int = 1):
+    def purge_pump_line(self, full_cycles: int = 1, gas_cycles: int = 0):
         """Empty selector-to-pump line by purging contents to waste.
         It is OK if the pump does not enter this function fully-plunged.
         """
@@ -359,6 +362,7 @@ class BrainWasher:
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()
         self.drain_exhaust_valve.energize()
+        self.pump.set_speed_percent(self.pump_purge_speed_percent)
         try:
             # Purge all starting contents of the syringe.
             if self.pump.get_position_ul() != 0:
@@ -378,6 +382,22 @@ class BrainWasher:
                 self.selector.move_to_position("outlet")
                 # Fully plunge syringe.
                 self.pump.move_absolute_in_percent(0)
+        #    for cycle in range(gas_cycles):
+        #        remaining_volume_percent = 100.
+        #        # Charge pump with N2.
+        #        self.fast_gas_charge_syringe()
+        #        # Select dest line.
+        #        self.log.debug("Purging pump line contents to waste.")
+        #        self.selector.move_to_position("outlet")
+        #        while remaining_volume_percent > 0:
+        #            remaining_volume_percent = max(remaining_volume_percent - self.LEAK_CHECK_SQUEEZE_PERCENT, 0)
+        #            self.log.debug("Sealing syringe flowpath")
+        #            self._seal_vici()
+        #            self.log.debug("Pressurizing syringe volume.")
+        #            self.pump.move_absolute_in_percent(remaining_volume_percent)
+        #            self.log.debug("Releasing pressure to outlet.")
+        #            self._unseal_vici()
+        #        # TODO: pressurize syringe to displace stubborn droplets.
         finally:
             # Close waste flowpath.
             self.drain_exhaust_valve.deenergize()
@@ -446,7 +466,8 @@ class BrainWasher:
         self.rv_source_valve.energize()
         self.rv_exhaust_valve.deenergize()  # Lock out the rv top exhaust port.
         self.drain_waste_valve.energize()  # Open rv lower drain path.
-        self.pump.set_speed_percent(100)
+        self.pump.set_speed_percent(self.pump_purge_speed_percent)
+
         # Pump the pump through the specified volume with gas.
         # Note: gas is compressible, so the volume displaced is less than
         #   the volume movement of the pump.
@@ -702,21 +723,12 @@ class BrainWasher:
 
         :raises LeakCheckError: upon failure.
         """
-        selector_num_positions = self.selector.get_num_positions()
         # Withdraw N2.
         self.fast_gas_charge_syringe(30)
         try:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
-            # Seal volume by putting selector in an interstitial position
-            # Tell the pump that it has 2x the number of positions it actually
-            # has; then move in between a "real" position, creating a seal.
-            self.log.debug("Altering VICI configuration.")
-            self.selector._positions = selector_num_positions * 2
-            interstitial_position = (self.selector._position_dict["ambient"] * 2 + 1) \
-                                    % (selector_num_positions * 2)
-            self.selector.set_num_positions(selector_num_positions*2)
-            self.selector.move_to_position(interstitial_position)
+            self._seal_vici()
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
@@ -725,13 +737,7 @@ class BrainWasher:
             self.log.error(msg)
             raise
         finally:
-            # Move to a valid position in the original position configuration.
-            self.log.debug("Restoring VICI configuration.")
-            outlet_position = self.selector._position_dict["outlet"] * 2
-            self.selector.move_to_position(outlet_position)
-            # Restore position configuration.
-            self.selector.set_num_positions(selector_num_positions)
-            self.selector._positions = selector_num_positions
+            self._unseal_vici()
             # Reset syringe
             self._purge_gas_filled_syringe()
 
@@ -838,3 +844,39 @@ class BrainWasher:
     def clean_system(self):
         # TODO: implement this.
         pass
+
+    def _seal_vici(self):
+        """Seal the vici by moving to the nearest clockwise interstitial position
+        i.e: port-between-ports.
+
+        .. Warning::
+           The vici must first be "unsealed" before we can call any normal vici
+           operations.
+
+        """
+        # Seal volume by putting selector in an interstitial position
+        # Tell the pump that it has 2x the number of positions it actually
+        # has; then move in between a "real" position, creating a seal.
+        self.log.debug("Altering VICI configuration.")
+        self.selector._positions = self.selector_nominal_num_positions * 2
+        interstitial_position = (self.selector._position_dict["ambient"] * 2 + 1) \
+                                % (self.selector_nominal_num_positions * 2)
+        self.selector.set_num_positions(self.selector_nominal_num_positions * 2)
+        # FIXME: we need to do it twice?
+        self.selector.set_num_positions(self.selector_nominal_num_positions * 2)
+        self.log.debug(f"VICI configuration set to {self.selector_nominal_num_positions * 2} positions.")
+        sleep(0.02)
+        self.selector.move_to_position(interstitial_position)
+
+    def _unseal_vici(self):
+        # Move to a valid position in the original position configuration.
+        outlet_position = self.selector._position_dict["outlet"] * 2
+        self.selector.move_to_position(outlet_position)
+        # Restore position configuration.
+        self.log.debug("Restoring VICI configuration.")
+        self.selector.set_num_positions(self.selector_nominal_num_positions)
+        # FIXME: we need to do it twice?
+        self.selector.set_num_positions(self.selector_nominal_num_positions)
+        self.selector._positions = self.selector_nominal_num_positions
+        self.log.debug(f"VICI configuration restored to {self.selector_nominal_num_positions}.")
+        sleep(0.02)
