@@ -32,6 +32,7 @@ dependencies = [
     { name = "pyharp" },
     { name = "pytest" },
     { name = "pyyaml" },
+    { name = "rpi-hardware-pwm" },
     { name = "ruff" },
     { name = "runze-control" },
     { name = "sm16inpind" },
@@ -52,9 +53,10 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.0.3" },
     { name = "pint", specifier = ">=0.21.1" },
     { name = "pydantic", specifier = ">=2.11.4" },
-    { name = "pyharp", git = "https://github.com/AllenNeuralDynamics/pyharp?branch=dev%2Fu8_array" },
+    { name = "pyharp", editable = "../pyharp" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "rpi-hardware-pwm", git = "https://github.com/Pioreactor/rpi_hardware_pwm.git" },
     { name = "ruff", specifier = ">=0.9.9" },
     { name = "runze-control", editable = "../runze-control" },
     { name = "sm16inpind", specifier = ">=1.0.1" },
@@ -455,10 +457,13 @@ wheels = [
 [[package]]
 name = "pyharp"
 version = "0.1.0"
-source = { git = "https://github.com/AllenNeuralDynamics/pyharp?branch=dev%2Fu8_array#9825d49cd4cd2c66ba107dbfc0c3bb02c2c1b1f0" }
+source = { editable = "../pyharp" }
 dependencies = [
     { name = "pyserial" },
 ]
+
+[package.metadata]
+requires-dist = [{ name = "pyserial", specifier = ">=3.4,<4.0" }]
 
 [[package]]
 name = "pypiwin32"
@@ -576,6 +581,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/14/0d/e2c3b43bbce3cf6bd97c840b46088a3031085179e596d4929729d8d68270/PyYAML-6.0.2-cp313-cp313-win32.whl", hash = "sha256:bc2fa7c6b47d6bc618dd7fb02ef6fdedb1090ec036abab80d4681424b84c1183", size = 140527, upload_time = "2024-08-06T20:33:03.001Z" },
     { url = "https://files.pythonhosted.org/packages/fa/de/02b54f42487e3d3c6efb3f89428677074ca7bf43aae402517bc7cca949f3/PyYAML-6.0.2-cp313-cp313-win_amd64.whl", hash = "sha256:8388ee1976c416731879ac16da0aff3f63b286ffdd57cdeb95f3f2e085687563", size = 156446, upload_time = "2024-08-06T20:33:04.33Z" },
 ]
+
+[[package]]
+name = "rpi-hardware-pwm"
+version = "0.3.0"
+source = { git = "https://github.com/Pioreactor/rpi_hardware_pwm.git#eea3028b1e9c6354dea4a8914a6e6f33492f5502" }
 
 [[package]]
 name = "ruamel-yaml"

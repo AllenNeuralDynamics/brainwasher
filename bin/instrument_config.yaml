@@ -94,7 +94,7 @@ devices:
         module: brainwasher.devices.harp.mixer
         class: PWMMixer
         kwds:
-            com_port: ""
+            com_port: "/dev/ttyACM0"
             channel: 0
             min_rpm: 333
             max_rpm: 6000

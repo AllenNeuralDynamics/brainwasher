@@ -505,6 +505,8 @@ class BrainWasher:
 
     @lock_flowpath
     def run_wash_step(self, duration_s: float, mix_speed_rpm: float,
+                      intermittent_mixing_on_time_s: float = None,
+                      intermittent_mixing_off_time_s: float = None
                       start_empty: bool = True, end_empty: bool = False,
                       **solution: dict):
         """Drain (optional), mix, and empty (opt) the reaction vessel to
@@ -513,11 +515,24 @@ class BrainWasher:
         :param duration_s: time in seconds to mix.
         :param mix_speed_rpm: speed (in rpm) to mix the chemicals during
             the mixing step.
+        :param intermittent_mixing_on_time_s: if specified greater-than-0
+            along with `intermittent_mixing_off_time_s`,
+            the time the mixer will be turned on intermittently.
+        :param intermittent_mixing_off_time_s: if specified greater-than-0,
+            along with `intermittent_mixing_on_time_s`,
+            the time the mixer will be turned off intermittently.
         :param start_empty: if True, drain the vessel before introducing new
             liquids.
         :param end_empty: if True, draing the vessel after mixing.
         :param solution: dict, keyed by chemical name of chemical
             amount in microliters.
+
+        .. note::
+           If both `intermittent_mixing_on_time_s` and
+           `intermittent_mixing_on_time_s` are specified,
+           mixing will involve looping between mixing for the
+           `intermittent_mixing_on_time_s` and stopping for the
+           `intermittent_mixing_off_time_s`.
 
         .. note::
            It is possible to call this function with *no* chemicals specified
@@ -548,13 +563,28 @@ class BrainWasher:
         try:
             self.mixer.set_mixing_speed(mix_speed_rpm)
         except NotImplementedError:
-            self.log.debug("Mixer does not support speed control. Skipping speed setting.")
+            self.log.warning("Mixer does not support speed control. Skipping "
+                             "speed setting.")
             mix_speed_rpm = self.mixer.max_rpm
         if mix_speed_rpm > 0:
             self.log.info(f"Mixing for {duration_s} seconds at {mix_speed_rpm}[rpm].")
-            self.mixer.start_mixing()
-        # Wait.
-        sleep(duration_s)
+        slow_mix_times = [intermittent_mixing_on_time_s,
+                          intermittent_mixing_off_time_s]
+        intermittent_mixing = all([i is not None for i in slow_mix_times])
+        if intermittent_mixing:
+            self.log.info(f"Mixing with intermittent mixing strategy: "
+                          f"on for {intermittent_mixing_on_time_s}[sec], "
+                          f"off for {intermittent_mixing_off_time_s}[sec].")
+        start_time_s = now()
+        self.mixer.start_mixing()
+        # Wait while implementing intermittent mixing strategy.
+        while (now() - start_time_s) < duration_s:
+            if not intermittent_mixing:
+                continue
+            sleep(intermittent_mixing_on_time_s)
+            self.stop_mixing()
+            sleep(intermittent_mixing_off_time_s)
+            self.start_mixing()
         if mix_speed_rpm > 0:
             self.mixer.stop_mixing()
         # Drain (if required).
@@ -562,9 +592,13 @@ class BrainWasher:
             self.drain_vessel()
 
     @lock_flowpath
-    def mix(self, duration_s: int, mix_speed_rpm: float = 1000):
+    def mix(self, duration_s: int, mix_speed_rpm: float = 1000,
+            intermittent_mixing_on_time_s: float = None,
+            intermittent_mixing_off_time_s: float = None):
         self.run_wash_step(duration_s=duration_s, mix_speed_rpm=mix_speed_rpm,
-                           start_empty=False, end_empty=False)
+            intermittent_mixing_on_time_s=intermittent_mixing_on_time_s,
+            intermittent_mixing_off_time_s=intermittent_mixing_off_time_s,
+            start_empty=False, end_empty=False)
 
     @lock_flowpath
     def fill(self, empty_first: bool = False, **solution: float):
@@ -740,6 +774,7 @@ class BrainWasher:
             self._unseal_vici()
             # Reset syringe
             self._purge_gas_filled_syringe()
+        self.log.info("leak check passed: syringe -> <- selector common path.")
 
     @lock_flowpath
     def leak_check_syringe_to_drain_exaust_normally_open_path(self):
@@ -759,6 +794,7 @@ class BrainWasher:
             raise
         finally:
             self._purge_gas_filled_syringe()
+        self.log.info("leak check passed: syringe -><- drain exhaust NO path.")
 
     @lock_flowpath
     def leak_check_syringe_to_drain_waste_path(self):
@@ -777,6 +813,7 @@ class BrainWasher:
             raise
         finally:
             self._purge_gas_filled_syringe()
+        self.log.info("leak check passed: syringe -><- drain waste path.")
 
     @lock_flowpath
     def leak_check_syringe_to_reaction_vessel(self):
@@ -796,6 +833,7 @@ class BrainWasher:
             raise
         finally:
             self._purge_gas_filled_syringe()
+        self.log.info("leak check passed: syringe -><- reaction vessel path.")
 
     @lock_flowpath
     def _squeeze_and_measure(self, pump_compression_percent: float = None,
