@@ -58,7 +58,7 @@ devices:
         class: dict
         kwds:
             clear: 5
-            yellow: 4
+            pbs: 4
             sbip: 3
             outlet: 2
             ambient: 1
@@ -142,7 +142,7 @@ devices:
         class: dict
         kwds:
             clear: selector_clear_bds
-            yellow: selector_yellow_bds
+            pbs: selector_pbs_bds
             sbip: selector_sbip_bds
             ambient: selector_ambient_bds
 # Liquid Detection Sensors
@@ -164,7 +164,7 @@ devices:
         kwds:
             board_address: 0
             channel: 5
-    selector_yellow_bds:
+    selector_pbs_bds:
         module: brainwasher.devices.sequent_microsystems.liquid_presence_detection
         class: BubbleDetectionSensor
         kwds:

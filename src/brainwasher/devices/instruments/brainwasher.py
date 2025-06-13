@@ -408,7 +408,6 @@ class BrainWasher:
     def dispense_to_vessel(self, microliters: float, chemical: str):
         """Withdraw specified chemical from the appropriate container and
         dispense it into the reaction vessel."""
-        self.log.info(f"Dispensing {microliters}uL of {chemical} to vessel.")
         # Safety checks:
         if microliters + self.rxn_vessel.curr_volume_ul > self.rxn_vessel.max_volume_ul:
             raise ValueError("Requested dispense amount would exceed vessel capacity.")
@@ -419,6 +418,7 @@ class BrainWasher:
             self.log.warning(f"{chemical} has not yet been primed. Priming now.")
             self.prime_reservoir_line(chemical)
         self.prime_pump_line(chemical) # Prime pump line.
+        self.log.info(f"Dispensing {microliters}uL of {chemical} to vessel.")
         # Set outlet flowpath starting configuration.
         self.rv_source_valve.energize()
         self.rv_exhaust_valve.energize()
@@ -504,7 +504,7 @@ class BrainWasher:
         self.pump.set_speed_percent(old_speed) # restore original speed.
 
     @lock_flowpath
-    def run_wash_step(self, duration_s: float, mix_speed_rpm: float,
+    def run_wash_step(self, duration_s: float = 0, mix_speed_rpm: float = 0,
                       intermittent_mixing_on_time_s: float = None,
                       intermittent_mixing_off_time_s: float = None,
                       start_empty: bool = True, end_empty: bool = False,
@@ -546,6 +546,10 @@ class BrainWasher:
            It is possible to call this function with *no* mixing speed i.e:
            a pure passive exposure step.
         """
+        # Decide if we will use intermittent mixing.
+        slow_mix_times = [intermittent_mixing_on_time_s,
+                          intermittent_mixing_off_time_s]
+        intermittent_mixing = all([i is not None for i in slow_mix_times])
         # Validate chemicals.
         common_chemicals = self.selector_lds_map.keys() & solution.keys()
         used_chemicals = set(solution.keys())
@@ -560,26 +564,31 @@ class BrainWasher:
             self.log.info(f"Filling vessel with solution: {solution}.")
         for chemical_name, ul in solution.items():
             self.dispense_to_vessel(ul, chemical_name)
-        try:
-            self.mixer.set_mixing_speed(mix_speed_rpm)
-        except NotImplementedError:
-            self.log.warning("Mixer does not support speed control. Skipping "
-                             "speed setting.")
-            mix_speed_rpm = self.mixer.max_rpm
         if mix_speed_rpm > 0:
-            self.log.info(f"Mixing for {duration_s} seconds at {mix_speed_rpm}[rpm].")
-        slow_mix_times = [intermittent_mixing_on_time_s,
-                          intermittent_mixing_off_time_s]
-        intermittent_mixing = all([i is not None for i in slow_mix_times])
-        if intermittent_mixing:
-            self.log.info(f"Mixing with intermittent mixing strategy: "
-                          f"on for {intermittent_mixing_on_time_s}[sec], "
-                          f"off for {intermittent_mixing_off_time_s}[sec].")
+            try:
+                self.mixer.set_mixing_speed(mix_speed_rpm)
+            except NotImplementedError:
+                self.log.warning("Mixer does not support speed control. "
+                                 "Skipping speed setting.")
+                mix_speed_rpm = self.mixer.rpm_range[1]
+        # Produce a sensible log message depending on what we're going to do.
+        if (mix_speed_rpm > 0) and (duration_s > 0):
+            intermittent_mixing_msg = ""
+            if intermittent_mixing:
+                intermittent_mixing_msg = (f" with intermittent mixing "
+                    f"strategy: on for {intermittent_mixing_on_time_s}[sec], "
+                    f"off for {intermittent_mixing_off_time_s}[sec]")
+            self.log.info(f"Mixing for {duration_s} seconds at {mix_speed_rpm}"
+                          f"[rpm]" + intermittent_mixing_msg + ".")
+        elif duration_s > 0:
+            self.log.info(f"Idling for {duration_s} seconds.")
         start_time_s = now()
-        self.mixer.start_mixing()
+        if mix_speed_rpm > 0:
+            self.mixer.start_mixing()
         # Wait while implementing intermittent mixing strategy.
         while (now() - start_time_s) < duration_s:
             if not intermittent_mixing:
+                sleep(0.010)
                 continue
             sleep(intermittent_mixing_on_time_s)
             self.mixer.stop_mixing()

@@ -1,0 +1,86 @@
+chemicals: !!set
+  sbip: null
+  pbs: null
+history:
+  events: []
+  starting_solution:
+    pbs: 10000
+name: sbip_test
+protocol:
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- duration_s: 28800
+  mix_speed_rpm: 1200
+  solution:
+    sbip: 10000
+- solution:
+    pbs: 10000
+source_protocol:
+  accessed: null
+  path: /home/brainwasher/protocols/demo_protocol.csv

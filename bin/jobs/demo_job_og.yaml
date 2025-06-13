@@ -1,0 +1,42 @@
+name: "my_job"
+source_protocol:
+  path: "/home/brainwasher/protocols/demo_protocol.csv"  # could be a path or url to a csv or another protocol.
+  accessed: null
+
+start_timestamp:
+  null
+end_timestamp:
+  null
+
+chemicals:
+  - clear
+  - yellow
+
+resume_state:
+  step: 1
+  overrides:
+    duration_s: 1800  # Overrides the current duration in that step
+
+protocol:
+  - mix_speed_rpm: 1000
+    duration_s: 3
+    solution:
+      clear: 2500
+      yellow: 7500
+  - mix_speed_rpm: 1000
+    duration_s: 3
+    solution:
+      clear: 5000
+      yellow: 5000
+  - mix_speed_rpm: 1000
+    duration_s: 3
+    solution:
+      clear: 7500
+      yellow: 2500
+    end_empty: false
+
+history:
+  starting_solution:
+    pbs: 10000
+  execution_history:
+    null

@@ -10,7 +10,6 @@ class Mixer:
         self.percent_range = (0, 100)
         self.rpm_range = (min_rpm, max_rpm)
         self.rpm = 0
-        self.set_mixing_speed(max_rpm)
 
     def percent_to_rpm(self, percent: float):
         return ((percent - self.percent_range[0])
@@ -54,7 +53,7 @@ class Mixer:
         self.log.debug(f"Setting mixing speed to {rpm:.3f}[rpm]")
         self._set_mixing_speed(rpm)
 
-    def _set_mixing_speed(rpm: float):
+    def _set_mixing_speed(self, rpm: float):
         raise NotImplementedError
 
     def start_mixing(self):
@@ -72,6 +71,16 @@ class Mixer:
         raise NotImplementedError
 
 
+class SimulatedMixer(Mixer):
+    """Simulated mixer class."""
+
+    def _start_mixing(self):
+        pass
+
+    def _stop_mixing(self):
+        pass
+
+
 class PWMMixer(Mixer):
     """An open loop mixing device."""
 
@@ -87,3 +96,4 @@ class PWMMixer(Mixer):
         """
         super().__init__(min_rpm=min_rpm, max_rpm=max_rpm, name=name)
         self.percent_range = (min_duty_cycle_percent, max_duty_cycle_percent)
+        self.set_mixing_speed(max_rpm)

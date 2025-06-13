@@ -19,8 +19,8 @@ class SourceProtocol(BaseModel):
 class WashStep(BaseModel):
     # FIXME: this should be retrieved from the function signature.
     # https://github.com/pydantic/pydantic/issues/1391
-    mix_speed_rpm: int
-    duration_s: float
+    mix_speed_rpm: Optional[float] = 0
+    duration_s: Optional[float] = 0
     solution: dict[str, float]
 
     @property
@@ -66,7 +66,9 @@ class ResumeState(BaseModel):
         override_keys = set(overrides.keys())
         wash_step_model_fields = set(WashStep.model_fields)
         if not override_keys.issubset(wash_step_model_fields):
-            raise ValueError(f"Override fields must all be valid WashStep fields. overrides: {override_keys}, WashSteps: {wash_step_model_fields}")
+            raise ValueError(f"Override fields must all be valid WashStep "
+                             f"fields. overrides: {override_keys}, "
+                             f"WashSteps: {wash_step_model_fields}")
         return overrides
 
     step: int
