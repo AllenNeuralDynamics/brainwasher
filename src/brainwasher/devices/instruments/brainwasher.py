@@ -43,7 +43,7 @@ def syringe_empty(func):
         self.log.debug("Ensuring syringe is empty.")
         # MiniSY04 does not always return exactly 0.
         pump_position_ul = self.pump.get_position_ul()
-        if abs(pump_position_ul) > 10:
+        if abs(pump_position_ul) > 12.5:
             error_msg = "Error. Pump is not starting from its reset position " \
                 f"and contains liquid or gas! abs(position) = {pump_position_ul}[uL]"
             self.log.error(error_msg)
