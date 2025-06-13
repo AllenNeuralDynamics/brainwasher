@@ -45,13 +45,13 @@ class Mixer:
         # Clamp rpm.
         if rpm < self.rpm_range[0]:
             self.rpm = self.rpm_range[0]
-            self.log.error("Clamping requested speed to {self.rpm} [rpm].")
-            percent = self.duty_cycle_percent_range[0]
+            self.log.error(f"Clamping requested speed to {self.rpm} [rpm].")
+            percent = self.percent_range[0]
         if rpm > self.rpm_range[1]:
             self.rpm = self.rpm_range[1]
             self.log.error("Clamping requested speed to {self.rpm} [rpm].")
-            percent = self.duty_cycle_percent_range[1]
-        self.log.debug("Setting mixing speed to {rpm:.3f}[rpm]")
+            percent = self.percent_range[1]
+        self.log.debug(f"Setting mixing speed to {rpm:.3f}[rpm]")
         self._set_mixing_speed(rpm)
 
     def _set_mixing_speed(rpm: float):

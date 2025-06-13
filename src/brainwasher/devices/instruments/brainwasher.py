@@ -506,7 +506,7 @@ class BrainWasher:
     @lock_flowpath
     def run_wash_step(self, duration_s: float, mix_speed_rpm: float,
                       intermittent_mixing_on_time_s: float = None,
-                      intermittent_mixing_off_time_s: float = None
+                      intermittent_mixing_off_time_s: float = None,
                       start_empty: bool = True, end_empty: bool = False,
                       **solution: dict):
         """Drain (optional), mix, and empty (opt) the reaction vessel to
@@ -582,9 +582,9 @@ class BrainWasher:
             if not intermittent_mixing:
                 continue
             sleep(intermittent_mixing_on_time_s)
-            self.stop_mixing()
+            self.mixer.stop_mixing()
             sleep(intermittent_mixing_off_time_s)
-            self.start_mixing()
+            self.mixer.start_mixing()
         if mix_speed_rpm > 0:
             self.mixer.stop_mixing()
         # Drain (if required).

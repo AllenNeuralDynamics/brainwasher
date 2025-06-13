@@ -17,11 +17,12 @@ class PWMMixer(PWMMixer):
 
     def __init__(self, gpio_pin: str, frequency_hz: float = 20000,
                  min_rpm: float = 333., max_rpm: float = 6000.,
-                 frequency_hz: float = 20000,
                  min_duty_cycle_percent: float = 40,
                  max_duty_cycle_percent: float = 100,
                  name: str = None):
-        self.pwm = HardwarePWM(pwm_channel=0, hz=frequency_hz, chip=0)
+        self.pwm_chan = self.__class__.PI5_GPIO_PIN_TO_CHANNEL[gpio_pin]
+        self.pwm = HardwarePWM(pwm_channel=self.pwm_chan, hz=frequency_hz,
+                               chip=0)
         self.duty_cycle_percent = 0
         super().__init__(min_rpm=min_rpm, max_rpm=max_rpm,
                          frequency_hz=frequency_hz,
@@ -38,13 +39,16 @@ class PWMMixer(PWMMixer):
         self.pwm.start(self.duty_cycle_percent)
 
     def _stop_mixing(self):
-        self.pwm.stop()
+        self.pwm.change_duty_cycle(0)
 
 
 if __name__ == "__main__":
-    mixer = PWMMixer(12, 20000,
+    from time import sleep
+
+    mixer = PWMMixer(18, 20000,
                      333, 6000, 40, 100)
-    mixer.set_mixing_speed(1200)
+    mixer.set_mixing_speed(6000)
     mixer.start_mixing()
+    #sleep(1)
     input()
     mixer.stop_mixing()

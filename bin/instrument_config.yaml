@@ -91,13 +91,13 @@ devices:
             max_volume_ul: 10000
             name: reaction-vessel
     mixer:
-        module: brainwasher.devices.harp.mixer
+        module: brainwasher.devices.raspberry_pi.mixer
         class: PWMMixer
         kwds:
-            com_port: "/dev/ttyACM0"
-            channel: 0
+            gpio_pin: 18
             min_rpm: 333
             max_rpm: 6000
+            frequency_hz: 20000
             min_duty_cycle_percent: 40
             max_duty_cycle_percent: 100
     pressure_sensor:
