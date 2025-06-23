@@ -716,7 +716,9 @@ class BrainWasher:
                 # Run step.
                 # FIXME: We really want a recursive dict update.
                 kwargs = {"duration_s": step.duration_s,
-                          "mix_speed_rpm": step.mix_speed_rpm}
+                          "mix_speed_rpm": step.mix_speed_rpm,
+                          "intermittent_mixing_on_time_s": step.intermittent_mixing_on_time_s,
+                          "intermittent_mixing_off_time_s": step.intermittent_mixing_off_time_s}
                 kwargs.update(step.solution)  # These aren't overrideable for now.
                 if index == start_step:
                     kwargs.update(**start_step_overrides)

@@ -19,6 +19,8 @@ class SourceProtocol(BaseModel):
 class WashStep(BaseModel):
     # FIXME: this should be retrieved from the function signature.
     # https://github.com/pydantic/pydantic/issues/1391
+    intermittent_mixing_on_time_s: Optional[float] = None
+    intermittent_mixing_off_time_s: Optional[float] = None
     mix_speed_rpm: Optional[float] = 0
     duration_s: Optional[float] = 0
     solution: dict[str, float]
