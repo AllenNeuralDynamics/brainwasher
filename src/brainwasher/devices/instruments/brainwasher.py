@@ -118,6 +118,7 @@ class BrainWasher:
         self.flowpath_lock = RLock()
         # Pause Control
         self.pause_requested = Event()
+        self.resume_state_overrides = {}
         # Launch pressure monitor thread.
         self.start_pressure_monitor()
 
@@ -587,6 +588,13 @@ class BrainWasher:
             self.mixer.start_mixing()
         # Wait while implementing intermittent mixing strategy.
         while (now() - start_time_s) < duration_s:
+            # Handle pause request if called in a "job" context.
+            if self.job_worker and self.job_worker.is_alive() and self.pause_requested.is_set():
+                elapsed_time_s = round(now() - start_time_s)
+                action_msg = "mixing" if mix_speed_rpm else "idling"
+                self.log.warning(f"Aborting after {elapsed_time_s}[s] of {action_msg}.")
+                self.resume_state_overrides.update(duration_s=(duration_s - elapsed_time_s))
+                return
             if not intermittent_mixing:
                 sleep(0.010)
                 continue
@@ -703,13 +711,8 @@ class BrainWasher:
         self.log.info(log_msg)
         # Execute the protocol.
         for index, step in enumerate(job.protocol[start_step:], start=start_step):
+            resume_step = index # Save resume step in case of unhandled exception.
             try:
-                if self.pause_requested.is_set():
-                    self.log.warning(f"Pausing system at the start of step {index+1}.")
-                    job.record_pause()
-                    self.pause_requested.clear()
-                    self.log.info(f"System paused.")
-                    return  # will execute the finally clause first.
                 # Apply overrides (recursive) on the first (ie resume) step only.
                 if index == start_step and start_step_overrides:
                     step = step.model_copy(update=start_step_overrides)
@@ -718,14 +721,27 @@ class BrainWasher:
                 # Convert step parameters to valid function parameters.
                 kwargs = step.model_dump(exclude='solution')  # omit **kwargs
                 kwargs.update(step.solution)  # splat **kwargs to flatten them.
-                # Run step.
                 self.log.info(f"Conducting step: "
                               f"{index + 1}/{len(job.protocol)} with "
                               f"{step.solution}")
+                # Run step.
                 self.run_wash_step(**kwargs)
+                # Handle pause state.
+                # Save current step if not completed (overrides present) or
+                # next step if the current step completed.
+                resume_step = index if self.resume_state_overrides else index + 1
+                if self.pause_requested.is_set():
+                    # Note: steps are 1-indexed when referenced in logs.
+                    self.log.warning(f"Pausing system at step {resume_step+1}.")
+                    job.record_pause()
+                    self.pause_requested.clear()
+                    self.log.info(f"System paused.")
+                    return  # Will execute finally block first.
             finally:
-                # Save the current step in case of pause, unhandled exception, CTRL-C.
-                job.save_resume_state(index)
+                # Always save the current step in case of an unhandled exception
+                # or power failure.
+                job.save_resume_state(resume_step, **self.resume_state_overrides)
+                self.resume_state_overrides = {}
                 with open(job_path, "w") as job_file:
                     yaml.dump(job.model_dump(), job_file)
                 self.log.debug(f"Job progress saved to: {job_path}")
