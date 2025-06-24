@@ -694,7 +694,7 @@ class BrainWasher:
             starting_or_resuming_msg = "Resuming"
         else:
             start_step = 0
-            start_step_overrides = {}
+            start_step_overrides = None
             starting_or_resuming_msg = "Starting"
             job.record_start()
         log_msg = f"{starting_or_resuming_msg} job: '{job.name}'"
@@ -703,9 +703,6 @@ class BrainWasher:
         self.log.info(log_msg)
         # Execute the protocol.
         for index, step in enumerate(job.protocol[start_step:], start=start_step):
-            self.log.info(f"Conducting step: "
-                          f"{index + 1}/{len(job.protocol)} with "
-                          f"{step.solution}")
             try:
                 if self.pause_requested.is_set():
                     self.log.warning(f"Pausing system at the start of step {index+1}.")
@@ -713,15 +710,18 @@ class BrainWasher:
                     self.pause_requested.clear()
                     self.log.info(f"System paused.")
                     return  # will execute the finally clause first.
+                # Apply overrides (recursive) on the first (ie resume) step only.
+                if index == start_step and start_step_overrides:
+                    step = step.model_copy(update=start_step_overrides)
+                    self.log.info(f"Applying overrides to starting step: "
+                                  f"{start_step_overrides}.")
+                # Convert step parameters to valid function parameters.
+                kwargs = step.model_dump(exclude='solution')  # omit **kwargs
+                kwargs.update(step.solution)  # splat **kwargs to flatten them.
                 # Run step.
-                # FIXME: We really want a recursive dict update.
-                kwargs = {"duration_s": step.duration_s,
-                          "mix_speed_rpm": step.mix_speed_rpm,
-                          "intermittent_mixing_on_time_s": step.intermittent_mixing_on_time_s,
-                          "intermittent_mixing_off_time_s": step.intermittent_mixing_off_time_s}
-                kwargs.update(step.solution)  # These aren't overrideable for now.
-                if index == start_step:
-                    kwargs.update(**start_step_overrides)
+                self.log.info(f"Conducting step: "
+                              f"{index + 1}/{len(job.protocol)} with "
+                              f"{step.solution}")
                 self.run_wash_step(**kwargs)
             finally:
                 # Save the current step in case of pause, unhandled exception, CTRL-C.

@@ -8,11 +8,15 @@ history:
 name: sbip_test
 protocol:
 - duration_s: 3.0
+  intermittent_mixing_off_time_s: null
+  intermittent_mixing_on_time_s: null
   mix_speed_rpm: 1000.0
   solution:
     sbip: 10000.0
-- duration_s: 0
-  mix_speed_rpm: 0
+- duration_s: 0.0
+  intermittent_mixing_off_time_s: null
+  intermittent_mixing_on_time_s: null
+  mix_speed_rpm: 0.0
   solution:
     pbs: 10000.0
 source_protocol:

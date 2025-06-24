@@ -2,11 +2,14 @@
 
 from pathlib import Path
 from pydantic import BaseModel, computed_field, field_serializer, model_serializer, AfterValidator, Field
+from pydantic import ValidationError
 from datetime import datetime
 from typing import Annotated, Optional, Any, Literal, Union
 import logging
 
+
 class SourceProtocol(BaseModel):
+    """Path denoting the job or protocol that this job was generated from."""
     path: Optional[Path] = None
     accessed: Optional[datetime] = None
 
@@ -19,6 +22,7 @@ class SourceProtocol(BaseModel):
 class WashStep(BaseModel):
     # FIXME: this should be retrieved from the function signature.
     # https://github.com/pydantic/pydantic/issues/1391
+    # Warning: names & default values must match those in brainwasher.run_wash_step
     intermittent_mixing_on_time_s: Optional[float] = None
     intermittent_mixing_off_time_s: Optional[float] = None
     mix_speed_rpm: Optional[float] = 0
@@ -63,17 +67,31 @@ class ResumeState(BaseModel):
 
     @staticmethod
     def values_in_wash_step(overrides: dict):
-        """Ensure keys in the overrides dict exist as WashStep fields."""
-        # TODO: ensure that these keys satisfy any WashStep field validators also.
+        """Ensure keys in the overrides dict exist as WashStep fields.
+
+        .. note::
+           WashStep `solution` field cannot be overritten.
+
+        """
         override_keys = set(overrides.keys())
-        wash_step_model_fields = set(WashStep.model_fields)
-        if not override_keys.issubset(wash_step_model_fields):
+        valid_wash_step_model_fields = set(WashStep.model_fields) - {"solution"}
+        if not override_keys.issubset(valid_wash_step_model_fields):
             raise ValueError(f"Override fields must all be valid WashStep "
-                             f"fields. overrides: {override_keys}, "
-                             f"WashSteps: {wash_step_model_fields}")
+                             f"fields and cannot include the solution field. "
+                             f"overrides: {override_keys}, "
+                             f"WashSteps: {valid_wash_step_model_fields}")
+        # Validate override values against WashStep value constraints.
+        try:  # Lazy way: try making a valid WashStep.
+            wash_step = WashStep(**overrides, solution={})
+        except ValidationError as e:
+            extra_msg = "Error validating ResumeState overrides against WashStep values."
+            raise ValueError(extra_msg) from e
+            raise
         return overrides
 
     step: int
+    # overrides are a subset of WashStep fields whose values will override
+    # those in a WashStep.
     overrides: Annotated[Optional[dict[str, Any]], AfterValidator(values_in_wash_step)] = None
 
 
@@ -156,9 +174,11 @@ if __name__ == "__main__":
     import pprint
     pprint.pprint(my_model.model_dump())
     print()
+    print("Saving resume state!")
     my_model.save_resume_state(2, duration_s=1000)
     pprint.pprint(my_model.model_dump())
     print()
+    print("Clearing resume state!")
     my_model.clear_resume_state()
     pprint.pprint(my_model.model_dump())
     #print(my_model)
