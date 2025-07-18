@@ -1,7 +1,5 @@
 """Simulated Selector"""
 import logging
-from vicivalve import VICI
-
 from typing import Union
 
 
@@ -15,12 +13,13 @@ class SimSelector:
         self._position_dict = position_map
 
     def move_to_position(self, position: Union[int, str]):
-        # FIXME: we should figure out how to use _lookup_position
-        #   Possibly inherit from VICIValve Selector and stub out certain features.
         self.log.debug(f"Moving to position: {position}")
 
-    def get_num_positions(self):
-        return self.position_count
 
-    def set_num_positions(self, positions):
-        self.position_count = positions
+class SimCloseableSelector(SimSelector):
+
+    def open(self):
+        self.log.debug("Opening flow.")
+
+    def close(self):
+        self.log.debug("Closing flow.")

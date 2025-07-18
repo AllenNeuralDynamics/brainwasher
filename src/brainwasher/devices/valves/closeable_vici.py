@@ -12,7 +12,7 @@ class Port:
     open: bool = False
 
 
-class LockingVICI(VICI):
+class CloseableVICI(VICI):
     """a rotary shear valve that can be closed by moving to an interstitial
     position *between* two positions, effectively acting like a normal
     `RotaryShearValve` but with twice as many positions."""

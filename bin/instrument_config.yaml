@@ -70,8 +70,7 @@ devices:
         kwds:
             baudrate: 9600
     selector:
-        module: vicivalve
-        class: VICI
+        class: brainwasher.devices.valves.closeable_vici.CloseableVICI
         kwds:
             serial: selector_serial_port
             positions: 10

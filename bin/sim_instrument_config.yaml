@@ -62,8 +62,7 @@ devices:
             outlet: 2
             ambient: 1
     selector:
-        module: brainwasher.devices.simulated_devices.selector
-        class: SimSelector
+        class: brainwasher.devices.simulated_devices.selector.SimCloseableSelector
         kwds:
             positions: 10
             position_map: selector_position_map
