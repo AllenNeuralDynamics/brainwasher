@@ -8,18 +8,16 @@ from brainwasher.devices.mixer import Mixer
 from brainwasher.devices.liquid_presence_detection import BubbleDetectionSensor
 from brainwasher.devices.sequent_microsystems.valve import NCValve, ThreeTwoValve
 from brainwasher.devices.pressure_sensor import PressureSensor
+from brainwasher.devices.valves.closeable_vici import CloseableVICI
 from brainwasher.errors.instrument_errors import LeakCheckError
 from brainwasher.protocol import Protocol
 from brainwasher.job import Job, PauseEvent, ResumeEvent
-from datetime import datetime
 from functools import wraps
-from pydantic_core import ValidationError
 from pathlib import Path
 from runze_control.syringe_pump import SyringePump
 from time import sleep
 from time import perf_counter as now
 from threading import Event, Thread, RLock, current_thread
-from vicivalve import VICI
 from typing import Union
 
 
@@ -67,7 +65,7 @@ class BrainWasher:
     MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG = 1.0
     MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.20
 
-    def __init__(self, selector: VICI,
+    def __init__(self, selector: CloseableVICI,
                  selector_lds_map: dict[str],
                  pump: SyringePump,
                  reaction_vessel,
@@ -133,7 +131,7 @@ class BrainWasher:
         # Connect: source pump -> waste.
         try:
             self.drain_exhaust_valve.energize()
-            self.selector.move_to_position("outlet")
+            self.selector.move_to_port("outlet")
             self.pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
             self.pump.set_speed_percent(self.nominal_pump_speed_percent)
             # Restore deenergized state.
@@ -247,7 +245,7 @@ class BrainWasher:
             self.log.debug("Polling prime-reservoir sensor while withdrawing up to "
                            f"{stroke_volume_ul}[uL] of {chemical}.")
             # Select chemical line.
-            self.selector.move_to_position(chemical)
+            self.selector.move_to_port(chemical)
             self.pump.withdraw(stroke_volume_ul, wait=False)
             # Temporarily remove pump log message spam.
             old_log_level = self.pump.log.level # save current log level.
@@ -265,7 +263,7 @@ class BrainWasher:
             remaining_volume_ul -= self.pump.get_position_ul()
             # Reset syringe stroke by purging displaced air to waste.
             self.log.debug("Removing displaced gas.")
-            self.selector.move_to_position("outlet")
+            self.selector.move_to_port("outlet")
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
         if not remaining_volume_ul and not liquid_detected:
             raise RuntimeError("Withdrew maximum volume "
@@ -302,7 +300,7 @@ class BrainWasher:
             # Withdraw another stroke.
             stroke_volume_ul = min(remaining_volume_ul, syringe_capacity_ul)
             self.fast_gas_charge_syringe()
-            self.selector.move_to_position(chemical) # Select chemical.
+            self.selector.move_to_port(chemical) # Select chemical.
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
             remaining_volume_ul -= stroke_volume_ul
         self.pump_is_primed_with = None  # Clear prime line state.
@@ -329,7 +327,7 @@ class BrainWasher:
                              f"{self.pump_is_primed_with}.")
             return
         self.log.debug(f"Priming pump line with {chemical}.")
-        self.selector.move_to_position(chemical) # Select chemical.
+        self.selector.move_to_port(chemical) # Select chemical.
         # Withdraw to source pump sensor.
         # We can do this in <1 full stroke after the chemical is primed.
         self.log.debug(f"Withdrawing {chemical} from reservoir.")
@@ -369,7 +367,7 @@ class BrainWasher:
             if self.pump.get_position_ul() != 0:
                 self.log.warning("Directing existing contents to waste.")
                 # Select dest line.
-                self.selector.move_to_position("outlet")
+                self.selector.move_to_port("outlet")
                 # Fully plunge syringe.
                 self.pump.move_absolute_in_percent(0)
             if full_cycles:
@@ -380,7 +378,7 @@ class BrainWasher:
                 self.fast_gas_charge_syringe()
                 # Select dest line.
                 self.log.debug("Purging pump line contents to waste.")
-                self.selector.move_to_position("outlet")
+                self.selector.move_to_port("outlet")
                 # Fully plunge syringe.
                 self.pump.move_absolute_in_percent(0)
         #    for cycle in range(gas_cycles):
@@ -389,15 +387,15 @@ class BrainWasher:
         #        self.fast_gas_charge_syringe()
         #        # Select dest line.
         #        self.log.debug("Purging pump line contents to waste.")
-        #        self.selector.move_to_position("outlet")
+        #        self.selector.move_to_port("outlet")
         #        while remaining_volume_percent > 0:
         #            remaining_volume_percent = max(remaining_volume_percent - self.LEAK_CHECK_SQUEEZE_PERCENT, 0)
         #            self.log.debug("Sealing syringe flowpath")
-        #            self._seal_vici()
+        #            self.selector.close()
         #            self.log.debug("Pressurizing syringe volume.")
         #            self.pump.move_absolute_in_percent(remaining_volume_percent)
         #            self.log.debug("Releasing pressure to outlet.")
-        #            self._unseal_vici()
+        #            self.selector.open()
         #        # TODO: pressurize syringe to displace stubborn droplets.
         finally:
             # Close waste flowpath.
@@ -424,12 +422,12 @@ class BrainWasher:
         self.rv_source_valve.energize()
         self.rv_exhaust_valve.energize()
         self.drain_exhaust_valve.energize()
-        self.selector.move_to_position(chemical)
+        self.selector.move_to_port(chemical)
         pump_to_common_dv_ul = 10.0 # FIXME: magic number. get this from a graph.
         # Subtract off pump-to-common dead volume because we will introduce
         # this volume back when we fully purge the pump-to-vessel flowpath.
         self.pump.withdraw(microliters - pump_to_common_dv_ul)
-        self.selector.move_to_position("outlet")
+        self.selector.move_to_port("outlet")
         # Fully plunge. Note: some liquid will remain in the pump-to-vessel
         # path at this point.
         self.log.debug(f"Plunging initial {microliters - pump_to_common_dv_ul}[uL].")
@@ -444,7 +442,7 @@ class BrainWasher:
         for purge_volume in purge_volumes:
             self.fast_gas_charge_syringe(purge_volume)
             # Select dest line.
-            self.selector.move_to_position("outlet")
+            self.selector.move_to_port("outlet")
             # Fully plunge syringe.
             self.pump.move_absolute_in_percent(0)
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
@@ -481,7 +479,7 @@ class BrainWasher:
             # Push out the vessel contents with gas.
             self.fast_gas_charge_syringe(stroke_percent)
             # Select dest line.
-            self.selector.move_to_position("outlet")
+            self.selector.move_to_port("outlet")
             # Fully plunge syringe.
             self.pump.move_absolute_in_percent(0)
             remaining_volume_ul -= stroke_volume_ul
@@ -498,7 +496,7 @@ class BrainWasher:
     def fast_gas_charge_syringe(self, percent: float = 100):
         """quickly charge the syringe with gas."""
         self.log.debug(f"Fast-charging pump to {percent}% volume with gas.")
-        self.selector.move_to_position("ambient")
+        self.selector.move_to_port("ambient")
         old_speed = self.pump.get_speed_percent()
         self.pump.set_speed_percent(100)  # draw up gas quickly.
         self.pump.move_absolute_in_percent(percent)
@@ -789,7 +787,7 @@ class BrainWasher:
         try:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
-            self._seal_vici()
+            self.selector.close()
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
@@ -798,7 +796,7 @@ class BrainWasher:
             self.log.error(msg)
             raise
         finally:
-            self._unseal_vici()
+            self.selector.open()
             # Reset syringe
             self._purge_gas_filled_syringe()
         self.log.info("leak check passed: syringe -> <- selector common path.")
@@ -810,7 +808,7 @@ class BrainWasher:
             self.deenergize_all_valves()
             self.rv_exhaust_valve.energize()
             self.fast_gas_charge_syringe(30)
-            self.selector.move_to_position("outlet")
+            self.selector.move_to_port("outlet")
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
@@ -829,7 +827,7 @@ class BrainWasher:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
             self.fast_gas_charge_syringe(30)
-            self.selector.move_to_position("outlet")
+            self.selector.move_to_port("outlet")
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
@@ -849,7 +847,7 @@ class BrainWasher:
             self.deenergize_all_valves()
             self.rv_source_valve.energize()
             self.fast_gas_charge_syringe(30)
-            self.selector.move_to_position("outlet")
+            self.selector.move_to_port("outlet")
             # Measure:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
@@ -909,39 +907,3 @@ class BrainWasher:
     def clean_system(self):
         # TODO: implement this.
         pass
-
-    def _seal_vici(self):
-        """Seal the vici by moving to the nearest clockwise interstitial position
-        i.e: port-between-ports.
-
-        .. Warning::
-           The vici must first be "unsealed" before we can call any normal vici
-           operations.
-
-        """
-        # Seal volume by putting selector in an interstitial position
-        # Tell the pump that it has 2x the number of positions it actually
-        # has; then move in between a "real" position, creating a seal.
-        self.log.debug("Altering VICI configuration.")
-        self.selector._positions = self.selector_nominal_num_positions * 2
-        interstitial_position = (self.selector._position_dict["ambient"] * 2 + 1) \
-                                % (self.selector_nominal_num_positions * 2)
-        self.selector.set_num_positions(self.selector_nominal_num_positions * 2)
-        # FIXME: we need to do it twice?
-        self.selector.set_num_positions(self.selector_nominal_num_positions * 2)
-        self.log.debug(f"VICI configuration set to {self.selector_nominal_num_positions * 2} positions.")
-        sleep(0.02)
-        self.selector.move_to_position(interstitial_position)
-
-    def _unseal_vici(self):
-        # Move to a valid position in the original position configuration.
-        outlet_position = self.selector._position_dict["outlet"] * 2
-        self.selector.move_to_position(outlet_position)
-        # Restore position configuration.
-        self.log.debug("Restoring VICI configuration.")
-        self.selector.set_num_positions(self.selector_nominal_num_positions)
-        # FIXME: we need to do it twice?
-        self.selector.set_num_positions(self.selector_nominal_num_positions)
-        self.selector._positions = self.selector_nominal_num_positions
-        self.log.debug(f"VICI configuration restored to {self.selector_nominal_num_positions}.")
-        sleep(0.02)
