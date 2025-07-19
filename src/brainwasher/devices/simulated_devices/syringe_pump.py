@@ -26,6 +26,9 @@ class SimSyringePump:
     def get_position_ul(self):
         return self.curr_volume_ul
 
+    def get_position_percent(self):
+        return 100. * self.curr_volume_ul/self.syringe_volume_ul
+
 
     def move_absolute_in_percent(self, percent: float, wait: bool = True):
         self.log.debug(f"Moving plunger to {percent}% full scale range")

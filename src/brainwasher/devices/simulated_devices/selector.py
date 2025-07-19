@@ -23,3 +23,6 @@ class SimCloseableSelector(SimSelector):
 
     def close(self):
         self.log.debug("Closing flow.")
+
+    def move_to_port(self, port: Union[int, str]):
+        self.log.debug(f"Moving to port: {port}")

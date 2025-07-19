@@ -91,7 +91,6 @@ class BrainWasher:
         self.drain_exhaust_valve = drain_exhaust_valve
         self.drain_waste_valve = drain_waste_valve
         self.pump_prime_lds = pump_prime_lds
-        self.selector_nominal_num_positions = self.selector.get_num_positions()
 
         self.prime_volumes_ul = {} # Store how much volume was displaced to
                                    # prime a particular chemical so that we
