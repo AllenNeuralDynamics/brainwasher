@@ -381,22 +381,21 @@ class BrainWasher:
                 self.selector.move_to_port("outlet")
                 # Fully plunge syringe.
                 self.pump.move_absolute_in_percent(0)
-        #    for cycle in range(gas_cycles):
-        #        remaining_volume_percent = 100.
-        #        # Charge pump with N2.
-        #        self.fast_gas_charge_syringe()
-        #        # Select dest line.
-        #        self.log.debug("Purging pump line contents to waste.")
-        #        self.selector.move_to_port("outlet")
-        #        while remaining_volume_percent > 0:
-        #            remaining_volume_percent = max(remaining_volume_percent - self.LEAK_CHECK_SQUEEZE_PERCENT, 0)
-        #            self.log.debug("Sealing syringe flowpath")
-        #            self.selector.close()
-        #            self.log.debug("Pressurizing syringe volume.")
-        #            self.pump.move_absolute_in_percent(remaining_volume_percent)
-        #            self.log.debug("Releasing pressure to outlet.")
-        #            self.selector.open()
-        #        # TODO: pressurize syringe to displace stubborn droplets.
+            for cycle in range(gas_cycles):
+                remaining_volume_percent = 100.
+                # Charge pump with N2.
+                self.fast_gas_charge_syringe()
+                # Select dest line.
+                self.log.debug("Purging pump line contents to waste.")
+                self.selector.move_to_port("outlet")
+                while remaining_volume_percent > 0:
+                    remaining_volume_percent = max(remaining_volume_percent - self.LEAK_CHECK_SQUEEZE_PERCENT, 0)
+                    self.log.debug("Sealing syringe flowpath")
+                    self.selector.close()
+                    self.log.debug("Pressurizing syringe volume.")
+                    self.pump.move_absolute_in_percent(remaining_volume_percent)
+                    self.log.debug("Releasing pressure to outlet.")
+                    self.selector.open()
         finally:
             # Close waste flowpath.
             self.drain_exhaust_valve.deenergize()
