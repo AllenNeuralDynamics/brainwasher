@@ -41,8 +41,8 @@ def syringe_empty(func):
         self.log.debug("Ensuring syringe is empty.")
         # MiniSY04 does not always return exactly 0.
         pump_position_ul = self.pump.get_position_ul()
-        if abs(pump_position_ul) > 12.5:
-            error_msg = "Error. Pump is not starting from its reset position " \
+        if abs(pump_position_ul) > self.PUMP_APPROX_ZERO_UL:
+            error_msg = "Error. Pump is not starting from its reset position (~0) " \
                 f"and contains liquid or gas! abs(position) = {pump_position_ul}[uL]"
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
@@ -60,7 +60,9 @@ class BrainWasher:
 
     """
 
+    PUMP_APPROX_ZERO_UL = 12.5
     MAX_SAFE_PRESSURE_PSIG = 13.0
+    MAX_PURGE_PRESSURE_PSIG = 8.0
     LEAK_CHECK_SQUEEZE_PERCENT = 15.
     MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG = 1.0
     MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.20
@@ -380,21 +382,34 @@ class BrainWasher:
                 self.selector.move_to_port("outlet")
                 # Fully plunge syringe.
                 self.pump.move_absolute_in_percent(0)
+            # Optional: Purge with Gas
+            #   Create a pressure pocket by squeezing the syringe with the
+            #   selector closed and then opening it to relieve the pressure
+            #   to waste to blow away droplets.
+            # Note: PV = nRT. As we make the total volume smaller, for the same
+            # starting pressure, the same pump displacement builds up more
+            # pressure, so we must check the pressure to stay under a safe limit.
             for cycle in range(gas_cycles):
-                remaining_volume_percent = 100.
                 # Charge pump with N2.
                 self.fast_gas_charge_syringe()
                 # Select dest line.
                 self.log.debug("Purging pump line contents to waste.")
                 self.selector.move_to_port("outlet")
-                while remaining_volume_percent > 0:
-                    remaining_volume_percent = max(remaining_volume_percent - self.LEAK_CHECK_SQUEEZE_PERCENT, 0)
+                remaining_volume_ul = self.pump.get_position_ul()
+                while remaining_volume_ul > self.PUMP_APPROX_ZERO_UL:
+                    self.log.debug(f"remaining volume: {remaining_volume_ul:.3f} [uL]")
                     self.log.debug("Sealing syringe flowpath")
                     self.selector.close()
                     self.log.debug("Pressurizing syringe volume.")
-                    self.pump.move_absolute_in_percent(remaining_volume_percent)
+                    self.pump.move_absolute_in_percent(0, wait=False)
+                    while self.pump.is_busy():
+                        if (self.pressure_psig > self.MAX_PURGE_PRESSURE_PSIG):
+                            self.pump.halt()
+                        sleep(0.05)
+                    remaining_volume_ul = self.pump.get_position_ul()
                     self.log.debug("Releasing pressure to outlet.")
                     self.selector.open()
+                    sleep(0.5)
         finally:
             # Close waste flowpath.
             self.drain_exhaust_valve.deenergize()

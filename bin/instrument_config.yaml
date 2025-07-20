@@ -71,8 +71,8 @@ devices:
         class: brainwasher.devices.valves.closeable_vici.CloseableVICI
         kwds:
             serial: selector_serial_port
-            positions: 10
-            position_map: selector_position_map
+            port_count: 10
+            port_map: selector_position_map
     source_pump:
         class: runze_control.syringe_pump.MiniSY04
         kwds:

@@ -9,7 +9,7 @@ from math import ceil
 
 @dataclass
 class Port:
-    index: int = None
+    port: Union[int, str] = None
     open: bool = False
 
 
@@ -49,7 +49,7 @@ class CloseableVICI(VICI):
 
     def _get_current_port(self):
         curr_hw_position = int(self.current_position())
-        return Port(index=ceil(float(curr_hw_position)/2),
+        return Port(port=ceil(float(curr_hw_position)/2),
                     open=(curr_hw_position % 2 != 0))  # open if odd
 
     def _to_nearest_hw_position(self, port: int, open: bool = True):
@@ -68,18 +68,18 @@ class CloseableVICI(VICI):
         open_hw_position = self._to_nearest_hw_position(port_index, open=True)
         self.logger.debug(f"Opening port: {port}.")
         super().move_to_position(open_hw_position)
-        self.current_port.index = port_index
+        self.current_port.port = port
         self.current_port.open = True
 
     def is_open(self):
         return self.current_port.open
 
     def open(self):
-        self.move_to_port(self.current_port.index)
+        self.move_to_port(self.current_port.port)
 
     def close(self):
-        closed_hw_position = self._to_nearest_hw_position(self.current_port.index,
-                                                       open=False)
+        port_index = self._port_map[str(self.current_port.port)]
+        closed_hw_position = self._to_nearest_hw_position(port_index, open=False)
         super().move_to_position(closed_hw_position)
         self.current_port.open = False
 
@@ -89,7 +89,7 @@ class CloseableVICI(VICI):
         open_hw_position = self._to_nearest_hw_position(port_index, open=True)
         self.logger.debug(f"Clockwise move to open port: {port}.")
         super().move_clockwise_to_position(open_hw_position)
-        self.current_port.index = port_index
+        self.current_port.port = port
         self.current_port.open = True
 
     def move_counterclockwise_to_port(self, port: Union[int, str]):
@@ -98,7 +98,7 @@ class CloseableVICI(VICI):
         open_hw_position = self._to_nearest_hw_position(port_index, open=True)
         self.logger.debug(f"Counterclockwise move to open port: {port}.")
         super().move_counterclockwise_to_position(open_hw_position)
-        self.current_port.index = port_index
+        self.current_port.port = port
         self.current_port.open = True
 
 
