@@ -4,6 +4,8 @@ import _thread
 import logging
 import yaml
 
+from brainwasher.devices.reaction_vessel import ReactionVessel
+from brainwasher.devices.waste_vessel import WasteVessel
 from brainwasher.devices.mixer import Mixer
 from brainwasher.devices.liquid_presence_detection import BubbleDetectionSensor
 from brainwasher.devices.sequent_microsystems.valve import NCValve, ThreeTwoValve
@@ -70,7 +72,8 @@ class BrainWasher:
     def __init__(self, selector: CloseableVICI,
                  selector_lds_map: dict[str],
                  pump: SyringePump,
-                 reaction_vessel,
+                 reaction_vessel: ReactionVessel,
+                 waste_vessels: list[WasteVessel],
                  mixer: Mixer,
                  pressure_sensor: PressureSensor,
                  rv_source_valve: ThreeTwoValve,
@@ -86,6 +89,7 @@ class BrainWasher:
         self.selector_lds_map = selector_lds_map
         self.pump = pump
         self.rxn_vessel = reaction_vessel
+        self.waste_vessels: list = waste_vessels
         self.mixer = mixer
         self.pressure_sensor = pressure_sensor
         self.rv_source_valve = rv_source_valve
@@ -668,10 +672,41 @@ class BrainWasher:
             #yaml.dump(job.model_dump(), job_path)
 
     def validate_job_against_instrument(self, job: Job):
-        """Validate that the job can be executed on the instrument"""
-        # TODO: validate all solution volumes fit in reaction vessel
+        """Validate that the job can be executed on this instrument configuration"""
+        # Ensure all solution volumes fit in reaction vessel
+        volume_errors = []
+        for index, step in enumerate(job.protocol):
+            if step.solution_volume_ul > self.rxn_vessel.max_volume_ul:
+                msg = (f"Step {index}: solution total volume "
+                       f"({step.solution_volume_ul} [uL]) exceeds reaction "
+                       f"vessel volume ({self.rxn_vessel.max_volume_ul} [uL]).")
+                volume_errors.append(msg)
+        if volume_errors:
+            raise ValueError("Job volumes are not compatible with the size "
+                             "of the instrument reaction vessel: "
+                             f"{volume_errors}.")
         # TODO: validate required chemicals are plumbed.
-        pass
+        #chemicals = job.chemicals
+        #if not job.chemicals.issubset(set(self.selector._port_map))
+        # TODO: validate that we have enough space in the waste vessels to
+        #  run the entire job.
+        # Ensure each step solution can be dumped to a compatible waste vessel.
+        waste_compatibility_errors = []
+        for index, step in enumerate(job.protocol):
+            step_components = set(step.solution.keys())
+            # Find at least one vessel that the solution can be dumped.
+            step_solution_has_valid_waste = \
+                any([step_components.issubset(vessel.valid_waste_chemicals)
+                     for vessel in self.waste_vessels])
+            if not step_solution_has_valid_waste:
+                msg = f"Step {index}: solution has no designated waste. " \
+                      f"Solution components: {step_components}. "
+                waste_compatibility_errors.append(msg)
+        if waste_compatibility_errors:
+            raise ValueError("Job is not chemically compatible with waste "
+                             f"vessels. The following steps cannot be dumped "
+                             f"to any waste vessel: {waste_compatibility_errors}")
+        self.log.info(f"Job passed validation against instrument capabilities.")
 
     def _load_job(self, job_path: str) -> Job:
         job_path = Path(job_path)
@@ -731,7 +766,7 @@ class BrainWasher:
                                   f"{start_step_overrides}.")
                 # Convert step parameters to valid function parameters.
                 kwargs = step.model_dump(exclude='solution')  # omit **kwargs
-                kwargs.update(step.solution)  # splat **kwargs to flatten them.
+                kwargs.update(step.solution)  # splat **solution
                 self.log.info(f"Conducting step: "
                               f"{index + 1}/{len(job.protocol)} with "
                               f"{step.solution}")

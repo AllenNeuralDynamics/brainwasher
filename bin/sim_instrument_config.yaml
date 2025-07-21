@@ -74,10 +74,32 @@ devices:
     reaction_vessel:
         module: brainwasher.devices.reaction_vessel
         class: ReactionVessel
+        skip_kwds: [name]
         kwds:
+            name: reaction_vessel
             curr_volume_ul: 0
             max_volume_ul: 10000
-            name: reaction-vessel
+    waste_vessels:
+        factory: device_spinner.builtins.to_list
+        args:
+            - thf_waste_vessel
+            - aqueous_waste_vessel
+    thf_waste_vessel:
+        class: brainwasher.devices.waste_vessel.WasteVessel
+        skip_kwds: [name]
+        kwds:
+            name: thf_waste_vessel
+            curr_volume_ul: 0
+            max_volume_ul: 250000
+            valid_waste_chemicals: ["thf", "deionized_water"]
+    aqueous_waste_vessel:
+        class: brainwasher.devices.waste_vessel.WasteVessel
+        skip_kwds: [name]
+        kwds:
+            name: aqueous_waste_vessel
+            curr_volume_ul: 0
+            max_volume_ul: 250000
+            valid_waste_chemicals: ["sbip", "deionized_water", "pbs"]
     mixer:
         module: brainwasher.devices.mixer
         class: SimulatedMixer
@@ -144,6 +166,7 @@ devices:
             pressure_sensor: pressure_sensor
             mixer: mixer
             reaction_vessel: reaction_vessel
+            waste_vessels: waste_vessels
             rv_source_valve: rv_source_valve
             rv_exhaust_valve: rv_exhaust_valve
             drain_exhaust_valve: drain_exhaust_valve
