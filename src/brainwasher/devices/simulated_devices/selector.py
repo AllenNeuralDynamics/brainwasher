@@ -18,6 +18,12 @@ class SimSelector:
 
 class SimCloseableSelector(SimSelector):
 
+    def __init__(self, port_count: int, port_map: dict = None,
+                 name: str = None):
+        self.port_count = port_count
+        self.port_map = port_map
+        super().__init__(positions=port_count, position_map=port_map, name=name)
+
     def open(self):
         self.log.debug("Opening flow.")
 

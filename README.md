@@ -1,7 +1,7 @@
 # brainwasher
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
-![Python](https://img.shields.io/badge/python->=3.7-blue?logo=python)
+![Python](https://img.shields.io/badge/python->=3.10-blue?logo=python)
 
 Note that this package is intended to run on a Raspberry Pi with a particular hardware configuration.
 

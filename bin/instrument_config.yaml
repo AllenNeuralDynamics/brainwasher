@@ -1,3 +1,4 @@
+
 logging:
     version: 1
     disable_existing_loggers: true
@@ -80,7 +81,7 @@ devices:
             address: 0x00
             syringe_volume_ul: 20000
     reaction_vessel:
-        class: brainwasher.devices.reaction_vessel.ReactionVessel
+        class: brainwasher.devices.vessels.ReactionVessel
         kwds:
             curr_volume_ul: 0
             max_volume_ul: 10000
@@ -114,10 +115,10 @@ devices:
             name: rv_exhaust
             board_address: 2
             channel: 1
-    drain_exhaust_valve:
+    output_bypass_valve:
         class: brainwasher.devices.sequent_microsystems.valve.NCValve
         kwds:
-            name: drain_exhaust
+            name: output_bypass
             board_address: 2
             channel: 3
     drain_waste_valve:
@@ -182,6 +183,6 @@ devices:
             reaction_vessel: reaction_vessel
             rv_source_valve: rv_source_valve
             rv_exhaust_valve: rv_exhaust_valve
-            drain_exhaust_valve: drain_exhaust_valve
+            output_bypass_valve: output_bypass_valve
             drain_waste_valve: drain_waste_valve
             pump_prime_lds: pump_bds

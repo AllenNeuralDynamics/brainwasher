@@ -52,8 +52,8 @@ class SimBrainWasher(BrainWasher):
     def leak_check_syringe_to_drain_exaust_normally_open_path(self):
         super().leak_check_syringe_to_drain_exaust_normally_open_path()
 
-    def leak_check_syringe_to_drain_waste_path(self):
-        super().leak_check_syringe_to_drain_waste_path()
+    def leak_check_syringe_to_waste_bypass_path(self):
+        super().leak_check_syringe_to_waste_bypass_path()
 
     def leak_check_syringe_to_reaction_vessel(self):
         super().leak_check_syringe_to_reaction_vessel()

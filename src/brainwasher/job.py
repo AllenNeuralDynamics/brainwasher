@@ -70,7 +70,7 @@ class ResumeState(BaseModel):
         """Ensure keys in the overrides dict exist as WashStep fields.
 
         .. note::
-           WashStep `solution` field cannot be overritten.
+           WashStep `solution` field cannot be overwritten.
 
         """
         override_keys = set(overrides.keys())
@@ -90,19 +90,21 @@ class ResumeState(BaseModel):
         return overrides
 
     step: int
+    starting_solution: dict[str, float]  # Required since we need to know
+                                         # How to handle waste.
     # overrides are a subset of WashStep fields whose values will override
     # those in a WashStep.
     overrides: Annotated[Optional[dict[str, Any]], AfterValidator(values_in_wash_step)] = None
 
 
 class History(BaseModel):
-    starting_solution: Optional[dict[str, int]] = None
     events: Optional[list[Event]] = list()
 
 
 class Job(BaseModel):
     """Local job, derived from a protocol, to be run on an instrument."""
     name: str
+    starting_solution: dict[str, float]
     source_protocol: Optional[SourceProtocol] = SourceProtocol()
     protocol: Optional[list[WashStep]] = list()
     resume_state: Optional[ResumeState] = None
@@ -112,7 +114,9 @@ class Job(BaseModel):
     @property
     def chemicals(self) -> set[str]:
         """Extract set of chemicals from all solutions across all steps"""
-        return set([chemical for step in self.protocol for chemical in step.solution.keys()])
+        step_components = set([chemical for step in self.protocol
+                          for chemical in step.solution.keys()])
+        return step_components | set(self.starting_solution.keys())
 
     def record_start(self, timestamp: datetime = None):
         """Record a start event to the job's history."""
@@ -134,8 +138,11 @@ class Job(BaseModel):
         timestamp = timestamp if timestamp else datetime.now()
         self.history.events.append(ResumeEvent(timestamp=timestamp))
 
-    def save_resume_state(self, step: int, **overrides: dict):
-        self.resume_state = ResumeState(step=step, overrides=overrides)
+    def save_resume_state(self, step: int, starting_solution: dict[str, float],
+                          **overrides: dict):
+        self.resume_state = ResumeState(step=step,
+                                        starting_solution=starting_solution,
+                                        overrides=overrides)
 
     def clear_resume_state(self):
         self.resume_state = None
@@ -165,17 +172,19 @@ class Job(BaseModel):
 
 if __name__ == "__main__":
 
-    my_model = Job(name="test_brian",
-                   #source_protocol=".",
-                   #resume_state=ResumeState(step=0, overrides={"duration_s": 123}),
-                   protocol=[WashStep(mix_speed_rpm=1000, duration_s=1800, solution={"thf": 1000, "di_water": 4000}),
-                             WashStep(mix_speed_rpm=1000, duration_s=1800, solution={"dcm": 5000})])
+    my_model = Job(name="test_brian", #source_protocol=".",
+                   starting_solution={"pbs": 10000},
+                   protocol=[WashStep(mix_speed_rpm=1000, duration_s=1800,
+                                      solution={"thf": 1000, "di_water": 4000}),
+                             WashStep(mix_speed_rpm=1000, duration_s=1800,
+                                      solution={"dcm": 5000})])
 
     import pprint
     pprint.pprint(my_model.model_dump())
     print()
     print("Saving resume state!")
-    my_model.save_resume_state(2, duration_s=1000)
+    my_model.save_resume_state(2, starting_solution={"pbs": 10000},
+                               duration_s=1000)
     pprint.pprint(my_model.model_dump())
     print()
     print("Clearing resume state!")
