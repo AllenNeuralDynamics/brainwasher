@@ -122,6 +122,9 @@ requires-dist = [
 ]
 provides-extras = ["dev"]
 
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=7.4.4" }]
+
 [[package]]
 name = "flexcache"
 version = "0.3"

@@ -180,14 +180,14 @@ if __name__ == "__main__":
                                       solution={"dcm": 5000})])
 
     import pprint
-    pprint.pprint(my_model.model_dump())
+    pprint.pprint(my_model.model_dump(exclude_unset=True))
     print()
     print("Saving resume state!")
     my_model.save_resume_state(2, starting_solution={"pbs": 10000},
                                duration_s=1000)
-    pprint.pprint(my_model.model_dump())
+    pprint.pprint(my_model.model_dump(exclude_unset=True))
     print()
     print("Clearing resume state!")
     my_model.clear_resume_state()
-    pprint.pprint(my_model.model_dump())
+    pprint.pprint(my_model.model_dump(exclude_unset=True))
     #print(my_model)

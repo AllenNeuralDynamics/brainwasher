@@ -693,7 +693,7 @@ class BrainWasher:
         if not job_path.exists():
             job = Job(name=job_path.stem)  # Name without suffix
             with open(job_path) as job_file:
-                yaml.dump(job.model_dump(), job_file)
+                yaml.dump(job.model_dump(exclude_none=True), job_file)
             self.log.info(f"Created an empty job file.")
             return
         # Create from an existing job.
@@ -703,7 +703,7 @@ class BrainWasher:
                 job = Job(**job_dict)  # validate
                 job.purge_history()
                 job.set_source_protocol(source_path)
-                yaml.dump(job.model_dump(), job_file)
+                yaml.dump(job.model_dump(exclude_none=True), job_file)
                 self.log.info(f"Created job file from an existing job file.")
                 return
         # Create from a csv-style protocol.
@@ -711,7 +711,7 @@ class BrainWasher:
             protocol = Protocol(job_path)
             # TODO: create a job from the protocol
             raise NotImplementedError("Cannot convert csv files to jobs yet!")
-            #yaml.dump(job.model_dump(), job_path)
+            #yaml.dump(job.model_dump(exclude_none=True), job_path)
 
     def validate_job_against_instrument(self, job: Job):
         """Validate that the job can be executed on this instrument configuration"""
@@ -790,24 +790,24 @@ class BrainWasher:
             start_step = job.resume_state.step
             start_step_overrides = job.resume_state.overrides
             starting_or_resuming_msg = "Resuming"
-            if (self.rxn_vessel.solution and
-                self.rxn_vessel.solution != job.resume_state.starting_solution):
+            if not self.rxn_vessel.solution: # assume unspecified.
+                self.rxn_vessel.add_solution(**job.resume_state.starting_solution)
+            if self.rxn_vessel.solution != job.resume_state.starting_solution:
                 raise ValueError("When resuming, reaction vessel starting "
                                  "solution does not match the correct resume "
                                  "state starting solution.")
-            self.rxn_vessel.add_solution(**job.resume_state.starting_solution)
             job.clear_resume_state()
             job.record_resume()
         else:
             start_step = 0
             start_step_overrides = None
             starting_or_resuming_msg = "Starting"
-            if (self.rxn_vessel.solution and
-                    self.rxn_vessel.solution != job.starting_solution):
+            if not self.rxn_vessel.solution: # assume unspecified.
+                self.rxn_vessel.add_solution(**job.starting_solution)
+            if  self.rxn_vessel.solution != job.starting_solution:
                 raise ValueError("When starting, reaction vessel starting"
                                  "solution does not match the correct resume "
                                  "state starting solution.")
-            self.rxn_vessel.add_solution(**job.starting_solution)
             job.record_start()
         log_msg = f"{starting_or_resuming_msg} job: '{job.name}'"
         if start_step > 0:
@@ -848,12 +848,12 @@ class BrainWasher:
                                       **self.resume_state_overrides)
                 self.resume_state_overrides = {}
                 with open(job_path, "w") as job_file:
-                    yaml.dump(job.model_dump(), job_file)
+                    yaml.dump(job.model_dump(exclude_none=True), job_file)
                 self.log.debug(f"Job progress saved to: {job_path}")
         job.clear_resume_state()
         job.record_finish()
         with open(job_path, "w") as job_file:
-            yaml.dump(job.model_dump(), job_file)
+            yaml.dump(job.model_dump(exclude_none=True), job_file)
         self.log.info(f"Finished job: {job.name} from {job_path}")
 
     def pause(self):
