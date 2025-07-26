@@ -86,14 +86,14 @@ devices:
         kwds:
             name: thf_waste_vessel
             max_volume_ul: 250000
-            compatible_chemicals: !!set {"thf", "deionized_water"}
+            compatible_chemicals: !!set {thf, deionized_water}
     aqueous_waste_vessel:
         class: brainwasher.devices.vessels.WasteVessel
         skip_kwds: [name]
         kwds:
             name: aqueous_waste_vessel
             max_volume_ul: 250000
-            compatible_chemicals: !!set {"sbip", "deionized_water", "pbs"}
+            compatible_chemicals: !!set {sbip, deionized_water, pbs}
     mixer:
         class: brainwasher.devices.mixer.SimulatedMixer
         kwds:

@@ -10,7 +10,7 @@ protocol:
   solution:
     sbip: 10000.0
 - duration_s: 0.0
-  mix_speed_rpm: 0
+  mix_speed_rpm: 0.0
   solution:
     pbs: 10000.0
 source_protocol:

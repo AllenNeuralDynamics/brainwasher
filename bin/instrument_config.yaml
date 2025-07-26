@@ -54,7 +54,7 @@ logging:
             - file
             #- web_handler
 devices:
-    selector_position_map:
+    selector_port_map:
         class: builtins.dict
         kwds:
             clear: 5
@@ -73,7 +73,7 @@ devices:
         kwds:
             serial: selector_serial_port
             port_count: 10
-            port_map: selector_position_map
+            port_map: selector_port_map
     source_pump:
         class: runze_control.syringe_pump.MiniSY04
         kwds:
@@ -82,10 +82,24 @@ devices:
             syringe_volume_ul: 20000
     reaction_vessel:
         class: brainwasher.devices.vessels.ReactionVessel
+        skip_kwds: [name]
         kwds:
             curr_volume_ul: 0
             max_volume_ul: 10000
-            name: reaction-vessel
+            name: reaction_vessel
+    waste_vessels:
+        factory: device_spinner.builtins.to_list
+        args:
+            - thf_waste_vessel
+            - aqueous_waste_vessel
+    thf_waste_vessel:
+        class: brainwasher.devices.vessels.WasteVessel
+        max_volume_ul: 250000
+        compatible_chemicals: !!set {thf, deionized_water}
+    aqueous_waste_vessel:
+        class: brainwasher.devices.vessels.WasteVessel
+        max_volume_ul: 250000
+        compatible_chemicals: !!set {sbip, deionized_water, pbs, dcm}
     mixer:
         class: brainwasher.devices.raspberry_pi.mixer.PWMMixer
         kwds:
@@ -105,26 +119,54 @@ devices:
             max_voltage: 5.010
     rv_source_valve:
         class: brainwasher.devices.sequent_microsystems.valve.ThreeTwoValve
+        skip_kwds: [name]
         kwds:
-            name: rv_source
+            name: rv_source_valve
             board_address: 2
             channel: 2
     rv_exhaust_valve:
         class: brainwasher.devices.sequent_microsystems.valve.ThreeTwoValve
+        skip_kwds: [name]
         kwds:
-            name: rv_exhaust
+            name: rv_exhaust_valve
             board_address: 2
             channel: 1
-    output_bypass_valve:
+    output_bypass_valves:
+        factory: device_spinner.builtins.to_list
+        args:
+            - thf_output_bypass_valve
+            - aqueous_output_bypass_valve
+    thf_output_bypass_valve:
         class: brainwasher.devices.sequent_microsystems.valve.NCValve
+        skip_kwds: [name]
         kwds:
-            name: output_bypass
+            name: thf_output_bypass_valve
+            board_address: 2
+            channel: 7
+    aqueous_output_bypass_valve:
+        class: brainwasher.devices.sequent_microsystems.valve.NCValve
+        skip_kwds: [name]
+        kwds:
+            name: aqueous_output_bypass_valve
             board_address: 2
             channel: 3
-    drain_waste_valve:
+    waste_drain_valves:
+        factory: device_spinner.builtins.to_list
+        args:
+            - thf_waste_drain_valve
+            - aqueous_waste_drain_valve
+    thf_waste_drain_valve:
         class: brainwasher.devices.sequent_microsystems.valve.NCValve
+        skip_kwds: [name]
         kwds:
-            name: drain_waste
+            name: thf_waste_drain_valve
+            board_address: 2
+            channel: 6
+    aqueous_waste_drain_valve:
+        class: brainwasher.devices.sequent_microsystems.valve.NCValve
+        skip_kwds: [name]
+        kwds:
+            name: aqueous_waste_drain_valve
             board_address: 2
             channel: 4
     selector_lds_map:
@@ -181,8 +223,9 @@ devices:
             pressure_sensor: pressure_sensor
             mixer: mixer
             reaction_vessel: reaction_vessel
+            waste_vessels: waste_vessels
             rv_source_valve: rv_source_valve
             rv_exhaust_valve: rv_exhaust_valve
-            output_bypass_valve: output_bypass_valve
-            drain_waste_valve: drain_waste_valve
+            output_bypass_valves: output_bypass_valves
+            waste_drain_valves: waste_drain_valves
             pump_prime_lds: pump_bds
