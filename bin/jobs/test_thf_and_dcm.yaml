@@ -1,0 +1,51 @@
+chemicals: !!set
+  dcm: null
+  deionized_water: null
+  pbs: null
+  thf: null
+history:
+  events:
+  - timestamp: 2025-07-28 15:43:15.605488
+    type: start
+  - timestamp: 2025-07-28 15:43:43.759675
+    type: end
+name: test_thf_and_dcm
+protocol:
+- duration_s: 3.0
+  mix_speed_rpm: 1200.0
+  solution:
+    deionized_water: 7000.0
+    thf: 3000.0
+- duration_s: 3.0
+  mix_speed_rpm: 1200.0
+  solution:
+    deionized_water: 1000.0
+    thf: 9000.0
+- duration_s: 3.0
+  mix_speed_rpm: 1200.0
+  solution:
+    thf: 10000.0
+- duration_s: 3.0
+  mix_speed_rpm: 1200.0
+  solution:
+    dcm: 10000.0
+- duration_s: 3.0
+  mix_speed_rpm: 1200.0
+  solution:
+    dcm: 10000.0
+- duration_s: 0.0
+  mix_speed_rpm: 0.0
+  solution:
+    deionized_water: 10000.0
+- duration_s: 0.0
+  mix_speed_rpm: 0.0
+  solution:
+    deionized_water: 10000.0
+- duration_s: 0.0
+  mix_speed_rpm: 0.0
+  solution:
+    deionized_water: 10000.0
+source_protocol:
+  path: /home/brainwasher/protocols/demo_protocol.csv
+starting_solution:
+  pbs: 10000.0

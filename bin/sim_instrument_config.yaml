@@ -55,9 +55,10 @@ devices:
     selector_port_map:
         class: builtins.dict
         kwds:
-            clear: 5
+            thf: 6
+            deionized_water: 5
             pbs: 4
-            sbip: 3
+            dcm: 3
             outlet: 2
             ambient: 1
     selector:
@@ -76,7 +77,7 @@ devices:
             name: reaction_vessel
             max_volume_ul: 10000
     waste_vessels:
-        factory: device_spinner.builtins.to_list
+        factory: device_spinner.factory_utils.to_list
         args:
             - thf_waste_vessel
             - aqueous_waste_vessel
@@ -93,7 +94,7 @@ devices:
         kwds:
             name: aqueous_waste_vessel
             max_volume_ul: 250000
-            compatible_chemicals: !!set {sbip, deionized_water, pbs}
+            compatible_chemicals: !!set {deionized_water, pbs, dcm}
     mixer:
         class: brainwasher.devices.mixer.SimulatedMixer
         kwds:
@@ -109,7 +110,7 @@ devices:
         kwds:
             name: rv_exhaust
     output_bypass_valves:
-        factory: device_spinner.builtins.to_list
+        factory: device_spinner.factory_utils.to_list
         args:
             - thf_output_bypass_valve
             - aqueous_output_bypass_valve
@@ -122,7 +123,7 @@ devices:
         kwds:
             name: aqueous_output_bypass
     waste_drain_valves:
-        factory: device_spinner.builtins.to_list
+        factory: device_spinner.factory_utils.to_list
         args:
             - thf_waste_drain_valve
             - aqueous_waste_drain_valve
@@ -137,20 +138,21 @@ devices:
     selector_lds_map:
         class: builtins.dict
         kwds:
-            clear: selector_clear_bds
+            thf: thf_bds
+            deionized_water: selector_deionized_water_bds
             pbs: selector_pbs_bds
-            sbip: selector_sbip_bds
+            dcm: selector_dcm_bds
             ambient: selector_ambient_bds
 # Liquid Detection Sensors
     pump_bds:
         class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
-    waste_pump_bds:
+    thf_bds:
         class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
-    selector_clear_bds:
+    selector_deionized_water_bds:
         class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
     selector_pbs_bds:
         class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
-    selector_sbip_bds:
+    selector_dcm_bds:
         class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
     selector_ambient_bds:
         class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor

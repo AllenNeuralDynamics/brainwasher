@@ -1,6 +1,6 @@
 """Tissue-clearing proof-of-concept"""
 
-import _thread
+import _thread  # To kill the main thread from a child thread.
 import logging
 import yaml
 
@@ -65,10 +65,11 @@ class BrainWasher:
     MAX_PURGE_PRESSURE_PSIG = 8.0
     LEAK_CHECK_SQUEEZE_PERCENT = 15.
     MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG = 1.0
-    MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.20
+    MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.10  # Max permissable relative change
+                                               # in pressure during leak checks.
 
     def __init__(self, selector: CloseableVICI,
-                 selector_lds_map: dict[str],
+                 selector_lds_map: dict[str, int],
                  pump: SyringePump,
                  reaction_vessel: ReactionVessel,
                  mixer: Mixer,
@@ -120,6 +121,7 @@ class BrainWasher:
         self.pressure_avg_start_time_s = 0
         self.pressure_avg_duration_s = 0
         self.pressure_psig = 0
+        self._validate_setup()
         # Protocol Thread control
         self.job_worker = None
         # Thread-safe protection within a class instance.
@@ -130,6 +132,26 @@ class BrainWasher:
         # Launch pressure monitor thread.
         self.start_pressure_monitor()
 
+    def _validate_setup(self):
+        # Ensure names match in selector port map and bds port map
+        # names in the bds port map should be a subset of names in the
+        selector_lds_map_keys = set(self.selector_lds_map.keys())
+        selector_port_map_keys = set(self.selector.port_map.keys())
+        # selector port map.
+        if not (selector_lds_map_keys <= selector_port_map_keys):
+            raise RuntimeError("Key names in selector port map and bds map do "
+                               "not match!")
+        # "ambient" and "outlet" must exist in the selector port map.
+        required_ports = {"ambient", "outlet"}
+        if not (required_ports <= selector_port_map_keys):
+            raise RuntimeError("The selector port map must include the "
+                               f"followig named ports: {required_ports}")
+
+    @property
+    def plumbed_chemicals(self):
+        """Chemicals that the instrument is currently plumbed with."""
+        return set(self.selector_lds_map.keys())
+
     @lock_flowpath
     def reset(self):
         """Initialize all hardware while ensuring that the system can bleed any
@@ -137,7 +159,9 @@ class BrainWasher:
         self.log.info("Resetting instrument.")
         self.mixer.stop_mixing()
         self.deenergize_all_valves()
-        if self.pump.get_position_ul() <= self.PUMP_APPROX_ZERO_UL:
+        if (self.pump.get_speed_percent() is not None and
+            self.pump.get_position_ul() <= self.PUMP_APPROX_ZERO_UL):
+            self.log.warning("Skipping syring pump reset. Pump is already reset.")
             return
         try:
             # Connect: source pump -> waste.
@@ -226,16 +250,19 @@ class BrainWasher:
         """Given a series of chemicals, return a waste vessel chemically
         compatible to store the solution contents. If multiple are
         compatible, return the vessel with the most spare volume."""
+        if not chemicals:
+            self.log.warning("Reaction vessel is empty. Any waste vessel is "
+                             "compatible.")
         # A solution is chemically compatible if its components are a subset
         # of the vessel's compatible components.
         waste_compatibility = [set(chemicals) <= wv.compatible_chemicals
                                for wv in self.waste_vessels]
         # None are compatible: bail early.
         if not any(waste_compatibility):
-            self.log.warning(f"No compatible waste found for: {chemicals}.")
+            self.log.error(f"No compatible waste found for: {chemicals}.")
             return None
         # Both are compatible! Return the one with less liquid or the first if equal.
-        if len(waste_compatibility) == len(self.waste_vessels):
+        if waste_compatibility.count(True) == len(self.waste_vessels):
             volumes = [wv.curr_volume_ul for wv in self.waste_vessels]
             return volumes.index(min(volumes))
         # Only one or the other are compatible.
@@ -517,10 +544,14 @@ class BrainWasher:
     @syringe_empty
     def drain_vessel(self, drain_volume_ul: float = 40000):
         """Drain the reaction vessel."""
-        self.log.info("Draining vessel.")
+        msg = ("Draining vesssel" +
+                f" of {self.rxn_vessel.solution}." if self.rxn_vessel.solution else ".")
+        self.log.info(msg)
         # Select chemically-compatible flowpath depending on the waste contents.
         components = set(self.rxn_vessel.solution.keys())
         waste_id = self.get_compatible_waste_vessel_id(*components)
+        self.log.debug(f"Waste contents will be discarded to "
+                       f"{self.waste_vessels[waste_id].name}.")
         # Set outlet flowpath starting configuration.
         self.rv_source_valve.energize()
         self.rv_exhaust_valve.deenergize()  # Lock out the rv top exhaust port.
@@ -609,8 +640,9 @@ class BrainWasher:
                           intermittent_mixing_off_time_s]
         intermittent_mixing = all([i is not None for i in slow_mix_times])
         # Validate chemicals.
-        common_chemicals = self.selector_lds_map.keys() & solution.keys()
+        #common_chemicals = self.selector_lds_map.keys() & solution.keys()
         used_chemicals = set(solution.keys())
+        common_chemicals = self.plumbed_chemicals & used_chemicals
         if len(common_chemicals) < len(used_chemicals):
             unrecognized_chemicals = common_chemicals ^ used_chemicals
             raise ValueError(f"Unrecognized chemicals: {unrecognized_chemicals}.")
@@ -731,8 +763,10 @@ class BrainWasher:
                              "of the instrument reaction vessel: "
                              f"{volume_errors}.")
         # Ensure required chemicals are plumbed.
-        if not job.chemicals <= set(self.selector.port_map.keys()):
-            raise ValueError("Job chemicals are not plumbed on the machine.")
+        if not job.chemicals <= self.plumbed_chemicals:
+            raise ValueError(f"Job chemicals are not plumbed on the machine; "
+                             f"Job chemicals: {job.chemicals}, "
+                             f"loaded chemicals: {self.plumbed_chemicals}.")
         # Ensure each step solution can be dumped to a compatible waste vessel.
         waste_compatibility_errors = []
         for index, step in enumerate(job.protocol):
@@ -878,7 +912,7 @@ class BrainWasher:
         # Leak checks run in order can isolate leaks down to a small number
         # of fittings/seals that need to be checked.
         self.leak_check_syringe_to_selector_common_path()
-        self.leak_check_syringe_to_drain_exaust_normally_open_path()
+        self.leak_check_syringe_to_rv_exaust_normally_open_path()
         self.leak_check_syringe_to_waste_bypass_path()
         self.leak_check_syringe_to_reaction_vessel()
 
@@ -909,7 +943,7 @@ class BrainWasher:
         self.log.info("leak check passed: syringe -> <- selector common path.")
 
     @lock_flowpath
-    def leak_check_syringe_to_drain_exaust_normally_open_path(self):
+    def leak_check_syringe_to_rv_exaust_normally_open_path(self):
         try:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
@@ -926,7 +960,7 @@ class BrainWasher:
             raise
         finally:
             self._purge_gas_filled_syringe()
-        self.log.info("leak check passed: syringe -><- output bypass NO path.")
+        self.log.info("leak check passed: syringe -><- reaction vessel exhaust NO path.")
 
     @lock_flowpath
     def leak_check_syringe_to_waste_bypass_path(self):

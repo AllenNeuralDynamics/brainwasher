@@ -57,9 +57,10 @@ devices:
     selector_port_map:
         class: builtins.dict
         kwds:
-            clear: 5
+            thf: 6
+            deionized_water: 5
             pbs: 4
-            sbip: 3
+            dcm: 3
             outlet: 2
             ambient: 1
     selector_serial_port:
@@ -84,22 +85,25 @@ devices:
         class: brainwasher.devices.vessels.ReactionVessel
         skip_kwds: [name]
         kwds:
-            curr_volume_ul: 0
             max_volume_ul: 10000
             name: reaction_vessel
     waste_vessels:
-        factory: device_spinner.builtins.to_list
+        factory: device_spinner.factory_utils.to_list
         args:
             - thf_waste_vessel
             - aqueous_waste_vessel
     thf_waste_vessel:
         class: brainwasher.devices.vessels.WasteVessel
-        max_volume_ul: 250000
-        compatible_chemicals: !!set {thf, deionized_water}
+        kwds:
+            name: thf_waste_vessel
+            max_volume_ul: 250000
+            compatible_chemicals: !!set {thf, deionized_water}
     aqueous_waste_vessel:
         class: brainwasher.devices.vessels.WasteVessel
-        max_volume_ul: 250000
-        compatible_chemicals: !!set {sbip, deionized_water, pbs, dcm}
+        kwds:
+            name: aqueous_waste_vessel
+            max_volume_ul: 250000
+            compatible_chemicals: !!set {deionized_water, pbs, dcm}
     mixer:
         class: brainwasher.devices.raspberry_pi.mixer.PWMMixer
         kwds:
@@ -132,7 +136,7 @@ devices:
             board_address: 2
             channel: 1
     output_bypass_valves:
-        factory: device_spinner.builtins.to_list
+        factory: device_spinner.factory_utils.to_list
         args:
             - thf_output_bypass_valve
             - aqueous_output_bypass_valve
@@ -151,7 +155,7 @@ devices:
             board_address: 2
             channel: 3
     waste_drain_valves:
-        factory: device_spinner.builtins.to_list
+        factory: device_spinner.factory_utils.to_list
         args:
             - thf_waste_drain_valve
             - aqueous_waste_drain_valve
@@ -172,9 +176,10 @@ devices:
     selector_lds_map:
         class: builtins.dict
         kwds:
-            clear: selector_clear_bds
+            thf: thf_bds
+            deionized_water: selector_deionized_water_bds
             pbs: selector_pbs_bds
-            sbip: selector_sbip_bds
+            dcm: selector_dcm_bds
             ambient: selector_ambient_bds
 # Liquid Detection Sensors
     pump_bds:
@@ -182,12 +187,12 @@ devices:
         kwds:
             board_address: 0
             channel: 11
-    waste_pump_bds:
+    thf_bds:
         class: brainwasher.devices.sequent_microsystems.liquid_presence_detection.BubbleDetectionSensor
         kwds:
             board_address: 0
             channel: 12
-    selector_clear_bds:
+    selector_deionized_water_bds:
         class: brainwasher.devices.sequent_microsystems.liquid_presence_detection.BubbleDetectionSensor
         kwds:
             board_address: 0
@@ -197,7 +202,7 @@ devices:
         kwds:
             board_address: 0
             channel: 4
-    selector_sbip_bds:
+    selector_dcm_bds:
         class: brainwasher.devices.sequent_microsystems.liquid_presence_detection.BubbleDetectionSensor
         kwds:
             board_address: 0
