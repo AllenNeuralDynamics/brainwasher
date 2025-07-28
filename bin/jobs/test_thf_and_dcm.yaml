@@ -1,14 +1,5 @@
-chemicals: !!set
-  dcm: null
-  deionized_water: null
-  pbs: null
-  thf: null
 history:
-  events:
-  - timestamp: 2025-07-28 15:43:15.605488
-    type: start
-  - timestamp: 2025-07-28 15:43:43.759675
-    type: end
+  events: []
 name: test_thf_and_dcm
 protocol:
 - duration_s: 3.0
