@@ -60,7 +60,7 @@ class BrainWasher:
 
     """
 
-    PUMP_APPROX_ZERO_UL = 12.5
+    PUMP_APPROX_ZERO_UL =  30.0 #12.5
     MAX_SAFE_PRESSURE_PSIG = 13.0
     MAX_PURGE_PRESSURE_PSIG = 8.0
     LEAK_CHECK_SQUEEZE_PERCENT = 15.
@@ -159,10 +159,6 @@ class BrainWasher:
         self.log.info("Resetting instrument.")
         self.mixer.stop_mixing()
         self.deenergize_all_valves()
-        if (self.pump.get_speed_percent() is not None and
-            self.pump.get_position_ul() <= self.PUMP_APPROX_ZERO_UL):
-            self.log.warning("Skipping syring pump reset. Pump is already reset.")
-            return
         try:
             # Connect: source pump -> waste.
             # FIXME: we need to know what we're purging.
@@ -288,6 +284,7 @@ class BrainWasher:
         if (not SIMULATED) and self.selector_lds_map[chemical].tripped():
             self.log.warning(f"{chemical} reservoir line detected prematurely "
                              f"as primed. Aborting.")
+            self.prime_volumes_ul[chemical] = 0
             return
         waste_id = self.get_compatible_waste_vessel_id(chemical)
         self.log.info(f"Priming {chemical} reservoir line.")
@@ -333,10 +330,18 @@ class BrainWasher:
             self.log.debug("Removing displaced gas.")
             self.selector.move_to_port("outlet")
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
+        # Ensure we leave with the pump fully plunged.
+        if self.pump.get_position_ul() != 0:
+            self.log.debug("Post-priming, removing displaced gas.")
+            self.selector.move_to_port("outlet")
+            # Bugfix. The pump appears to ignore small movement commands near 0.
+            # Since priming may put the pump in a position near zero, we reset
+            # to ensure we're at 0.
+            self.pump.reset_syringe_position()
+        self.output_bypass_valves[waste_id].deenergize()
         if not remaining_volume_ul and not liquid_detected:
             raise RuntimeError("Withdrew maximum volume "
                 f"({max_pump_displacement_ul}[uL]) and no liquid detected.")
-        self.output_bypass_valves[waste_id].deenergize()
         displaced_volume_ul = max_pump_displacement_ul - remaining_volume_ul
         # Save displaced volume.
         self.prime_volumes_ul[chemical] = displaced_volume_ul
@@ -387,7 +392,8 @@ class BrainWasher:
             self.log.warning(f"Skipping priming pump in simulation.")
             self.pump_is_primed_with = f"{chemical}"
             return
-        self.prime_reservoir_line(chemical)
+        if chemical not in self.prime_volumes_ul:
+            self.prime_reservoir_line(chemical)
         # FIXME: store this state in software in case we are at the edge
         #  of the sensor trip threshold.
         if self.pump_is_primed_with:
@@ -443,7 +449,7 @@ class BrainWasher:
         try:
             # Purge all starting contents of the syringe.
             if self.pump.get_position_ul() != 0:
-                self.log.warning("Directing existing contents to waste.")
+                self.log.warning(f"Directing existing contents to {destination.name}.")
                 # Select dest line.
                 self.selector.move_to_port("outlet")
                 # Fully plunge syringe.
@@ -482,11 +488,19 @@ class BrainWasher:
                     while self.pump.is_busy():
                         if (self.pressure_psig > self.MAX_PURGE_PRESSURE_PSIG):
                             self.pump.halt()
+                            self.pump.is_busy() # Dump busy state to logs.
+                            break  # For some reason halt may not always clear busy?
                         sleep(0.05)
                     remaining_volume_ul = self.pump.get_position_ul()
                     self.log.debug("Releasing pressure to outlet.")
                     self.selector.open()
                     sleep(0.5)
+            ## Ensure we're fully reset, not just hovering at the "0" error margin.
+            #self.pump.move_absolute_in_percent(0)
+            # Bugfix. The pump appears to ignore small movement commands near 0.
+            # Since priming may put the pump in a position near zero, we reset
+            # to ensure we're at 0.
+            self.pump.reset_syringe_position()
         finally:
             # Close waste flowpath.
             self.output_bypass_valves[waste_id].deenergize()
@@ -839,7 +853,7 @@ class BrainWasher:
             if not self.rxn_vessel.solution: # assume unspecified.
                 self.rxn_vessel.add_solution(**job.starting_solution)
             if  self.rxn_vessel.solution != job.starting_solution:
-                raise ValueError("When starting, reaction vessel starting"
+                raise ValueError("When starting, reaction vessel starting "
                                  "solution does not match the correct resume "
                                  "state starting solution.")
             job.record_start()
