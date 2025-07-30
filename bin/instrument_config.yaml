@@ -91,19 +91,19 @@ devices:
         factory: device_spinner.factory_utils.to_list
         args:
             - thf_waste_vessel
-            - aqueous_waste_vessel
+            - dcm_waste_vessel
     thf_waste_vessel:
         class: brainwasher.devices.vessels.WasteVessel
         kwds:
             name: thf_waste_vessel
             max_volume_ul: 250000
-            compatible_chemicals: !!set {thf, deionized_water}
-    aqueous_waste_vessel:
+            compatible_chemicals: !!set {thf, deionized_water, pbs}
+    dcm_waste_vessel:
         class: brainwasher.devices.vessels.WasteVessel
         kwds:
-            name: aqueous_waste_vessel
+            name: dcm_waste_vessel
             max_volume_ul: 250000
-            compatible_chemicals: !!set {deionized_water, pbs, dcm}
+            compatible_chemicals: !!set {dcm}
     mixer:
         class: brainwasher.devices.raspberry_pi.mixer.PWMMixer
         kwds:
