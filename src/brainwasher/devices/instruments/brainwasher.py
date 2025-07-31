@@ -1011,8 +1011,18 @@ class BrainWasher:
                   "is leaking."
             self.log.error(msg)
             raise
-        finally:
+        finally:  # Cleanup. Purge compressed air everywhere.
             self._purge_gas_filled_syringe()
+            # Purge reaction vessel.
+            self.log.debug("Depressurizing reaction vessel")
+            vapor_components = set(self.rxn_vessel.solution.keys())
+            waste_vessel_id = self.get_compatible_waste_vessel_id(*vapor_components)
+            # TODO: waste_vessel_id could be None but shouldn't be at this point.
+            self.output_bypass_valves[waste_vessel_id].energize()
+            self.rv_exhaust_valve.energize()
+            sleep(0.5)
+            self.output_bypass_valves[waste_vessel_id].deenergize()
+            self.rv_exhaust_valve.deenergize()
         self.log.info("leak check passed: syringe -><- reaction vessel path.")
 
     @lock_flowpath
@@ -1056,10 +1066,14 @@ class BrainWasher:
 
     @lock_flowpath
     def _purge_gas_filled_syringe(self):
+        self.log.debug("Purging gas-filled syringe to waste.")
         self.deenergize_all_valves()
-        self.output_bypass_valves[0].energize()
+        vapor_components = set(self.rxn_vessel.solution.keys())
+        waste_vessel_id = self.get_compatible_waste_vessel_id(*vapor_components)
+        # TODO: waste_vessel_id could be None but shouldn't be at this point.
+        self.output_bypass_valves[waste_vessel_id].energize()
         self.pump.move_absolute_in_percent(0)
-        self.output_bypass_valves[0].deenergize()
+        self.output_bypass_valves[waste_vessel_id].deenergize()
 
     @lock_flowpath
     def clean_system(self):

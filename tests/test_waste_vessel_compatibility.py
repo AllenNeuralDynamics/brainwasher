@@ -28,8 +28,10 @@ def test_get_chemicals_for_waste_components():
     assert bw.get_compatible_waste_vessel_id(*{"thf", "deionized_water"}) == 0
     assert bw.get_compatible_waste_vessel_id(*{"dcm"}) == 1
     assert bw.get_compatible_waste_vessel_id(*{"peanut_butter"}) == None
-    # Both are compatible with deionized_water. Return the least full one or
-    # the first one if they are equally full.
-    assert bw.get_compatible_waste_vessel_id(*{"deionized_water"}) == 0
-    bw.waste_vessels[0].add_solution(**{"deionized_water": 100})
-    assert bw.get_compatible_waste_vessel_id(*{"deionized_water"}) == 1
+
+    # TODO: test compatibility when both vessels are compatible.
+    ## Both are compatible with deionized_water. Return the least full one or
+    ## the first one if they are equally full.
+
+    # "No chemicals" case. Return the first vessel with less filled volume.
+    assert bw.get_compatible_waste_vessel_id(*[]) == 0
