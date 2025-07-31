@@ -164,7 +164,7 @@ class BrainWasher:
             # FIXME: we need to know what we're purging.
             #   We need to write out state to a file.
             self.log.debug("Connecting pump to waste.")
-            self.log.critical("Dumping unknown pump contents to unknown waste.")
+            self.log.error("Dumping unknown pump contents to unknown waste.")
             self.output_bypass_valves[0].energize()
             self.selector.move_to_port("outlet")
             self.pump.reset_syringe_position() # Home pump; dispense contents to waste.
@@ -1074,8 +1074,3 @@ class BrainWasher:
         self.output_bypass_valves[waste_vessel_id].energize()
         self.pump.move_absolute_in_percent(0)
         self.output_bypass_valves[waste_vessel_id].deenergize()
-
-    @lock_flowpath
-    def clean_system(self):
-        # TODO: implement this.
-        pass
