@@ -1,3 +1,8 @@
+chemicals: !!set
+  dcm: null
+  deionized_water: null
+  pbs: null
+  thf: null
 history:
   events: []
 name: test_thf_and_dcm

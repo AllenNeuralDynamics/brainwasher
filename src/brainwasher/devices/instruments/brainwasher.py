@@ -13,6 +13,7 @@ from brainwasher.devices.valves.closeable_vici import CloseableVICI
 from brainwasher.errors.instrument_errors import LeakCheckError
 from brainwasher.protocol import Protocol
 from brainwasher.job import Job
+from datetime import timedelta
 from functools import wraps
 from pathlib import Path
 from runze_control.syringe_pump import SyringePump
@@ -860,6 +861,9 @@ class BrainWasher:
         log_msg = f"{starting_or_resuming_msg} job: '{job.name}'"
         if start_step > 0:
             log_msg += f" at step {start_step+1}."  # Steps in logs are 1-indexed.
+        else:
+            log_msg += ". "
+        log_msg += f"Job should take {timedelta(seconds=job.get_duration_s(start_step))}."
         self.log.info(log_msg)
         # Execute the protocol.
         for index, step in enumerate(job.protocol[start_step:], start=start_step):

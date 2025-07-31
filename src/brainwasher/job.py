@@ -110,6 +110,10 @@ class Job(BaseModel):
     resume_state: Optional[ResumeState] = None
     history: Optional[History] = History()
 
+    def get_duration_s(self, start_step: int = 0):
+        """Total job duration in seconds starting from the specified step."""
+        return sum([step.duration_s for step in self.protocol[start_step:]])
+
     @computed_field
     @property
     def chemicals(self) -> set[str]:
@@ -168,26 +172,3 @@ class Job(BaseModel):
         else:
             kwargs["exclude"] = {"resume_state"}
         return super().model_dump(**kwargs)
-
-
-if __name__ == "__main__":
-
-    my_model = Job(name="test_brian", #source_protocol=".",
-                   starting_solution={"pbs": 10000},
-                   protocol=[WashStep(mix_speed_rpm=1000, duration_s=1800,
-                                      solution={"thf": 1000, "di_water": 4000}),
-                             WashStep(mix_speed_rpm=1000, duration_s=1800,
-                                      solution={"dcm": 5000})])
-
-    import pprint
-    pprint.pprint(my_model.model_dump(exclude_unset=True))
-    print()
-    print("Saving resume state!")
-    my_model.save_resume_state(2, starting_solution={"pbs": 10000},
-                               duration_s=1000)
-    pprint.pprint(my_model.model_dump(exclude_unset=True))
-    print()
-    print("Clearing resume state!")
-    my_model.clear_resume_state()
-    pprint.pprint(my_model.model_dump(exclude_unset=True))
-    #print(my_model)
