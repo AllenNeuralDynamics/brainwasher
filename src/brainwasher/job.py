@@ -4,6 +4,7 @@ from pathlib import Path
 from pydantic import BaseModel, computed_field, field_serializer, model_serializer, AfterValidator, Field
 from pydantic import ValidationError
 from datetime import datetime
+from functools import cached_property
 from typing import Annotated, Optional, Any, Literal, Union
 import logging
 
@@ -114,13 +115,25 @@ class Job(BaseModel):
         """Total job duration in seconds starting from the specified step."""
         return sum([step.duration_s for step in self.protocol[start_step:]])
 
-    @computed_field
-    @property
+    @cached_property
     def chemicals(self) -> set[str]:
         """Extract set of chemicals from all solutions across all steps"""
         step_components = set([chemical for step in self.protocol
                           for chemical in step.solution.keys()])
+        # Include starting solution chemicals.
         return step_components | set(self.starting_solution.keys())
+
+    @computed_field
+    @cached_property
+    def stock_chemical_volumes_ul(self) -> dict[str, float]:
+        """Dict of total chemical volumes (in microliters) needed across all
+        steps."""
+        stock_chemicals = {}
+        for step in self.protocol:
+            for chemical_name, volume_ul in step.solution.items():
+                curr_volume_ul = stock_chemicals.get(chemical_name, 0)
+                stock_chemicals[chemical_name] = curr_volume_ul + volume_ul
+        return stock_chemicals
 
     def record_start(self, timestamp: datetime = None):
         """Record a start event to the job's history."""

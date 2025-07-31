@@ -12,6 +12,8 @@ brainwasher.devices.instruments.brainwasher.SIMULATED = True
 
 
 def get_simulated_brainwasher():
+    """Grab simulated instrument config, and use it to instantiate a brainwasher
+    instance."""
     pkg_dir = Path(__file__).parent.parent
     cfg_file = pkg_dir / Path("bin") / Path("sim_instrument_config.yaml")
     if not cfg_file.exists():
@@ -23,7 +25,7 @@ def get_simulated_brainwasher():
 
 
 def test_get_chemicals_for_waste_components():
-
+    """Ensure `get_compatible_waste_vessel_id` works as expected."""
     bw = get_simulated_brainwasher()
     assert bw.get_compatible_waste_vessel_id(*{"thf", "deionized_water"}) == 0
     assert bw.get_compatible_waste_vessel_id(*{"dcm"}) == 1
