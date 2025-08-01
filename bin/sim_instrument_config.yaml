@@ -52,113 +52,113 @@ logging:
             - file
             #- web_handler
 devices:
-    selector_position_map:
-        module: builtins
-        class: dict
+    selector_port_map:
+        class: builtins.dict
         kwds:
-            clear: 5
+            thf: 6
+            deionized_water: 5
             pbs: 4
-            sbip: 3
+            dcm: 3
             outlet: 2
             ambient: 1
     selector:
         class: brainwasher.devices.simulated_devices.selector.SimCloseableSelector
         kwds:
-            positions: 10
-            position_map: selector_position_map
+            port_count: 10
+            port_map: selector_port_map
     source_pump:
-        module: brainwasher.devices.simulated_devices.syringe_pump
-        class: SimSyringePump
+        class: brainwasher.devices.simulated_devices.syringe_pump.SimSyringePump
         kwds:
             syringe_volume_ul: 20000
     reaction_vessel:
-        module: brainwasher.devices.reaction_vessel
-        class: ReactionVessel
+        class: brainwasher.devices.vessels.ReactionVessel
         skip_kwds: [name]
         kwds:
             name: reaction_vessel
-            curr_volume_ul: 0
             max_volume_ul: 10000
     waste_vessels:
-        factory: device_spinner.builtins.to_list
+        factory: device_spinner.factory_utils.to_list
         args:
             - thf_waste_vessel
-            - aqueous_waste_vessel
+            - dcm_waste_vessel
     thf_waste_vessel:
-        class: brainwasher.devices.waste_vessel.WasteVessel
+        class: brainwasher.devices.vessels.WasteVessel
         skip_kwds: [name]
         kwds:
             name: thf_waste_vessel
-            curr_volume_ul: 0
             max_volume_ul: 250000
-            valid_waste_chemicals: ["thf", "deionized_water"]
-    aqueous_waste_vessel:
-        class: brainwasher.devices.waste_vessel.WasteVessel
+            compatible_chemicals: !!set {thf, deionized_water, pbs}
+    dcm_waste_vessel:
+        class: brainwasher.devices.vessels.WasteVessel
         skip_kwds: [name]
         kwds:
-            name: aqueous_waste_vessel
-            curr_volume_ul: 0
+            name: dcm_waste_vessel
             max_volume_ul: 250000
-            valid_waste_chemicals: ["sbip", "deionized_water", "pbs"]
+            compatible_chemicals: !!set {dcm}
     mixer:
-        module: brainwasher.devices.mixer
-        class: SimulatedMixer
+        class: brainwasher.devices.mixer.SimulatedMixer
         kwds:
             max_rpm: 1200
     pressure_sensor:
-        module: brainwasher.devices.simulated_devices.pressure_sensor
-        class: SimPressureSensor
+        class: brainwasher.devices.simulated_devices.pressure_sensor.SimPressureSensor
     rv_source_valve:
-        module: brainwasher.devices.valves.valve
-        class: ThreeTwoSolenoidValve
+        class: brainwasher.devices.valves.valve.ThreeTwoSolenoidValve
         kwds:
             name: rv_source
     rv_exhaust_valve:
-        module: brainwasher.devices.valves.valve
-        class: ThreeTwoSolenoidValve
+        class: brainwasher.devices.valves.valve.ThreeTwoSolenoidValve
         kwds:
             name: rv_exhaust
-    drain_exhaust_valve:
-        module: brainwasher.devices.valves.valve
-        class: NCSolenoidValve
+    output_bypass_valves:
+        factory: device_spinner.factory_utils.to_list
+        args:
+            - thf_output_bypass_valve
+            - aqueous_output_bypass_valve
+    thf_output_bypass_valve:
+        class: brainwasher.devices.valves.valve.NCSolenoidValve
         kwds:
-            name: drain_exhaust
-    drain_waste_valve:
-        module: brainwasher.devices.valves.valve
-        class: NCSolenoidValve
+            name: output_bypass
+    aqueous_output_bypass_valve:
+        class: brainwasher.devices.valves.valve.NCSolenoidValve
         kwds:
-            name: drain_waste
+            name: aqueous_output_bypass
+    waste_drain_valves:
+        factory: device_spinner.factory_utils.to_list
+        args:
+            - thf_waste_drain_valve
+            - aqueous_waste_drain_valve
+    thf_waste_drain_valve:
+        class: brainwasher.devices.valves.valve.NCSolenoidValve
+        kwds:
+            name: thf_waste_drain
+    aqueous_waste_drain_valve:
+        class: brainwasher.devices.valves.valve.NCSolenoidValve
+        kwds:
+            name: aqueous_waste_drain
     selector_lds_map:
-        module: builtins
-        class: dict
+        class: builtins.dict
         kwds:
-            clear: selector_clear_bds
+            thf: thf_bds
+            deionized_water: selector_deionized_water_bds
             pbs: selector_pbs_bds
-            sbip: selector_sbip_bds
+            dcm: selector_dcm_bds
             ambient: selector_ambient_bds
 # Liquid Detection Sensors
     pump_bds:
-        module: brainwasher.devices.liquid_presence_detection
-        class: BubbleDetectionSensor
-    waste_pump_bds:
-        module: brainwasher.devices.liquid_presence_detection
-        class: BubbleDetectionSensor
-    selector_clear_bds:
-        module: brainwasher.devices.liquid_presence_detection
-        class: BubbleDetectionSensor
+        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
+    thf_bds:
+        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
+    selector_deionized_water_bds:
+        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
     selector_pbs_bds:
-        module: brainwasher.devices.liquid_presence_detection
-        class: BubbleDetectionSensor
-    selector_sbip_bds:
-        module: brainwasher.devices.liquid_presence_detection
-        class: BubbleDetectionSensor
+        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
+    selector_dcm_bds:
+        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
     selector_ambient_bds:
-        module: brainwasher.devices.liquid_presence_detection
-        class: BubbleDetectionSensor
+        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
 # Full System:
     brainwasher:
-        module: brainwasher.devices.instruments.brainwasher
-        class: BrainWasher
+        class: brainwasher.devices.instruments.brainwasher.BrainWasher
         kwds:
             selector: selector
             selector_lds_map: selector_lds_map
@@ -169,6 +169,6 @@ devices:
             waste_vessels: waste_vessels
             rv_source_valve: rv_source_valve
             rv_exhaust_valve: rv_exhaust_valve
-            drain_exhaust_valve: drain_exhaust_valve
-            drain_waste_valve: drain_waste_valve
+            output_bypass_valves: output_bypass_valves
+            waste_drain_valves: waste_drain_valves
             pump_prime_lds: pump_bds

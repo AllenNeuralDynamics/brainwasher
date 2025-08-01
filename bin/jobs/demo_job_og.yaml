@@ -3,10 +3,8 @@ source_protocol:
   path: "/home/brainwasher/protocols/demo_protocol.csv"  # could be a path or url to a csv or another protocol.
   accessed: null
 
-start_timestamp:
-  null
-end_timestamp:
-  null
+starting_solution:
+  pbs: 10000
 
 chemicals:
   - clear
@@ -36,7 +34,5 @@ protocol:
     end_empty: false
 
 history:
-  starting_solution:
-    pbs: 10000
   execution_history:
     null
