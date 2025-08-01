@@ -13,6 +13,7 @@ from brainwasher.devices.valves.closeable_vici import CloseableVICI
 from brainwasher.errors.instrument_errors import LeakCheckError
 from brainwasher.protocol import Protocol
 from brainwasher.job import Job
+from copy import deepcopy
 from datetime import timedelta
 from functools import wraps
 from pathlib import Path
@@ -81,7 +82,6 @@ class BrainWasher:
                  output_bypass_valves: list[NCValve],
                  waste_drain_valves: list[NCValve],
                  pump_prime_lds: BubbleDetectionSensor,
-                 starting_state: dict = None,
                  #tube_length_graph
                  ):
         """
@@ -243,24 +243,32 @@ class BrainWasher:
                 _thread.interrupt_main()
             sleep(0.01)
 
-    def get_compatible_waste_vessel_id(self, *chemicals: str) -> int | None:
+    def get_compatible_waste_vessel_id(self, *chemicals: str,
+                                       waste_vessels: list[WasteVessel] = None) -> int | None:
         """Given a series of chemicals, return a waste vessel chemically
         compatible to store the solution contents. If multiple are
-        compatible, return the vessel with the most spare volume."""
+        compatible, return the vessel with the most spare volume.
+
+        .. Note::
+           If unspecified, `waste_vessels` defaults to `self.waste_vessels`.
+
+        """
+        if waste_vessels is None:
+            waste_vessels = self.waste_vessels
         if not chemicals:
             self.log.warning("Reaction vessel is empty. Any waste vessel is "
                              "compatible.")
         # A solution is chemically compatible if its components are a subset
         # of the vessel's compatible components.
         waste_compatibility = [set(chemicals) <= wv.compatible_chemicals
-                               for wv in self.waste_vessels]
+                               for wv in waste_vessels]
         # None are compatible: bail early.
         if not any(waste_compatibility):
             self.log.error(f"No compatible waste found for: {chemicals}.")
             return None
         # Both are compatible! Return the one with less liquid or the first if equal.
-        if waste_compatibility.count(True) == len(self.waste_vessels):
-            volumes = [wv.curr_volume_ul for wv in self.waste_vessels]
+        if waste_compatibility.count(True) == len(waste_vessels):
+            volumes = [wv.curr_volume_ul for wv in waste_vessels]
             return volumes.index(min(volumes))
         # Only one or the other are compatible.
         return waste_compatibility.index(True)
@@ -762,8 +770,6 @@ class BrainWasher:
 
     def validate_job_against_instrument(self, job: Job):
         """Validate that the job can be executed on this instrument configuration"""
-        # TODO: validate that we have enough space in the waste vessels to
-        #  run the entire job.
         # Ensure all solution volumes fit in reaction vessel
         volume_errors = []
         for index, step in enumerate(job.protocol):
@@ -797,6 +803,14 @@ class BrainWasher:
             raise ValueError("Job is not chemically compatible with waste "
                              f"vessels. The following steps cannot be dumped "
                              f"to any waste vessel: {waste_compatibility_errors}")
+        # Ensure waste vessels can accommodate solutions across every job step.
+        # Easiest way to check this is to just run it on a copy.
+        waste_vessels = deepcopy(self.waste_vessels)
+        for index, step in enumerate(job.protocol):
+            waste_vessel_id = self.get_compatible_waste_vessel_id(*step.components,
+                                                                  waste_vessels=waste_vessels)
+            # Raises an error if we're at capacity.
+            waste_vessels[waste_vessel_id].add_solution(**step.solution)
         self.log.info(f"Job passed validation against instrument capabilities.")
 
     def _load_job(self, job_path: str) -> Job:

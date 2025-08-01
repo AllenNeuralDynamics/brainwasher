@@ -14,6 +14,8 @@ brainwasher.devices.instruments.brainwasher.SIMULATED = True
 def get_simulated_brainwasher():
     """Grab simulated instrument config, and use it to instantiate a brainwasher
     instance."""
+    # This is kinda clunky and doesn't support dynamically changing fields or
+    # where or not the high-level brainwaser is considred SIMULATED.
     pkg_dir = Path(__file__).parent.parent
     cfg_file = pkg_dir / Path("bin") / Path("sim_instrument_config.yaml")
     if not cfg_file.exists():

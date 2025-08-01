@@ -15,11 +15,12 @@ class Vessel:
         return sum(self.solution.values())
 
     def add_solution(self, **chemicals: dict[str, float]):
-        for chemical, volume_ul in chemicals.items():
-            if chemical in self.solution:
-                self.solution[chemical] += volume_ul
-            else:
-                self.solution[chemical] = volume_ul
+        added_volume_ul = sum(chemicals.values())
+        if self.curr_volume_ul + added_volume_ul > self.max_volume_ul:
+            raise ValueError("Adding solution would exceed max volume.")
+        for chemical_name, volume_ul in chemicals.items():
+            curr_volume_ul = self.solution.get(chemical_name, 0)
+            self.solution[chemical_name] = curr_volume_ul + volume_ul
 
     def purge_solution(self):
         self.solution = {}

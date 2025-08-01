@@ -40,3 +40,7 @@ source_protocol:
   path: /home/brainwasher/protocols/demo_protocol.csv
 starting_solution:
   pbs: 10000.0
+stock_chemical_volumes_ul:
+  dcm: 20000.0
+  deionized_water: 38000.0
+  thf: 22000.0

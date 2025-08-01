@@ -31,6 +31,11 @@ class WashStep(BaseModel):
     solution: dict[str, float]
 
     @property
+    def components(self):
+        """names of chemical components used in this step."""
+        return set(self.solution.keys())
+
+    @property
     def solution_volume_ul(self):
         """Total solution volume computed from chemical sums.
 
@@ -119,7 +124,7 @@ class Job(BaseModel):
     def chemicals(self) -> set[str]:
         """Extract set of chemicals from all solutions across all steps"""
         step_components = set([chemical for step in self.protocol
-                          for chemical in step.solution.keys()])
+                          for chemical in step.components])
         # Include starting solution chemicals.
         return step_components | set(self.starting_solution.keys())
 
