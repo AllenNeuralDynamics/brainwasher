@@ -69,6 +69,7 @@ class BrainWasher:
     MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG = 1.0
     MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.10  # Max permissable relative change
                                                # in pressure during leak checks.
+    PRESSURE_POCKET_TIMEOUT_S = 6.0
 
     def __init__(self, selector: CloseableVICI,
                  selector_lds_map: dict[str, int],
@@ -494,8 +495,18 @@ class BrainWasher:
                     self.selector.close()
                     self.log.debug("Pressurizing syringe volume.")
                     self.pump.move_absolute_in_percent(0, wait=False)
+                    start_time_s = now()
                     while self.pump.is_busy():
-                        if (self.pressure_psig > self.MAX_PURGE_PRESSURE_PSIG):
+                        # Bugfix: the pump can think it is still busy according
+                        # to its motor status, so we halt it after a certin time.
+                        if (now() - start_time_s) > self.PRESSURE_POCKET_TIMEOUT_S:
+                            self.log.error(f"Pump timed out (i.e: thinks it is "
+                                           f"still busy) while creating a pressure "
+                                           f"pocket after {self.PRESSURE_POCKET_TIMEOUT_S}[seconds].")
+                            self.pump.halt()
+                            self.pump.is_busy() # Dump busy state to logs.
+                            break
+                        if self.pressure_psig > self.MAX_PURGE_PRESSURE_PSIG:
                             self.pump.halt()
                             self.pump.is_busy() # Dump busy state to logs.
                             break  # For some reason halt may not always clear busy?
