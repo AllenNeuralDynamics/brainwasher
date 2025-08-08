@@ -1,13 +1,13 @@
 # brainwasher
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
-![Python](https://img.shields.io/badge/python->=3.7-blue?logo=python)
+![Python](https://img.shields.io/badge/python->=3.10-blue?logo=python)
 
 Note that this package is intended to run on a Raspberry Pi with a particular hardware configuration.
 
 ## Quick Links
 * [Reaction Vessel CAD model](https://cad.onshape.com/documents/f1bf5f3ce34b965e5212d1ac/w/45b1dd7d9365ece513829b77/e/7736ee8ab9b2b1e217084778)
-* [P&ID Diagram Source link](https://alleninstitute.sharepoint.com/:u:/s/Instrumentation/ERyxjmhmVwZOke5AnwQ4NG0Bue9zIMbGMNcaT-wdS2hT9w?e=ZHAdRq)
+* [P&ID Diagram Source link](https://alleninstitute.sharepoint.com/:u:/s/Instrumentation/EToUz-sNb_NOhtTetyjH3GUBfrVqOR7EBPKXOnT8-eHf-Q?e=GkewAP)
 * [Project Design Folder](https://alleninstitute.sharepoint.com/:f:/s/Instrumentation/Emw6bMGQgo5Pgin2Gb3EXEcBvJux_NXnwFN3A5khlz1pbA?e=NgBTAY)
 
 ## Wiring Setup
