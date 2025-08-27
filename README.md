@@ -119,18 +119,14 @@ protocol:
   solution:
     deionized_water: 10000.0
 source_protocol:
-  path: /home/brainwasher/protocols/demo_protocol.csv
+  path: /home/brainwasher/protocols/demo_protocol.csv # This value is ignored right now.
 starting_solution:
   pbs: 10000.0
-stock_chemical_volumes_ul:
-  dcm: 20000.0
-  deionized_water: 38000.0
-  thf: 22000.0
 
 ```
 
 
-A step has the following required steps:
+A step in the `protocol` has the following required steps:
 ```yaml
 - duration_s: 60  # [seconds]. How long to remain in this step.
   mix_speed_rpm: 0.0 # [rpm]. 0 for "no mixing." Minimum on-speed: 360; max: 6000.
@@ -144,3 +140,6 @@ These additional steps are optional:
   intermittent_mixing_on_time: None # Float. If specified, duty cycle of leaving the motor on at the specified RPM.
   intermittent_mixing_off_time: None # Float. If specified, duty cycle of of leaving the motor off at the specified RPM.
 ```
+
+Once the job file is executed, extra (computed) fields will be added afterwards.
+These fields are not required will be recomputed if the required fields change.
