@@ -1,11 +1,10 @@
 """Tissue-clearing proof-of-concept"""
 
-import _thread
+import _thread  # To kill the main thread from a child thread.
 import logging
 import yaml
 
-from brainwasher.devices.reaction_vessel import ReactionVessel
-from brainwasher.devices.waste_vessel import WasteVessel
+from brainwasher.devices.vessels import Vessel, ReactionVessel, WasteVessel
 from brainwasher.devices.mixer import Mixer
 from brainwasher.devices.liquid_presence_detection import BubbleDetectionSensor
 from brainwasher.devices.sequent_microsystems.valve import NCValve, ThreeTwoValve
@@ -13,14 +12,15 @@ from brainwasher.devices.pressure_sensor import PressureSensor
 from brainwasher.devices.valves.closeable_vici import CloseableVICI
 from brainwasher.errors.instrument_errors import LeakCheckError
 from brainwasher.protocol import Protocol
-from brainwasher.job import Job, PauseEvent, ResumeEvent
+from brainwasher.job import Job
+from copy import deepcopy
+from datetime import timedelta
 from functools import wraps
 from pathlib import Path
 from runze_control.syringe_pump import SyringePump
 from time import sleep
 from time import perf_counter as now
 from threading import Event, Thread, RLock, current_thread
-from typing import Union
 
 
 SIMULATED = False
@@ -62,29 +62,37 @@ class BrainWasher:
 
     """
 
-    PUMP_APPROX_ZERO_UL = 12.5
+    PUMP_APPROX_ZERO_UL =  30.0 #12.5
     MAX_SAFE_PRESSURE_PSIG = 13.0
     MAX_PURGE_PRESSURE_PSIG = 8.0
     LEAK_CHECK_SQUEEZE_PERCENT = 15.
     MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG = 1.0
-    MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.20
+    MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG = 0.10  # Max permissable relative change
+                                               # in pressure during leak checks.
+    PRESSURE_POCKET_TIMEOUT_S = 6.0
 
     def __init__(self, selector: CloseableVICI,
-                 selector_lds_map: dict[str],
+                 selector_lds_map: dict[str, int],
                  pump: SyringePump,
                  reaction_vessel: ReactionVessel,
-                 waste_vessels: list[WasteVessel],
                  mixer: Mixer,
                  pressure_sensor: PressureSensor,
                  rv_source_valve: ThreeTwoValve,
                  rv_exhaust_valve: ThreeTwoValve,
-                 drain_exhaust_valve: NCValve,
-                 drain_waste_valve: NCValve,
+                 waste_vessels: list[WasteVessel],
+                 output_bypass_valves: list[NCValve],
+                 waste_drain_valves: list[NCValve],
                  pump_prime_lds: BubbleDetectionSensor,
                  #tube_length_graph
                  ):
-        """"""
-        self.log = logging.getLogger(__name__)
+        """
+        :param waste_vessels: list of waste vessels, each of which may have
+            different compatible chemicals that can be added to it.
+        :param waste_drain_valves: list of valves gating each waste vessel.
+            Valve order must match the order of the waste vessels.
+
+        """
+        self.log = logging.getLogger(self.__class__.__name__)
         self.selector = selector
         self.selector_lds_map = selector_lds_map
         self.pump = pump
@@ -94,8 +102,8 @@ class BrainWasher:
         self.pressure_sensor = pressure_sensor
         self.rv_source_valve = rv_source_valve
         self.rv_exhaust_valve = rv_exhaust_valve
-        self.drain_exhaust_valve = drain_exhaust_valve
-        self.drain_waste_valve = drain_waste_valve
+        self.output_bypass_valves = output_bypass_valves # liquids and vapors to waste.
+        self.waste_drain_valves = waste_drain_valves  # reaction vessel waste drain valve.
         self.pump_prime_lds = pump_prime_lds
 
         self.prime_volumes_ul = {} # Store how much volume was displaced to
@@ -115,6 +123,7 @@ class BrainWasher:
         self.pressure_avg_start_time_s = 0
         self.pressure_avg_duration_s = 0
         self.pressure_psig = 0
+        self._validate_setup()
         # Protocol Thread control
         self.job_worker = None
         # Thread-safe protection within a class instance.
@@ -125,19 +134,42 @@ class BrainWasher:
         # Launch pressure monitor thread.
         self.start_pressure_monitor()
 
+    def _validate_setup(self):
+        # Ensure names match in selector port map and bds port map
+        # names in the bds port map should be a subset of names in the
+        selector_lds_map_keys = set(self.selector_lds_map.keys())
+        selector_port_map_keys = set(self.selector.port_map.keys())
+        # selector port map.
+        if not (selector_lds_map_keys <= selector_port_map_keys):
+            raise RuntimeError("Key names in selector port map and bds map do "
+                               "not match!")
+        # "ambient" and "outlet" must exist in the selector port map.
+        required_ports = {"ambient", "outlet"}
+        if not (required_ports <= selector_port_map_keys):
+            raise RuntimeError("The selector port map must include the "
+                               f"followig named ports: {required_ports}")
+
+    @property
+    def plumbed_chemicals(self):
+        """Chemicals that the instrument is currently plumbed with."""
+        return set(self.selector_lds_map.keys())
+
     @lock_flowpath
     def reset(self):
         """Initialize all hardware while ensuring that the system can bleed any
         pressure pockets created to waste."""
         self.log.info("Resetting instrument.")
-        self.deenergize_all_valves()
         self.mixer.stop_mixing()
-        self.log.debug("Connecting Source Pump to waste.")
-        # Connect: source pump -> waste.
+        self.deenergize_all_valves()
         try:
-            self.drain_exhaust_valve.energize()
+            # Connect: source pump -> waste.
+            # FIXME: we need to know what we're purging.
+            #   We need to write out state to a file.
+            self.log.debug("Connecting pump to waste.")
+            self.log.error("Dumping unknown pump contents to unknown waste.")
+            self.output_bypass_valves[0].energize()
             self.selector.move_to_port("outlet")
-            self.pump.reset_syringe_position() # Home pump; dispense any liquid to waste.
+            self.pump.reset_syringe_position() # Home pump; dispense contents to waste.
             self.pump.set_speed_percent(self.nominal_pump_speed_percent)
             # Restore deenergized state.
         finally:
@@ -161,15 +193,17 @@ class BrainWasher:
         self.log.debug("Deenergizing all solenoid valves.")
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()
-        self.drain_exhaust_valve.deenergize()
-        self.drain_waste_valve.deenergize()
+        for valve in self.output_bypass_valves:
+            valve.deenergize()
+        for valve in self.waste_drain_valves:
+            valve.deenergize()
 
     def start_pressure_monitor(self):
         if self.monitoring_pressure.is_set():
             return
         self.monitoring_pressure.set()
         self.pressure_monitor_thread = Thread(target=self._monitor_pressure_worker,
-                                              name="pressure_monitor_worker_thread",
+                                              name="pressure_monitor_worker",
                                               daemon=True)
         self.pressure_monitor_thread.start()
 
@@ -210,6 +244,40 @@ class BrainWasher:
                 _thread.interrupt_main()
             sleep(0.01)
 
+    def get_compatible_waste_vessel_id(self, *chemicals: str,
+                                       waste_vessels: list[WasteVessel] = None) -> int | None:
+        """Given a series of chemicals, return a waste vessel chemically
+        compatible to store the solution contents. If multiple are
+        compatible, return the vessel with the most spare volume.
+
+        .. Note::
+           If unspecified, `waste_vessels` defaults to `self.waste_vessels`.
+
+        """
+        if waste_vessels is None:
+            waste_vessels = self.waste_vessels
+        if not chemicals:
+            self.log.warning("Reaction vessel is empty. Any waste vessel is "
+                             "compatible.")
+        # A solution is chemically compatible if its components are a subset
+        # of the vessel's compatible components.
+        waste_compatibility = [set(chemicals) <= wv.compatible_chemicals
+                               for wv in waste_vessels]
+        # None are compatible: bail early.
+        if not any(waste_compatibility):
+            self.log.error(f"No compatible waste found for: {chemicals}.")
+            return None
+        # Both are compatible! Return the one with less liquid or the first if equal.
+        if waste_compatibility.count(True) == len(waste_vessels):
+            volumes = [wv.curr_volume_ul for wv in waste_vessels]
+            return volumes.index(min(volumes))
+        # Only one or the other are compatible.
+        return waste_compatibility.index(True)
+
+    def reset_waste_vessel(self, index: int):
+        """Update the specified waste vessel volume to empty."""
+        self.waste_vessels[index].purge_solution()
+
     @lock_flowpath
     @syringe_empty
     def prime_reservoir_line(self, chemical: str,
@@ -224,15 +292,17 @@ class BrainWasher:
             return
         # Bail-early if we're already primed.
         if (not SIMULATED) and self.selector_lds_map[chemical].tripped():
-            self.log.warning(f"{chemical} reservoir line detected prematurely as primed. "
-                             "Aborting.")
+            self.log.warning(f"{chemical} reservoir line detected prematurely "
+                             f"as primed. Aborting.")
+            self.prime_volumes_ul[chemical] = 0
             return
+        waste_id = self.get_compatible_waste_vessel_id(chemical)
         self.log.info(f"Priming {chemical} reservoir line.")
         # Configure syringe path to dump air to waste
         self.log.debug(f"Opening pump path to waste.")
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()
-        self.drain_exhaust_valve.energize()
+        self.output_bypass_valves[waste_id].energize()
         syringe_volume_ul = self.pump.syringe_volume_ul
         remaining_volume_ul = max_pump_displacement_ul
         # Withdraw (100%) until reservoir line is tripped.
@@ -264,16 +334,24 @@ class BrainWasher:
                 liquid_detected = True
                 break
             self.pump.log.setLevel(old_log_level) # Restore pump log level.
-            # subtact off however much volume we actually withdrew.
+            # Subtract off however much volume we actually withdrew.
             remaining_volume_ul -= self.pump.get_position_ul()
             # Reset syringe stroke by purging displaced air to waste.
             self.log.debug("Removing displaced gas.")
             self.selector.move_to_port("outlet")
             self.pump.move_absolute_in_percent(0) # Plunge to starting position.
+        # Ensure we leave with the pump fully plunged.
+        if self.pump.get_position_ul() != 0:
+            self.log.debug("Post-priming, removing displaced gas.")
+            self.selector.move_to_port("outlet")
+            # Bugfix. The pump appears to ignore small movement commands near 0.
+            # Since priming may put the pump in a position near zero, we reset
+            # to ensure we're at 0.
+            self.pump.reset_syringe_position()
+        self.output_bypass_valves[waste_id].deenergize()
         if not remaining_volume_ul and not liquid_detected:
             raise RuntimeError("Withdrew maximum volume "
                 f"({max_pump_displacement_ul}[uL]) and no liquid detected.")
-        self.drain_exhaust_valve.deenergize()
         displaced_volume_ul = max_pump_displacement_ul - remaining_volume_ul
         # Save displaced volume.
         self.prime_volumes_ul[chemical] = displaced_volume_ul
@@ -322,11 +400,13 @@ class BrainWasher:
             chemical."""
         if SIMULATED:
             self.log.warning(f"Skipping priming pump in simulation.")
+            self.pump_is_primed_with = f"{chemical}"
             return
-        self.prime_reservoir_line(chemical)
+        if chemical not in self.prime_volumes_ul:
+            self.prime_reservoir_line(chemical)
         # FIXME: store this state in software in case we are at the edge
         #  of the sensor trip threshold.
-        if self.pump_is_primed_with: #self.pump_prime_lds.tripped():
+        if self.pump_is_primed_with:
             # Edge case: what happens if another chemical is in the line?
             self.log.warning(f"Pump line already primed with "
                              f"{self.pump_is_primed_with}.")
@@ -356,21 +436,30 @@ class BrainWasher:
             "attempting to aspirate to the start of the pump.")
 
     @lock_flowpath
-    def purge_pump_line(self, full_cycles: int = 1, gas_cycles: int = 0):
-        """Empty selector-to-pump line by purging contents to waste.
-        It is OK if the pump does not enter this function fully-plunged.
+    def purge_pump_line(self, chemical: str, destination: Vessel,
+                        full_cycles: int = 1, gas_cycles: int = 0):
+        """Empty selector-to-pump line by purging contents to destination.
+
+        .. Note::
+           It is OK if the pump does not enter this function fully-plunged.
+
         """
         self.log.debug("Purging pump line.")
         # Configure syringe path to dump air to waste
         self.log.debug(f"Opening pump path to waste.")
-        self.rv_source_valve.deenergize()
-        self.rv_exhaust_valve.deenergize()
-        self.drain_exhaust_valve.energize()
+        waste_id = self.get_compatible_waste_vessel_id(chemical)
+        if destination == self.rxn_vessel:
+            self.rv_source_valve.energize()
+            self.rv_exhaust_valve.energize()
+        else:  # Bypass rxn vessel to waste.
+            self.rv_source_valve.deenergize()
+            self.rv_exhaust_valve.deenergize()
+        self.output_bypass_valves[waste_id].energize()
         self.pump.set_speed_percent(self.pump_purge_speed_percent)
         try:
             # Purge all starting contents of the syringe.
             if self.pump.get_position_ul() != 0:
-                self.log.warning("Directing existing contents to waste.")
+                self.log.warning(f"Directing existing contents to {destination.name}.")
                 # Select dest line.
                 self.selector.move_to_port("outlet")
                 # Fully plunge syringe.
@@ -406,17 +495,35 @@ class BrainWasher:
                     self.selector.close()
                     self.log.debug("Pressurizing syringe volume.")
                     self.pump.move_absolute_in_percent(0, wait=False)
+                    start_time_s = now()
                     while self.pump.is_busy():
-                        if (self.pressure_psig > self.MAX_PURGE_PRESSURE_PSIG):
+                        # Bugfix: the pump can think it is still busy according
+                        # to its motor status, so we halt it after a certin time.
+                        if (now() - start_time_s) > self.PRESSURE_POCKET_TIMEOUT_S:
+                            self.log.error(f"Pump timed out (i.e: thinks it is "
+                                           f"still busy) while creating a pressure "
+                                           f"pocket after {self.PRESSURE_POCKET_TIMEOUT_S}[seconds].")
                             self.pump.halt()
+                            self.pump.is_busy() # Dump busy state to logs.
+                            break
+                        if self.pressure_psig > self.MAX_PURGE_PRESSURE_PSIG:
+                            self.pump.halt()
+                            self.pump.is_busy() # Dump busy state to logs.
+                            break  # For some reason halt may not always clear busy?
                         sleep(0.05)
                     remaining_volume_ul = self.pump.get_position_ul()
                     self.log.debug("Releasing pressure to outlet.")
                     self.selector.open()
                     sleep(0.5)
+            ## Ensure we're fully reset, not just hovering at the "0" error margin.
+            #self.pump.move_absolute_in_percent(0)
+            # Bugfix. The pump appears to ignore small movement commands near 0.
+            # Since priming may put the pump in a position near zero, we reset
+            # to ensure we're at 0.
+            self.pump.reset_syringe_position()
         finally:
             # Close waste flowpath.
-            self.drain_exhaust_valve.deenergize()
+            self.output_bypass_valves[waste_id].deenergize()
         self.log.debug("Purging pump line complete.")
         self.pump_is_primed_with = None
 
@@ -433,12 +540,13 @@ class BrainWasher:
         if chemical not in self.prime_volumes_ul:
             self.log.warning(f"{chemical} has not yet been primed. Priming now.")
             self.prime_reservoir_line(chemical)
+        waste_id = self.get_compatible_waste_vessel_id(chemical)
         self.prime_pump_line(chemical) # Prime pump line.
         self.log.info(f"Dispensing {microliters}uL of {chemical} to vessel.")
         # Set outlet flowpath starting configuration.
         self.rv_source_valve.energize()
         self.rv_exhaust_valve.energize()
-        self.drain_exhaust_valve.energize()
+        self.output_bypass_valves[waste_id].energize()
         self.selector.move_to_port(chemical)
         pump_to_common_dv_ul = 10.0 # FIXME: magic number. get this from a graph.
         # Subtract off pump-to-common dead volume because we will introduce
@@ -454,22 +562,15 @@ class BrainWasher:
                        f"fully dispense {microliters}[uL].")
         # Now push residual liquid out of pump-to-vessel line using gas.
         # This adds pump_to_common_dv_ul and bypasses any dead volume.
-        self.pump.set_speed_percent(self.nominal_pump_speed_percent)
-        purge_volumes = [15, 5]  # FIXME: magic numbers.
-        for purge_volume in purge_volumes:
-            self.fast_gas_charge_syringe(purge_volume)
-            # Select dest line.
-            self.selector.move_to_port("outlet")
-            # Fully plunge syringe.
-            self.pump.move_absolute_in_percent(0)
-        self.pump.set_speed_percent(self.nominal_pump_speed_percent)
-        # Update State:
-        self.pump_is_primed_with = None  # Clear prime line state.
-        self.rxn_vessel.curr_volume_ul += microliters
+        self.purge_pump_line(self.pump_is_primed_with,
+                             destination=self.rxn_vessel, gas_cycles=1)
+        ## Update State:
+        self.rxn_vessel.add_solution(**{chemical: microliters})
+        self.pump_is_primed_with = None
         # Seal reaction vessel and all other flowpaths.
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()
-        self.drain_exhaust_valve.deenergize()
+        self.output_bypass_valves[waste_id].deenergize()
         self.log.debug(f"Dispensed {microliters}[uL] into reaction vessel. "
                        f"Prime line is now cleared.")
 
@@ -477,14 +578,20 @@ class BrainWasher:
     @syringe_empty
     def drain_vessel(self, drain_volume_ul: float = 40000):
         """Drain the reaction vessel."""
-        self.log.info("Draining vessel.")
+        msg = ("Draining vesssel" +
+                f" of {self.rxn_vessel.solution}." if self.rxn_vessel.solution else ".")
+        self.log.info(msg)
+        # Select chemically-compatible flowpath depending on the waste contents.
+        components = set(self.rxn_vessel.solution.keys())
+        waste_id = self.get_compatible_waste_vessel_id(*components)
+        self.log.debug(f"Waste contents will be discarded to "
+                       f"{self.waste_vessels[waste_id].name}.")
         # Set outlet flowpath starting configuration.
         self.rv_source_valve.energize()
         self.rv_exhaust_valve.deenergize()  # Lock out the rv top exhaust port.
-        self.drain_waste_valve.energize()  # Open rv lower drain path.
+        self.waste_drain_valves[waste_id].energize()  # Open rv lower drain path.
         self.pump.set_speed_percent(self.pump_purge_speed_percent)
-
-        # Pump the pump through the specified volume with gas.
+        # Pump through the specified volume with gas.
         # Note: gas is compressible, so the volume displaced is less than
         #   the volume movement of the pump.
         syringe_volume_ul = self.pump.syringe_volume_ul
@@ -503,11 +610,11 @@ class BrainWasher:
             sleep(0.5)  # Wait for liquid to finish moving (system to hit equilibrium).
         self.pump.set_speed_percent(self.nominal_pump_speed_percent)
         # Update State:
-        self.rxn_vessel.curr_volume_ul = 0
+        self.rxn_vessel.purge_solution()
         # Close valves
         self.rv_source_valve.deenergize()
         self.rv_exhaust_valve.deenergize()
-        self.drain_waste_valve.deenergize()
+        self.waste_drain_valves[waste_id].deenergize()
 
     @lock_flowpath
     def fast_gas_charge_syringe(self, percent: float = 100):
@@ -546,7 +653,7 @@ class BrainWasher:
         .. note::
            If both `intermittent_mixing_on_time_s` and
            `intermittent_mixing_on_time_s` are specified,
-           mixing will involve looping between mixing for the
+           mixing will cycle between mixing for the
            `intermittent_mixing_on_time_s` and stopping for the
            `intermittent_mixing_off_time_s`.
 
@@ -567,8 +674,9 @@ class BrainWasher:
                           intermittent_mixing_off_time_s]
         intermittent_mixing = all([i is not None for i in slow_mix_times])
         # Validate chemicals.
-        common_chemicals = self.selector_lds_map.keys() & solution.keys()
+        #common_chemicals = self.selector_lds_map.keys() & solution.keys()
         used_chemicals = set(solution.keys())
+        common_chemicals = self.plumbed_chemicals & used_chemicals
         if len(common_chemicals) < len(used_chemicals):
             unrecognized_chemicals = common_chemicals ^ used_chemicals
             raise ValueError(f"Unrecognized chemicals: {unrecognized_chemicals}.")
@@ -651,7 +759,7 @@ class BrainWasher:
         if not job_path.exists():
             job = Job(name=job_path.stem)  # Name without suffix
             with open(job_path) as job_file:
-                yaml.dump(job.model_dump(), job_file)
+                yaml.dump(job.model_dump(exclude_none=True), job_file)
             self.log.info(f"Created an empty job file.")
             return
         # Create from an existing job.
@@ -661,7 +769,7 @@ class BrainWasher:
                 job = Job(**job_dict)  # validate
                 job.purge_history()
                 job.set_source_protocol(source_path)
-                yaml.dump(job.model_dump(), job_file)
+                yaml.dump(job.model_dump(exclude_none=True), job_file)
                 self.log.info(f"Created job file from an existing job file.")
                 return
         # Create from a csv-style protocol.
@@ -669,7 +777,7 @@ class BrainWasher:
             protocol = Protocol(job_path)
             # TODO: create a job from the protocol
             raise NotImplementedError("Cannot convert csv files to jobs yet!")
-            #yaml.dump(job.model_dump(), job_path)
+            #yaml.dump(job.model_dump(exclude_none=True), job_path)
 
     def validate_job_against_instrument(self, job: Job):
         """Validate that the job can be executed on this instrument configuration"""
@@ -680,32 +788,40 @@ class BrainWasher:
                 msg = (f"Step {index}: solution total volume "
                        f"({step.solution_volume_ul} [uL]) exceeds reaction "
                        f"vessel volume ({self.rxn_vessel.max_volume_ul} [uL]).")
+                self.log.error(msg)
                 volume_errors.append(msg)
         if volume_errors:
             raise ValueError("Job volumes are not compatible with the size "
                              "of the instrument reaction vessel: "
                              f"{volume_errors}.")
-        # TODO: validate required chemicals are plumbed.
-        #chemicals = job.chemicals
-        #if not job.chemicals.issubset(set(self.selector._port_map))
-        # TODO: validate that we have enough space in the waste vessels to
-        #  run the entire job.
+        # Ensure required chemicals are plumbed.
+        if not job.chemicals <= self.plumbed_chemicals:
+            raise ValueError(f"Job chemicals are not plumbed on the machine; "
+                             f"Job chemicals: {job.chemicals}, "
+                             f"loaded chemicals: {self.plumbed_chemicals}.")
         # Ensure each step solution can be dumped to a compatible waste vessel.
         waste_compatibility_errors = []
         for index, step in enumerate(job.protocol):
-            step_components = set(step.solution.keys())
+            components = set(step.solution.keys())
             # Find at least one vessel that the solution can be dumped.
-            step_solution_has_valid_waste = \
-                any([step_components.issubset(vessel.valid_waste_chemicals)
-                     for vessel in self.waste_vessels])
-            if not step_solution_has_valid_waste:
-                msg = f"Step {index}: solution has no designated waste. " \
-                      f"Solution components: {step_components}. "
+            solution_has_valid_waste = self.get_compatible_waste_vessel_id(*components)
+            if solution_has_valid_waste is None:
+                msg = f"Step {index} solution has no designated waste. " \
+                      f"Solution components: {components}. "
+                self.log.error(msg)
                 waste_compatibility_errors.append(msg)
         if waste_compatibility_errors:
             raise ValueError("Job is not chemically compatible with waste "
                              f"vessels. The following steps cannot be dumped "
                              f"to any waste vessel: {waste_compatibility_errors}")
+        # Ensure waste vessels can accommodate solutions across every job step.
+        # Easiest way to check this is to just run it on a copy.
+        waste_vessels = deepcopy(self.waste_vessels)
+        for index, step in enumerate(job.protocol):
+            waste_vessel_id = self.get_compatible_waste_vessel_id(*step.components,
+                                                                  waste_vessels=waste_vessels)
+            # Raises an error if we're at capacity.
+            waste_vessels[waste_vessel_id].add_solution(**step.solution)
         self.log.info(f"Job passed validation against instrument capabilities.")
 
     def _load_job(self, job_path: str) -> Job:
@@ -732,7 +848,7 @@ class BrainWasher:
         # Run job in a separate thread to lock out flowpath
         # and support pause/resume control.
         self.job_worker = Thread(target=self._run_job_worker,
-                                 name="run_job_worker_thread",
+                                 name="run_job_worker",
                                  args=[job, Path(job_path)],
                                  daemon=True)
         self.job_worker.start()
@@ -740,20 +856,39 @@ class BrainWasher:
     @lock_flowpath
     def _run_job_worker(self, job: Job, job_path: Path):
         """Start or resume a job from job_path"""
+        # When starting/resuming, ensure the current rxn vessel solution is
+        # either unspecified (assume user filled it with correct starting solution)
+        # or matches the job starting solution (user instructed machine to fill
+        # it with the correct starting solution).
         if job.resume_state:
             start_step = job.resume_state.step
             start_step_overrides = job.resume_state.overrides
+            starting_or_resuming_msg = "Resuming"
+            if not self.rxn_vessel.solution: # assume unspecified.
+                self.rxn_vessel.add_solution(**job.resume_state.starting_solution)
+            if self.rxn_vessel.solution != job.resume_state.starting_solution:
+                raise ValueError("When resuming, reaction vessel starting "
+                                 "solution does not match the correct resume "
+                                 "state starting solution.")
             job.clear_resume_state()
             job.record_resume()
-            starting_or_resuming_msg = "Resuming"
         else:
             start_step = 0
             start_step_overrides = None
             starting_or_resuming_msg = "Starting"
+            if not self.rxn_vessel.solution: # assume unspecified.
+                self.rxn_vessel.add_solution(**job.starting_solution)
+            if  self.rxn_vessel.solution != job.starting_solution:
+                raise ValueError("When starting, reaction vessel starting "
+                                 "solution does not match the correct resume "
+                                 "state starting solution.")
             job.record_start()
         log_msg = f"{starting_or_resuming_msg} job: '{job.name}'"
         if start_step > 0:
             log_msg += f" at step {start_step+1}."  # Steps in logs are 1-indexed.
+        else:
+            log_msg += ". "
+        log_msg += f"Job should take {timedelta(seconds=job.get_duration_s(start_step))}."
         self.log.info(log_msg)
         # Execute the protocol.
         for index, step in enumerate(job.protocol[start_step:], start=start_step):
@@ -765,7 +900,7 @@ class BrainWasher:
                     self.log.info(f"Applying overrides to starting step: "
                                   f"{start_step_overrides}.")
                 # Convert step parameters to valid function parameters.
-                kwargs = step.model_dump(exclude='solution')  # omit **kwargs
+                kwargs = step.model_dump(exclude='solution')  # omit **solution
                 kwargs.update(step.solution)  # splat **solution
                 self.log.info(f"Conducting step: "
                               f"{index + 1}/{len(job.protocol)} with "
@@ -786,15 +921,16 @@ class BrainWasher:
             finally:
                 # Always save the current step in case of an unhandled exception
                 # or power failure.
-                job.save_resume_state(resume_step, **self.resume_state_overrides)
+                job.save_resume_state(resume_step, step.solution,
+                                      **self.resume_state_overrides)
                 self.resume_state_overrides = {}
                 with open(job_path, "w") as job_file:
-                    yaml.dump(job.model_dump(), job_file)
+                    yaml.dump(job.model_dump(exclude_none=True), job_file)
                 self.log.debug(f"Job progress saved to: {job_path}")
         job.clear_resume_state()
         job.record_finish()
         with open(job_path, "w") as job_file:
-            yaml.dump(job.model_dump(), job_file)
+            yaml.dump(job.model_dump(exclude_none=True), job_file)
         self.log.info(f"Finished job: {job.name} from {job_path}")
 
     def pause(self):
@@ -819,8 +955,8 @@ class BrainWasher:
         # Leak checks run in order can isolate leaks down to a small number
         # of fittings/seals that need to be checked.
         self.leak_check_syringe_to_selector_common_path()
-        self.leak_check_syringe_to_drain_exaust_normally_open_path()
-        self.leak_check_syringe_to_drain_waste_path()
+        self.leak_check_syringe_to_rv_exaust_normally_open_path()
+        self.leak_check_syringe_to_waste_bypass_path()
         self.leak_check_syringe_to_reaction_vessel()
 
     @lock_flowpath
@@ -850,7 +986,7 @@ class BrainWasher:
         self.log.info("leak check passed: syringe -> <- selector common path.")
 
     @lock_flowpath
-    def leak_check_syringe_to_drain_exaust_normally_open_path(self):
+    def leak_check_syringe_to_rv_exaust_normally_open_path(self):
         try:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
@@ -862,15 +998,15 @@ class BrainWasher:
             self.log.debug("Leak check passed.")
         except LeakCheckError:
             msg = "Flowpath between syringe pump and normally-open position of" \
-                  "drain exhaust valve is leaking."
+                  "output bypass valve is leaking."
             self.log.error(msg)
             raise
         finally:
             self._purge_gas_filled_syringe()
-        self.log.info("leak check passed: syringe -><- drain exhaust NO path.")
+        self.log.info("leak check passed: syringe -><- reaction vessel exhaust NO path.")
 
     @lock_flowpath
-    def leak_check_syringe_to_drain_waste_path(self):
+    def leak_check_syringe_to_waste_bypass_path(self):
         try:
             self.log.debug("Creating closed volume.")
             self.deenergize_all_valves()
@@ -880,13 +1016,13 @@ class BrainWasher:
             self._squeeze_and_measure()
             self.log.debug("Leak check passed.")
         except LeakCheckError:
-            msg = "Flowpath between syringe pump and closed drain waste valve" \
+            msg = "Flowpath between syringe pump and closed output bypass valve" \
                   "is leaking."
             self.log.error(msg)
             raise
         finally:
             self._purge_gas_filled_syringe()
-        self.log.info("leak check passed: syringe -><- drain waste path.")
+        self.log.info("leak check passed: syringe -><- output bypass path.")
 
     @lock_flowpath
     def leak_check_syringe_to_reaction_vessel(self):
@@ -904,8 +1040,18 @@ class BrainWasher:
                   "is leaking."
             self.log.error(msg)
             raise
-        finally:
+        finally:  # Cleanup. Purge compressed air everywhere.
             self._purge_gas_filled_syringe()
+            # Purge reaction vessel.
+            self.log.debug("Depressurizing reaction vessel")
+            vapor_components = set(self.rxn_vessel.solution.keys())
+            waste_vessel_id = self.get_compatible_waste_vessel_id(*vapor_components)
+            # TODO: waste_vessel_id could be None but shouldn't be at this point.
+            self.output_bypass_valves[waste_vessel_id].energize()
+            self.rv_exhaust_valve.energize()
+            sleep(0.5)
+            self.output_bypass_valves[waste_vessel_id].deenergize()
+            self.rv_exhaust_valve.deenergize()
         self.log.info("leak check passed: syringe -><- reaction vessel path.")
 
     @lock_flowpath
@@ -949,9 +1095,11 @@ class BrainWasher:
 
     @lock_flowpath
     def _purge_gas_filled_syringe(self):
-        self.purge_pump_line(full_cycles=0)
-
-    @lock_flowpath
-    def clean_system(self):
-        # TODO: implement this.
-        pass
+        self.log.debug("Purging gas-filled syringe to waste.")
+        self.deenergize_all_valves()
+        vapor_components = set(self.rxn_vessel.solution.keys())
+        waste_vessel_id = self.get_compatible_waste_vessel_id(*vapor_components)
+        # TODO: waste_vessel_id could be None but shouldn't be at this point.
+        self.output_bypass_valves[waste_vessel_id].energize()
+        self.pump.move_absolute_in_percent(0)
+        self.output_bypass_valves[waste_vessel_id].deenergize()

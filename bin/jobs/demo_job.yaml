@@ -1,12 +1,10 @@
 chemicals: !!set
   clear: null
   yellow: null
+starting_solution:
+  pbs: 10000
 history:
-  events:
-  - timestamp: 2025-06-13 13:29:30.896479
-    type: start
-  starting_solution:
-    pbs: 10000
+  events: []
 name: my_job
 protocol:
 - duration_s: 1.0
@@ -24,9 +22,6 @@ protocol:
   solution:
     clear: 7500.0
     yellow: 2500.0
-resume_state:
-  overrides: {}
-  step: 0
 source_protocol:
   accessed: null
   path: /home/brainwasher/protocols/demo_protocol.csv
