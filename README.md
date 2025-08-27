@@ -162,3 +162,12 @@ starting_solution:
   pbs: 10000.0 # This is what the reaction vessel is first filled with.
 
 ```
+
+
+## Running a Job File
+1. If the job was created elsewhere, load the job onto the machine via USB stick or `scp`.
+1. Load the reaction vessel with brain along with starting liquid (most likely PBS).
+1. Ensure reagents are fresh and topped off.
+2. Ensure waste bottles are empty or have sufficient empty volume.
+1. Launch the console by running `main.py` in the project `bin` folder.
+1. From the console, type in `run /path/to/job_file.yaml` and press <ENTER>
