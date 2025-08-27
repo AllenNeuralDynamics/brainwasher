@@ -80,7 +80,7 @@ To do so, login to the Pi, setup Git, and edit files on the device itself.
 
 TODO: systemd setup.
 
-## Job Files
+# Job Files
 
 A job file is a sequence of wash steps along with some metadata.
 
@@ -143,3 +143,22 @@ These additional steps are optional:
 
 Once the job file is executed, extra (computed) fields will be added afterwards.
 These fields are not required will be recomputed if the required fields change.
+
+
+## Creating a new job file:
+To create a new job, you can simply copy the following skeleton of required fields and then add a list of protocol steps.
+```yaml
+
+history:
+  events: []
+name: <sample name here>
+protocol:
+- # Add steps here!
+- # Step 0
+- # Step 1 ...
+source_protocol:
+  path: /dev/null # This value is ignored right now.
+starting_solution:
+  pbs: 10000.0 # This is what the reaction vessel is first filled with.
+
+```
