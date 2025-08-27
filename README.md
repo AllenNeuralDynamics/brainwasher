@@ -134,13 +134,13 @@ A step has the following required steps:
 ```yaml
 - duration_s: 60  # [seconds]. How long to remain in this step.
   mix_speed_rpm: 0.0 # [rpm]. 0 for "no mixing." Minimum on-speed: 360; max: 6000.
-  solution:  # a dictionary, keyed by solution name of volumes in microliters.
+  solution:  # a dictionary, keyed by solution name, of volumes in microliters.
     deionized_water: 10000.0
 ```
-
+These additional steps are optional:
 ```yaml
-  start_empty: true # Optional! If true, empty the reaction vessel before filling with solution for this step. Default is true. 
-  end_empty: false  # Optional! If true, empty the reaction vessel before exiting this step. Default is false.
+  start_empty: true # If true, empty the reaction vessel before filling with solution for this step. Default is true. 
+  end_empty: false  # If true, empty the reaction vessel before exiting this step. Default is false.
   intermittent_mixing_on_time: None # Float. If specified, duty cycle of leaving the motor on at the specified RPM.
   intermittent_mixing_off_time: None # Float. If specified, duty cycle of of leaving the motor off at the specified RPM.
 ```
