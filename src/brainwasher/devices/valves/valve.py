@@ -39,9 +39,30 @@ class NOValve(IsolationValve):
     pass
 
 
-class ThreeTwoValve:
+class NCSolenoidValve(NCValve, SolenoidValve):
+
+    def open(self):
+        self.energize()
+
+    def close(self):
+        self.deenergize()
+
+
+class NOSolenoidValve(NOValve, SolenoidValve):
+
+    def open(self):
+        self.deenergize()
+
+    def close(self):
+        self.energize()
+
+
+class ThreeTwoValve(Valve):
     """3/2 valve base class."""
 
     def select_way(self, way: Union[int, str]):
         """Select way 'A' (0) or 'B' (1)."""
         raise NotImplementedError
+
+class ThreeTwoSolenoidValve(SolenoidValve):
+    pass

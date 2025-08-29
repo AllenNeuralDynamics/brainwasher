@@ -79,27 +79,26 @@ class Protocol:
                         ul = float(qty.to('uL').magnitude)
                     solution[chemical] = ul
             if not all([found_chemical, qty]):
-                raise RuntimeError(f"Cannot parse solution on step {step}.")
+                raise RuntimeError(f"Cannot parse solution on step {step}: {solution_str}")
         # TODO: Infer remaining percents if any are missing.
         ## If any quantities are specified as a percent, infer any missing qty.
         #if any([i.units == self.ureg.percent for i in solution.values()]):
         #    print("found percent!!")
         return solution
 
-    def validate(self):
+    def validate(self, max_volume_ul):
         """Read the current schedule. Ensure every step is doable on the
         target system.
         """
+        # FIXME: passing in max_volume_ul here feels sloppy.
         for index, row in self.df.iterrows():
-            #print(row['c1'], row['c2'])
-            pass
-        # Easy way: iterate through all function calls and cache everything.
-        # Validate column names.
-        # Validate chemicals.
-        # Validate solutions.
-        # Validate durations.
-        # Validate solution spec as "all percent" or "all volume-based"
-        pass
+            # Validate column names.
+            # Validate chemicals.
+            # Validate solutions.
+            # Validate durations.
+            # Validate solution spec as "all percent" or "all volume-based"
+            # Lazy way: iterate through all function calls and cache everything.
+            self.get_solution(index, max_volume_ul)
 
 
 
