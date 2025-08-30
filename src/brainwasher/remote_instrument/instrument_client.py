@@ -3,12 +3,45 @@
 import zmq
 import pickle
 
+class RouterClient:
 
-class InstrumentClient:
+    def __init__(self, rpc_port: str = "5555", broadcaster_port: str = "5556"):
+        self.rpc_client = ZMQRPCClient(rpc_port)
+        self.broadcaster_client = ZMQBroadcasterClient(broadcaster_port)
+
+    def call(self, name, *args, **kwds):
+        """Call a function/method and return the response."""
+        return self.rpc_client.call(name, *args, **kwds)
+
+    def receive_broadcast(self):
+        """Receive the results of periodically called functions"""
+        return self.broadcaster_client.receive()
+
+    def close(self):
+        self.broadcaster_client.close()
+
+
+class ZMQRPCClient:
+
+    def __init__(self, port):
+        # Receive periodic broadcasted messages setup.
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REQ)
+        self.full_address = "tcp://localhost:%s" % port
+        self.socket.connect(self.full_address)
+        self.socket.subscribe("")  # Subscribe to all topics.
+
+    def call(self, callable_name: str, *args, **kwargs):
+        """Call a function and return the result."""
+        return self.socket.send(pickle.dumps((callable_name, args, kwargs)))
+
+
+class ZMQBroadcasterClient:
     """Connect to an instrument server (likely running on an actual instrument)
     and interact with it via remote control. (A remote procedure call interface)"""
 
     def __init__(self, port):
+        # Receive periodic broadcasted messages setup.
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.SUB)
         self.full_address = "tcp://localhost:%s" % port
@@ -21,3 +54,4 @@ class InstrumentClient:
 
     def close(self):
         self.socket.close()
+
