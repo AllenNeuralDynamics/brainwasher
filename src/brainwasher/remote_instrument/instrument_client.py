@@ -5,9 +5,9 @@ import pickle
 
 class RouterClient:
 
-    def __init__(self, rpc_port: str = "5555", broadcaster_port: str = "5556"):
+    def __init__(self, rpc_port: str = "5555", broadcast_port: str = "5556"):
         self.rpc_client = ZMQRPCClient(rpc_port)
-        self.broadcaster_client = ZMQBroadcasterClient(broadcaster_port)
+        self.broadcaster_client = ZMQBroadcasterClient(broadcast_port)
 
     def call(self, name, *args, **kwds):
         """Call a function/method and return the response."""
@@ -23,17 +23,18 @@ class RouterClient:
 
 class ZMQRPCClient:
 
-    def __init__(self, port):
+    def __init__(self, port: str = "5555"):
         # Receive periodic broadcasted messages setup.
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REQ)
-        self.full_address = "tcp://localhost:%s" % port
+        self.full_address = f"tcp://localhost:{port}"
         self.socket.connect(self.full_address)
-        self.socket.subscribe("")  # Subscribe to all topics.
+        #self.socket.subscribe("")  # Subscribe to all topics.
 
     def call(self, callable_name: str, *args, **kwargs):
         """Call a function and return the result."""
-        return self.socket.send(pickle.dumps((callable_name, args, kwargs)))
+        self.socket.send(pickle.dumps((callable_name, args, kwargs)))
+        return pickle.loads(self.socket.recv())
 
 
 class ZMQBroadcasterClient:
@@ -44,7 +45,7 @@ class ZMQBroadcasterClient:
         # Receive periodic broadcasted messages setup.
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.SUB)
-        self.full_address = "tcp://localhost:%s" % port
+        self.full_address = f"tcp://localhost:{port}"
         self.socket.connect(self.full_address)
         self.socket.subscribe("")  # Subscribe to all topics.
 

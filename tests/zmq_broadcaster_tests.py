@@ -37,37 +37,38 @@ def test_server_broadcast():
 
 def test_client_receive():
     sensor_index = 0
-    port = "5555"
     sensors = SensorArray()  # Create an object
-    server = RouterServer(port=port)  # Create a server.
-    client = RouterClient(port=port)  # Create a client.
+    server = RouterServer()  # Create a server.
+    client = RouterClient()  # Create a client.
     # broadcast a method at 10[Hz].
     server.add_broadcast(10, sensors.get_data, sensor_index)
     # receive data.
     received_data = None
     start_time = now()
     while ((now() - start_time) < 1):
-        received_data = client.receive_broadcasts()
+        received_data = client.receive_broadcast()
         print(f"received: {received_data}")
         assert 0.0 <= received_data[sensor_index] <= 5.0
     server.close()
 
 
 def test_live_add_remove_broadcast():
+    """Add, then remove a broadcast. Ensure that it has been removed."""
     sensor_index = 0
-    port = "5555"
     sensors = SensorArray()  # Create an object
-    server = RouterServer(port=port)  # Create a server.
-    client = RouterClient(port=port)  # Create a client.
+    server = RouterServer()  # Create a server.
+    client = RouterClient()  # Create a client.
     # broadcast a method at 10[Hz].
     server.add_broadcast(10, sensors.get_data, sensor_index)
     server.remove_broadcast(sensors.get_data)
-    assert server
+    # FIXME: thread should exit after removing the only periodic function.
+    assert server.broadcaster.func_params == {}
+    #assert server.broadcaster.calls_by_frequency == {}
+    #assert server.broadcaster.threads.get(10, None) == None  # might need a delay.
 
 
-def test_call_remote_method():
-    port = "5555"
-    sensors = SensorArray()  # Create an object
-    server = RouterServer(port=port)  # Create a server.
-    client = RouterClient(port=port)  # Create a Client.
-    reply = client.call("sensors.get_sensor_data")
+#def test_call_remote_method():
+#    sensors = SensorArray()  # Create an object
+#    server = RouterServer()  # Create a server.
+#    client = RouterClient()  # Create a Client.
+#    reply = client.call("sensors.get_sensor_data")

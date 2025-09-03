@@ -1,0 +1,35 @@
+#!/usr/bin/env/python3
+
+import pytest
+from random import uniform
+from brainwasher.remote_instrument.instrument_client import ZMQRPCClient
+from brainwasher.remote_instrument.instrument_server import ZMQRPCServer
+from time import sleep
+from time import perf_counter as now
+
+
+# Create a simple class to pass into the server.
+class SensorArray:
+    __test__ = False
+
+    def __init__(self):
+        pass
+
+    def get_data(self, sensor_index: int = 0):
+        """Get spoofed analog voltage sensor data: 0.0-5.0 [V] measurement from
+            specified sensor index."""
+        return {sensor_index: uniform(0., 5.)}
+
+
+def test_rpc_server_creation():
+    server = ZMQRPCServer()
+
+
+def test_request_and_reply():
+    sensors = SensorArray()  # Create an object
+    server = ZMQRPCServer(sensors=sensors)  # Create a server.
+    client = ZMQRPCClient()  # Create a server.
+    server.run()
+
+    data = client.call("sorted", [3, 2, 1])
+    assert data == [1, 2, 3]

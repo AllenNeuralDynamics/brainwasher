@@ -1,5 +1,6 @@
 """Instrument Server for enabling remote control/monitoring of the Instrument"""
 
+import builtins
 import logging
 import pickle
 import zmq
@@ -13,13 +14,11 @@ class RouterServer:
     """Interface for enabling remote control/monitoring of one or more object
        instances."""
     def __init__(self, rpc_port: str = "5555", broadcast_port: str = "5556"):
-        self.rpc = ZMQRPC(rpc_port)
+        self.rpc = ZMQRPCServer(rpc_port)
         self.broadcaster = ZMQBroadcaster(broadcast_port)
 
-    def call(self, func_name: str, *args, **kwargs):
-        return self.rpc.call(func_name, *args, **kwargs)
-
-    def receive(self):
+    def run(self):
+        """Setup rpc listener and broadcaster."""
         pass
 
     def add_broadcast(self, frequency_hz: float, func: Callable, *args, **kwargs):
@@ -32,9 +31,9 @@ class RouterServer:
         self.broadcaster.close()
 
 
-class ZMQRPC:
+class ZMQRPCServer:
 
-    def __init__(self, port: str = "5555"):
+    def __init__(self, port: str = "5555", **devices):
         self.log = logging.getLogger(self.__class__.__name__)
         self.port = port
         self.context = zmq.Context()
@@ -42,12 +41,35 @@ class ZMQRPC:
         self.socket.bind("tcp://*:%s" % self.port)
         self.keep_receiving = Event()
         self.keep_receiving.set()
+        self.devices = devices
 
-    def receive_worker(self):
+    def run(self):
+        """Launch thread to execute RPCs."""
+        thread = Thread(target=self._receive_worker,
+                        name=f"REQ_receive_thread",
+                        daemon=True)
+        thread.start()
+
+    def stop(self):
+        self.keep_receiving.clear()
+
+    def _call(self, callable_name: str, *args, **kwargs):
+        """Lookup and call the callable."""
+        # TODO: Find function or method
+        # Call the function and return the result.
+        func = getattr(builtins, callable_name)
+        return func(*args, **kwargs)
+
+    def _receive_worker(self):
+        """Wait for requests, call requested function, and return the reply.
+        Launched in a thread.
+        """
         while self.keep_receiving.is_set():
-            # FIXME: actually lookup and call the function.
             pickled_request = self.socket.recv()
             request = pickle.loads(pickled_request)
+            callable_name, args, kwargs = request
+            reply = self._call(callable_name, *args, **kwargs)
+            return self.socket.send(pickle.dumps(reply))
 
 
 class ZMQBroadcaster:
