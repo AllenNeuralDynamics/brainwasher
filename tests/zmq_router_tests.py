@@ -53,7 +53,6 @@ def test_many_client_receive():
 
     received_data = None
     start_time = now()
-    # FIXME: is this correct? Are we all getting the same data?
     while ((now() - start_time) < 1):
         received_data0 = clients[0].receive_broadcast()
         received_data1 = clients[1].receive_broadcast()

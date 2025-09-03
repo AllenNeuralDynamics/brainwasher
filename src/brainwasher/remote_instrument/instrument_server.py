@@ -21,8 +21,8 @@ class RouterServer:
        instances."""
     def __init__(self, rpc_port: str = "5555", broadcast_port: str = "5556",
                  **devices):
-        self.rpc = ZMQRPCServer(rpc_port, **devices)
-        self.streamer = ZMQStreamServer(broadcast_port)
+        self.rpc = ZMQRPCServer(port=rpc_port, **devices)
+        self.streamer = ZMQStreamServer(port=broadcast_port)
 
     def run(self):
         """Setup rpc listener and broadcaster."""
