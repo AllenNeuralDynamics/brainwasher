@@ -31,5 +31,6 @@ def test_request_and_reply():
     client = ZMQRPCClient()  # Create a server.
     server.run()
 
-    data = client.call("sorted", [3, 2, 1])
-    assert data == [1, 2, 3]
+    data = client.call("sensors", "get_data", 0)
+    assert 0 in data
+    assert 0.0 <= data[0] <= 5.0

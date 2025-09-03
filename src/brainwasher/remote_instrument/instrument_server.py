@@ -7,38 +7,48 @@ import zmq
 from threading import Thread, Event, Lock
 from time import sleep
 from typing import Callable
-from copy import deepcopy
+
+
+# Note: Can we implement a WriteToken as an object instance that we pass
+# into self.devices?
+
+
+# TODO: Can *multiple* Router Clients connect to the RouterServer??
 
 
 class RouterServer:
     """Interface for enabling remote control/monitoring of one or more object
        instances."""
-    def __init__(self, rpc_port: str = "5555", broadcast_port: str = "5556"):
-        self.rpc = ZMQRPCServer(rpc_port)
-        self.broadcaster = ZMQBroadcaster(broadcast_port)
+    def __init__(self, rpc_port: str = "5555", broadcast_port: str = "5556",
+                 **devices):
+        self.rpc = ZMQRPCServer(rpc_port, **devices)
+        self.streamer = ZMQStreamServer(broadcast_port)
 
     def run(self):
         """Setup rpc listener and broadcaster."""
         pass
 
     def add_broadcast(self, frequency_hz: float, func: Callable, *args, **kwargs):
-        self.broadcaster.add(frequency_hz, func, *args, **kwargs)
+        self.streamer.add(frequency_hz, func, *args, **kwargs)
 
     def remove_broadcast(self, func):
-        self.broadcaster.remove(func)
+        self.streamer.remove(func)
 
     def close(self):
-        self.broadcaster.close()
+        self.streamer.close()
 
 
 class ZMQRPCServer:
+    """Remote Procedure Caller (RPC) Server. Call any method from a dict of
+    object instances, and dispatch the serialized result to the connected
+    RPC Client."""
 
     def __init__(self, port: str = "5555", **devices):
         self.log = logging.getLogger(self.__class__.__name__)
         self.port = port
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
-        self.socket.bind("tcp://*:%s" % self.port)
+        self.socket.bind(f"tcp://*:{self.port}")
         self.keep_receiving = Event()
         self.keep_receiving.set()
         self.devices = devices
@@ -53,11 +63,13 @@ class ZMQRPCServer:
     def stop(self):
         self.keep_receiving.clear()
 
-    def _call(self, callable_name: str, *args, **kwargs):
-        """Lookup and call the callable."""
-        # TODO: Find function or method
+    def _call(self, device_name: str, method_name: str, *args, **kwargs):
+        """Lookup the call, invoke it, and return the result."""
+        if device_name not in self.devices:
+            raise ValueError(f"{device_name} is not present in devices.")
+        device = self.devices[device_name]
+        func = getattr(device, method_name)  # Might raise AttributeError
         # Call the function and return the result.
-        func = getattr(builtins, callable_name)
         return func(*args, **kwargs)
 
     def _receive_worker(self):
@@ -67,12 +79,12 @@ class ZMQRPCServer:
         while self.keep_receiving.is_set():
             pickled_request = self.socket.recv()
             request = pickle.loads(pickled_request)
-            callable_name, args, kwargs = request
-            reply = self._call(callable_name, *args, **kwargs)
+            device_name, method_name, args, kwargs = request
+            reply = self._call(device_name, method_name, *args, **kwargs)
             return self.socket.send(pickle.dumps(reply))
 
 
-class ZMQBroadcaster:
+class ZMQStreamServer:
     """Broadcaster for periodically calling a callable with specific args/kwargs
        at a specified frequency."""
 
@@ -81,7 +93,7 @@ class ZMQBroadcaster:
         self.port = port
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.PUB)
-        self.socket.bind("tcp://*:%s" % self.port)
+        self.socket.bind(f"tcp://*:{self.port}")
 
         self.func_params: Dict[Callable, Tuple] = {}
         self.calls_by_frequency: Dict[float, set] = {}
