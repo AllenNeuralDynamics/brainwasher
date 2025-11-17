@@ -61,7 +61,6 @@ def main():
     for handler in logger.handlers:
         if handler.get_name() == 'console':
             handler.setLevel(args.log_level)
-    #logger.addHandler(logging.FileHandler(filename=f"logs-{date_str}.log", mode="a"))
 
     # Create the instrument.
     device_specs = dict(device_config.cfg)
@@ -74,20 +73,12 @@ def main():
     #cam.start_recording("test
     instrument.reset()
 
-
-    #instrument.leak_check_syringe_to_selector_common_path() # TODO
-    #instrument.leak_check_syringe_to_drain_exaust_normally_open_path()  # works
-    #instrument.leak_check_syringe_to_drain_waste_path()  # works
-    #instrument.leak_check_syringe_to_reaction_vessel()  # works
-
-
     #protocol = args.protocol if args.protocol is not None else StringIO(demo_protocol_csv_str)
     #if args.protocol is None:
     #    logger.info("Running demo protocol")
-    prompt = Inpromptu(instrument, methods_to_skip=[])
+    prompt = Inpromptu(instrument, methods_to_skip=["purge_pump_line"])
     try:
         prompt.cmdloop()
-        #instrument.run_protocol(protocol)
     except KeyboardInterrupt:
         instrument.halt()
     except Exception:

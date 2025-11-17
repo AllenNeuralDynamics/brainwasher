@@ -1,10 +1,10 @@
 chemicals: !!set
   sbip: null
   pbs: null
+starting_solution:
+  pbs: 10000
 history:
   events: []
-  starting_solution:
-    pbs: 10000
 name: sbip_test
 protocol:
 - duration_s: 28800

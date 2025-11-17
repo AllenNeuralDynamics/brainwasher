@@ -1,13 +1,13 @@
 # brainwasher
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
-![Python](https://img.shields.io/badge/python->=3.7-blue?logo=python)
+![Python](https://img.shields.io/badge/python->=3.10-blue?logo=python)
 
 Note that this package is intended to run on a Raspberry Pi with a particular hardware configuration.
 
 ## Quick Links
 * [Reaction Vessel CAD model](https://cad.onshape.com/documents/f1bf5f3ce34b965e5212d1ac/w/45b1dd7d9365ece513829b77/e/7736ee8ab9b2b1e217084778)
-* [P&ID Diagram Source link](https://alleninstitute.sharepoint.com/:u:/s/Instrumentation/ERyxjmhmVwZOke5AnwQ4NG0Bue9zIMbGMNcaT-wdS2hT9w?e=ZHAdRq)
+* [P&ID Diagram Source link](https://alleninstitute.sharepoint.com/:u:/s/Instrumentation/EToUz-sNb_NOhtTetyjH3GUBfrVqOR7EBPKXOnT8-eHf-Q?e=GkewAP)
 * [Project Design Folder](https://alleninstitute.sharepoint.com/:f:/s/Instrumentation/Emw6bMGQgo5Pgin2Gb3EXEcBvJux_NXnwFN3A5khlz1pbA?e=NgBTAY)
 
 ## Wiring Setup
@@ -80,75 +80,94 @@ To do so, login to the Pi, setup Git, and edit files on the device itself.
 
 TODO: systemd setup.
 
+# Job Files
 
-## Contributing
+A job file is a sequence of wash steps along with some metadata.
 
-### Linters and testing
+A sample job file looks like the following: 
 
-There are several libraries used to run linters, check documentation, and run tests.
+```yaml
 
-- Please test your changes using the **coverage** library, which will run the tests and log a coverage report:
+history:
+  events: []
+name: test_thf_and_dcm
+protocol:
+- duration_s: 3.0
+  mix_speed_rpm: 1200.0
+  solution:
+    deionized_water: 7000.0
+    thf: 3000.0
+- duration_s: 3.0
+  mix_speed_rpm: 1200.0
+  solution:
+    deionized_water: 1000.0
+    thf: 9000.0
+- duration_s: 3.0
+  mix_speed_rpm: 1200.0
+  solution:
+    thf: 10000.0
+- duration_s: 3.0
+  mix_speed_rpm: 1200.0
+  solution:
+    dcm: 10000.0
+- duration_s: 3.0
+  mix_speed_rpm: 1200.0
+  solution:
+    dcm: 10000.0
+- duration_s: 0.0
+  mix_speed_rpm: 0.0
+  solution:
+    deionized_water: 10000.0
+source_protocol:
+  path: /home/brainwasher/protocols/demo_protocol.csv # This value is ignored right now.
+starting_solution:
+  pbs: 10000.0
 
-```bash
-coverage run -m unittest discover && coverage report
 ```
 
-- Use **interrogate** to check that modules, methods, etc. have been documented thoroughly:
 
-```bash
-interrogate .
+A step in the `protocol` has the following required steps:
+```yaml
+- duration_s: 60  # [seconds]. How long to remain in this step.
+  mix_speed_rpm: 0.0 # [rpm]. 0 for "no mixing." Minimum on-speed: 360; max: 6000.
+  solution:  # a dictionary, keyed by solution name, of volumes in microliters.
+    deionized_water: 10000.0
+```
+These additional steps are optional:
+```yaml
+  start_empty: true # If true, empty the reaction vessel before filling with solution for this step. Default is true. 
+  end_empty: false  # If true, empty the reaction vessel before exiting this step. Default is false.
+  intermittent_mixing_on_time: None # Float. If specified, duty cycle of leaving the motor on at the specified RPM.
+  intermittent_mixing_off_time: None # Float. If specified, duty cycle of of leaving the motor off at the specified RPM.
 ```
 
-- Use **flake8** to check that code is up to standards (no unused imports, etc.):
-```bash
-flake8 .
+Once the job file is executed, extra (computed) fields will be added afterwards.
+These fields are not required will be recomputed if the required fields change.
+
+
+## Creating a new job file:
+To create a new job, you can simply copy the following skeleton of required fields and then add a list of protocol steps.
+```yaml
+
+history:
+  events: []
+name: <sample name here>
+protocol:
+- # Add steps here!
+- # Step 0
+- # Step 1 ...
+source_protocol:
+  path: /dev/null # This value is ignored right now.
+starting_solution:
+  pbs: 10000.0 # This is what the reaction vessel is first filled with.
+
 ```
 
-- Use **black** to automatically format the code into PEP standards:
-```bash
-black .
-```
 
-- Use **isort** to automatically sort import statements:
-```bash
-isort .
-```
-
-### Pull requests
-
-For internal members, please create a branch. For external members, please fork the repository and open a pull request from the fork. We'll primarily use [Angular](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#commit) style for commit messages. Roughly, they should follow the pattern:
-```text
-<type>(<scope>): <short summary>
-```
-
-where scope (optional) describes the packages affected by the code changes and type (mandatory) is one of:
-
-- **build**: Changes that affect build tools or external dependencies (example scopes: pyproject.toml, setup.py)
-- **ci**: Changes to our CI configuration files and scripts (examples: .github/workflows/ci.yml)
-- **docs**: Documentation only changes
-- **feat**: A new feature
-- **fix**: A bugfix
-- **perf**: A code change that improves performance
-- **refactor**: A code change that neither fixes a bug nor adds a feature
-- **test**: Adding missing tests or correcting existing tests
-
-### Semantic Release
-
-The table below, from [semantic release](https://github.com/semantic-release/semantic-release), shows which commit message gets you which release type when `semantic-release` runs (using the default configuration):
-
-| Commit message                                                                                                                                                                                   | Release type                                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `fix(pencil): stop graphite breaking when too much pressure applied`                                                                                                                             | ~~Patch~~ Fix Release, Default release                                                                          |
-| `feat(pencil): add 'graphiteWidth' option`                                                                                                                                                       | ~~Minor~~ Feature Release                                                                                       |
-| `perf(pencil): remove graphiteWidth option`<br><br>`BREAKING CHANGE: The graphiteWidth option has been removed.`<br>`The default graphite width of 10mm is always used for performance reasons.` | ~~Major~~ Breaking Release <br /> (Note that the `BREAKING CHANGE: ` token must be in the footer of the commit) |
-
-### Documentation
-To generate the rst files source files for documentation, run
-```bash
-sphinx-apidoc -o doc_template/source/ src 
-```
-Then to create the documentation HTML files, run
-```bash
-sphinx-build -b html doc_template/source/ doc_template/build/html
-```
-More info on sphinx installation can be found [here](https://www.sphinx-doc.org/en/master/usage/installation.html).
+## Running a Job File
+1. If the job was created elsewhere, load the job onto the machine via USB stick or `scp`.
+1. Load the reaction vessel with brain along with starting liquid (most likely PBS).
+1. Ensure reagents are fresh and topped off.
+2. Ensure waste bottles are empty or have sufficient empty volume.
+1. Launch the console by running `main.py` in the project `bin` folder.
+1. From the console, type in `run /path/to/job_file.yaml` and press <ENTER>

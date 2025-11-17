@@ -1,5 +1,7 @@
 """Multiposition Valves"""
 import logging
+import copy
+
 from vicivalve import VICI
 from serial import Serial
 from typing import Union
@@ -32,6 +34,7 @@ class CloseableVICI(VICI):
         # double every current position value.
         # map every other port to a "closed" position.
         self.port_count = port_count
+        self.port_map = port_map  # Unused but saved for interface access.
         # create a dictionary {'1': 1, '2': 2, ..., 'n': n}
         self._port_map = dict(zip([str(i + 1) for i in range(self.port_count)],
                                   [i + 1 for i in range(self.port_count)]))

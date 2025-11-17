@@ -1,0 +1,70 @@
+history:
+  events: []
+name: thf_thru_dcm
+protocol:
+- duration_s: 14400.0
+  mix_speed_rpm: 1200.0
+  solution:
+    deionized_water: 7000.0
+    thf: 3000.0
+- duration_s: 14400.0
+  mix_speed_rpm: 1200.0
+  solution:
+    deionized_water: 5000.0
+    thf: 5000.0
+- duration_s: 14400.0
+  mix_speed_rpm: 1200.0
+  solution:
+    deionized_water: 3000.0
+    thf: 7000.0
+- duration_s: 14400.0
+  mix_speed_rpm: 1200.0
+  solution:
+    deionized_water: 2000.0
+    thf: 8000.0
+- duration_s: 14400.0
+  mix_speed_rpm: 1200.0
+  solution:
+    deionized_water: 1000.0
+    thf: 9000.0
+- duration_s: 14400.0
+  mix_speed_rpm: 1200.0
+  solution:
+    deionized_water: 500.0
+    thf: 9500.0
+- duration_s: 14400.0
+  mix_speed_rpm: 1200.0
+  solution:
+    thf: 10000.0
+- duration_s: 43200.0
+  mix_speed_rpm: 1200.0
+  solution:
+    thf: 10000.0
+- duration_s: 7200.0
+  mix_speed_rpm: 1200.0
+  solution:
+    thf: 10000.0
+- duration_s: 3600.0
+  mix_speed_rpm: 1200.0
+  solution:
+    dcm: 10000.0
+- duration_s: 7200.0
+  mix_speed_rpm: 1200.0
+  solution:
+    dcm: 10000.0
+- duration_s: 7200.0
+  mix_speed_rpm: 1200.0
+  solution:
+    dcm: 10000.0
+- duration_s: 43200.0
+  mix_speed_rpm: 1200.0
+  solution:
+    dcm: 10000.0
+source_protocol:
+  path: /home/poofjunior/projects/brainwasher/bin
+starting_solution:
+  pbs: 10000.0
+stock_chemical_volumes_ul:
+  dcm: 40000.0
+  deionized_water: 18500.0
+  thf: 71500.0
