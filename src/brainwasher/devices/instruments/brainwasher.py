@@ -626,6 +626,9 @@ class BrainWasher:
         self.pump.move_absolute_in_percent(percent)
         self.pump.set_speed_percent(old_speed) # restore original speed.
 
+    def run_step(self, *args, **kwargs):
+        return self.run_wash_step(*args, **kwargs)
+
     @lock_flowpath
     def run_wash_step(self, duration_s: float = 0, mix_speed_rpm: float = 0,
                       intermittent_mixing_on_time_s: float = None,

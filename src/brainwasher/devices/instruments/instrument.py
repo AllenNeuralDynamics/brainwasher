@@ -11,6 +11,7 @@ import yaml
 class Instrument:
 
     def __init__(self, ):
+        self.log = logging.getLogger(__name__ + "." + self.__class__.__name__)
         self.rxn_vessel = None
         self.job_worker: Thread = None
         self.pause_requested: Event = None
@@ -32,7 +33,7 @@ class Instrument:
         self.job_worker.start()
 
     @abstractmethod
-    def run_wash_step(self, *args, **kwargs):
+    def run_step(self, *args, **kwargs):
         """The main function that gets called over and over."""
         raise NotImplementedError("Implement me in the derived class!")
 
@@ -106,7 +107,7 @@ class Instrument:
                               f"{index + 1}/{len(job.protocol)} with "
                               f"{step.solution}")
                 # Run step.
-                self.run_wash_step(**kwargs)
+                self.run_step(**kwargs)
                 # Handle pause state.
                 # Save current step if not completed (overrides present) or
                 # next step if the current step completed.
