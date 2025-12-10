@@ -5,7 +5,7 @@ from pydantic import BaseModel, computed_field, field_serializer, model_serializ
 
 from datetime import datetime
 from functools import cached_property
-from typing import, Optional, Any, Literal, Union
+from typing import Optional, Any, Literal, Union
 import logging
 
 
