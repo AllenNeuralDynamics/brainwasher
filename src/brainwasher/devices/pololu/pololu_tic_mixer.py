@@ -14,6 +14,14 @@ MICROSTEP_FACTORS = {
     9: 256,
 }
 
+OPERATION_STATE = {
+    "reset": 0,
+    "reenergized": 2,
+    "soft_error": 4,  
+    "waiting_for_err_line": 6,
+    "starting_up"  : 8,
+    "normal": 10
+}
 
 class PololuTicMixer(Mixer):
     """An open loop mixing device."""
@@ -35,9 +43,10 @@ class PololuTicMixer(Mixer):
         self.tic.set_target_velocity(steps_per_10000_secs)
 
     def _start_mixing(self):
-        self.tic.energize()
-        self.tic.enter_safe_start()
+        if self.tic.get_target_velocity() == 0:  # don't start if speed is set to 0
+            self.tic.energize()
+            self.tic.exit_safe_start()
     
     def _stop_mixing(self):
         self.tic.deenergize()
-        self.tic.exit_safe_start()
+        self.tic.enter_safe_start()

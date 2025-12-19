@@ -9,23 +9,19 @@ class Cycle(BaseModel):
     duration_min: float = Field(..., description="Duration in minutes of all washes in cycle.")
     washes: int = Field(..., description="Number of washes performed in cycle.")
 
-class WashVolumes(BaseModel):
-    fill_volume_ml: float = Field(..., description="Fill volume of all washes.")
-    drain_volume_ml: float = Field(..., description="Drain volume of all washes. May exceed fill to totally drain reaction vessel.")
-
 class BrainSlosherJob(Job):
     protocol: list[Cycle] = list()
     motor_speed_rpm: float = Field(..., description="Speed of motor in rpms. Set to 0 to disable motor.")
 
-
-
 class BrainSlosherConfig(BaseModel):
     selector_port_map: dict[str, int]
     max_syringe_volume_ml: float = Field(default=4.5, description="Maximum fill volume of the syringe to prevent chatter when operating.")
-    prime_pump_volume_ml: float = Field(default=3, description="Volume to prime line with.")
-    prime_line_reps: int = Field(..., description="Number of reps to prime line.")
+    prime_volume_ml: float = Field(default=11, description="Volume to prime lines.")
+    purge_volume_ml: float = Field(default=4.5, description="Volume to purge drain line.")
     waste_volume_ml: float = Field(..., description="Volume of waste volume vessel.")
-
+    drain_volume_buffer_ml: float = Field(..., description="Buffer to add to draining volume to ensure chamber is completly empty.")
+    fill_volume_ml: float = Field(..., description="Volume to fill chamber completly.")
+    
     @field_validator("selector_port_map")
     def check_required_keys(cls, v):
         if "air" not in v:
