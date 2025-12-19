@@ -164,8 +164,10 @@ class BrainSlosher(Instrument):
         # Check if chamber is in correct state 
         if self.rxn_vessel.solution != {solution: self.config.fill_volume_ml}:
             self.drain_chamber()
+            self.prime_line(solution)
             self.fill_chamber(solution, 
                               self.config.fill_volume_ml)
+            self.purge_line()
         
         start_time_s = perf_counter()
         duration_s = duration_min * 60
@@ -176,8 +178,8 @@ class BrainSlosher(Instrument):
                 self.log.warning(f"Aborting after {elapsed_time_s}[s].")
                 self.resume_state_overrides.update(duration_min=(duration_s - elapsed_time_s)/60)
                 return
-        
+        self.drain_chamber()
         self.mixer.stop_mixing()
-        self.drain_vessel()
+        
 
 
