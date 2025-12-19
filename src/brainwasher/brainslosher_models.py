@@ -18,7 +18,6 @@ class BrainSlosherConfig(BaseModel):
     max_syringe_volume_ml: float = Field(default=4.5, description="Maximum fill volume of the syringe to prevent chatter when operating.")
     prime_volume_ml: float = Field(default=11, description="Volume to prime lines.")
     purge_volume_ml: float = Field(default=4.5, description="Volume to purge drain line.")
-    waste_volume_ml: float = Field(..., description="Volume of waste volume vessel.")
     drain_volume_buffer_ml: float = Field(..., description="Buffer to add to draining volume to ensure chamber is completly empty.")
     fill_volume_ml: float = Field(..., description="Volume to fill chamber completly.")
     

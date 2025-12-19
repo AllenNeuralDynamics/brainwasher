@@ -178,7 +178,7 @@ class BrainSlosher(Instrument):
                 self.log.warning(f"Aborting after {elapsed_time_s}[s].")
                 self.resume_state_overrides.update(duration_min=(duration_s - elapsed_time_s)/60)
                 return
-        self.drain_chamber()
+        self.drain_chamber()    
         self.mixer.stop_mixing()
         
 
