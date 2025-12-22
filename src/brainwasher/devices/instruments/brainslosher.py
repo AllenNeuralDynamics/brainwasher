@@ -122,6 +122,8 @@ class BrainSlosher(Instrument):
 
         """
 
+        pass
+
     def run_step(self, solution: str, duration_min: float, washes: int):
         """
         Run through cycles defined in job 

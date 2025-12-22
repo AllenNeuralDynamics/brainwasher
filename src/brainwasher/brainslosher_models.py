@@ -13,6 +13,8 @@ class BrainSlosherJob(Job):
     protocol: list[Cycle] = list()
     motor_speed_rpm: float = Field(..., description="Speed of motor in rpms. Set to 0 to disable motor.")
 
+"""pydantic model of brainwasher config."""
+
 class BrainSlosherConfig(BaseModel):
     selector_port_map: dict[str, int]
     max_syringe_volume_ml: float = Field(default=4.5, description="Maximum fill volume of the syringe to prevent chatter when operating.")
