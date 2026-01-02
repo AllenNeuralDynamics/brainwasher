@@ -14,7 +14,7 @@ class Instrument:
         self.log = logging.getLogger(__name__ + "." + self.__class__.__name__)
         self.rxn_vessel = None
         self.job_worker: Thread = None
-        self.pause_requested: Event = None
+        self.pause_requested: Event = Event()
 
     def run(self, job_path: str):
         """Run the job specified from the specified filepath."""
@@ -54,7 +54,6 @@ class Instrument:
             logging.debug(f"Job is a valid job.")
             return job
 
-    @lock_flowpath
     def _run_job_worker(self, job: Job, job_path: Path):
         """Start or resume a job from job_path"""
         # When starting/resuming, ensure the current rxn vessel solution is
@@ -102,7 +101,7 @@ class Instrument:
                                   f"{start_step_overrides}.")
                 # Convert step parameters to valid function parameters.
                 kwargs = step.model_dump(exclude='solution')  # omit **solution
-                kwargs.update(step.solution)  # splat **solution
+                kwargs.update({"solution":step.solution})  # splat **solution
                 self.log.info(f"Conducting step: "
                               f"{index + 1}/{len(job.protocol)} with "
                               f"{step.solution}")
@@ -122,7 +121,7 @@ class Instrument:
             finally:
                 # Always save the current step in case of an unhandled exception
                 # or power failure.
-                job.save_resume_state(resume_step, step.solution,
+                self.save_resume_state(job, resume_step, step.solution,
                                       **self.resume_state_overrides)
                 self.resume_state_overrides = {}
                 with open(job_path, "w") as job_file:
@@ -133,6 +132,13 @@ class Instrument:
         with open(job_path, "w") as job_file:
             yaml.dump(job.model_dump(exclude_none=True), job_file)
         self.log.info(f"Finished job: {job.name} from {job_path}")
+
+    def save_resume_state( job: Job, resume_step: int, starting_solution: dict, overrides: dict):
+        """
+            Save resume state of job
+        """
+        job.save_resume_state(resume_step, starting_solution,
+                                      **overrides)
 
     def pause(self):
         """Request that the system pause the currently running protocol and

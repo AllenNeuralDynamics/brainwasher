@@ -57,7 +57,7 @@ class BrainSlosher(Instrument):
         if self.rxn_vessel.curr_volume_ul + volume_ml * 1000 > self.rxn_vessel.max_volume_ul:
             raise ValueError("Chamber will exceed max volume if filled. Please drain.")
         
-        self.rxn_vessel.add_solution({solution:volume_ml * 1000})
+        self.rxn_vessel.add_solution(**{solution:volume_ml * 1000})
         self.withdraw_and_dispense_solution(solution, volume_ml, 'chamber')
 
     
@@ -121,7 +121,7 @@ class BrainSlosher(Instrument):
         :raises ValueError: if solution or volume is not valid
 
         """
-
+        # TODO: implement checks if neccessary 
         pass
 
     def run_step(self, solution: str, duration_min: float, washes: int):
@@ -136,7 +136,10 @@ class BrainSlosher(Instrument):
         self.purge_line()
         for i in range(washes):
             self.prime_line(solution)
-            self.run_wash_step(duration_min=duration_min, solution=solution)
+            try:
+                self.run_wash_step(duration_min=duration_min, solution=solution)
+            finally:
+                self.resume_state_overrides.update(washes=washes-(i+1))
 
     def _run_job_worker(self, job: BrainSlosherJob, job_path: Path):
         """
@@ -145,6 +148,12 @@ class BrainSlosher(Instrument):
         
         self.mixer.set_mixing_speed(job.motor_speed_rpm)
         return super()._run_job_worker(job, job_path)
+
+    def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):
+        """
+            Save resume state of job. Overwrite since solution is string and startign solution is dict
+        """
+        job.save_resume_state(resume_step, {starting_solution: self.config.fill_volume_ml*1000}, **kwargs)
 
     @lock_flowpath
     def run_wash_step(self, 
@@ -176,9 +185,9 @@ class BrainSlosher(Instrument):
         while (perf_counter() - start_time_s) < duration_s:
             # Handle pause request if called in a "job" context.
             if self.job_worker and self.job_worker.is_alive() and self.pause_requested.is_set():
-                elapsed_time_s = round(perf_counter()() - start_time_s)
+                elapsed_time_s = round(perf_counter() - start_time_s)
                 self.log.warning(f"Aborting after {elapsed_time_s}[s].")
-                self.resume_state_overrides.update(duration_min=(duration_s - elapsed_time_s)/60)
+                self.resume_state_overrides.update(duration_min=round((duration_s - elapsed_time_s)/60, 1))
                 return
         self.drain_chamber()    
         self.mixer.stop_mixing()
