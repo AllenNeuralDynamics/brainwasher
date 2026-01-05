@@ -1,0 +1,12 @@
+    "selector_port_map": {
+      "air": 0,
+      "chamber": 1,
+      "drain": 2,
+      "PBS": 3,
+      "diH20":4
+    }
+    "max_syringe_volume_ml": 4.5,
+    "prime_volume_ml": 11,
+    "purge_volume_ml": 4.5,
+    "drain_volume_buffer_ml": 0.5,
+    "fill_volume_ml": 12

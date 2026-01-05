@@ -21,13 +21,10 @@ dependencies = [
     "coloredlogs>=15.0.1",
     "device-spinner",
     "runze-control",
-    "vicivalve",
-    "inpromptu",
     "mock>=5.2.0",
     "pydantic>=2.11.4",
     "datetime>=5.5",
     "pyyaml>=6.0.2",
-    "pyharp",
     "rpi-hardware-pwm",
 ]
 
@@ -42,3 +39,4 @@ vicivalve = { path = "../../external_projects/vicivalve", editable = true }
 inpromptu = { path = "../inpromptu", editable = true }
 pyharp = { path = "../pyharp", editable = true }
 rpi-hardware-pwm = { git = "https://github.com/Pioreactor/rpi_hardware_pwm.git" }
+one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git" }

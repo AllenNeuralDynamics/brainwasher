@@ -98,6 +98,28 @@ class BrainSlosher(Instrument):
             self.pump.dispense(pump_vol * 1000) # convert ml to ul
             volume_ml -= pump_vol
 
+    def get_config(self) -> BrainSlosherConfig:
+        """
+        Convienence method to get config
+        """
+        return self.config
+    
+    def set_fill_volume(self, volume: float) -> None:
+        """
+        Convienence method for setting fill volume key in config
+        
+        :param volume: wash volume in ml
+        """
+        self.config.fill_volume_ml = volume
+        
+    def set_drain_buffer_volume(self, volume: float) -> None:
+        """
+        Convienence method for setting drain buffer key in config
+        
+        :param volume: drain buffer volume in ml
+        """
+        self.config.drain_volume_buffer_ml = volume
+
     def prime_line(self, solution: str) -> None:
         """
         Prime line
