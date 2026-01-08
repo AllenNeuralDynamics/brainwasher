@@ -107,7 +107,7 @@ def main():
     waste = WasteVessel(name="waste", max_volume_ul=50000)
     # pump = SimSyringePump(syringe_volume_ul=config.max_syringe_volume_ml, name="sim")
     # mixer = SimulatedMixer(max_rpm=200)
-    pump = SY01B(com_port="COM4")
+    pump = SY01B(com_port="COM4", baudrate=9600, position_count=0, syringe_volume_ul=4500)
     mixer = PololuTicMixer(200)
     brainslosher = BrainSlosher(config=config,
                                 rxn_vessel=chamber,
