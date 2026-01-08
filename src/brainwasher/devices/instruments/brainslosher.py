@@ -187,6 +187,7 @@ class BrainSlosher(Instrument):
         
         self.mixer.set_mixing_speed(job.motor_speed_rpm)
         self._job = job
+        #self._step = 
         return super()._run_job_worker(job, job_path)
 
     def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):

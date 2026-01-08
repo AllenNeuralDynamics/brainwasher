@@ -1,8 +1,10 @@
 from brainwasher.devices.instruments.brainslosher import BrainSlosher
 from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob
 from brainwasher.devices.vessels import ReactionVessel, WasteVessel
-from brainwasher.devices.simulated_devices.syringe_pump import SimSyringePump
-from brainwasher.devices.mixer import SimulatedMixer
+# from brainwasher.devices.simulated_devices.syringe_pump import SimSyringePump
+# from brainwasher.devices.mixer import SimulatedMixer
+from runze_control.multichannel_syringe_pump import SY01B
+from brainwasher.devices.pololu.pololu_tic_mixer import PololuTicMixer
 import logging
 from one_liner.server import RouterServer
 from pathlib import Path
@@ -91,19 +93,22 @@ class ZMQServer(RouterServer):
 def main():
     
     config = BrainSlosherConfig(selector_port_map= {
-                                                    "air": 0,
-                                                    "chamber": 1,
-                                                    "waste": 2,
-                                                    "PBS": 3,
-                                                    "diH20":4
+                                                    "air": 4,
+                                                    "chamber": 6,
+                                                    "waste": 3,
+                                                    "drain":5,
+                                                    "PBS": 1,
+                                                    "diH20":2
                                                     },
                                 drain_volume_buffer_ml=.5,
-                                fill_volume_ml=11 
+                                fill_volume_ml=10 
                                 )
     chamber = ReactionVessel(name="chamber", max_volume_ul=50000)
     waste = WasteVessel(name="waste", max_volume_ul=50000)
-    pump = SimSyringePump(syringe_volume_ul=config.max_syringe_volume_ml, name="sim")
-    mixer = SimulatedMixer(max_rpm=200)
+    # pump = SimSyringePump(syringe_volume_ul=config.max_syringe_volume_ml, name="sim")
+    # mixer = SimulatedMixer(max_rpm=200)
+    pump = SY01B(com_port="COM4")
+    mixer = PololuTicMixer(200)
     brainslosher = BrainSlosher(config=config,
                                 rxn_vessel=chamber,
                                 pump=pump,
