@@ -9,6 +9,7 @@ from time import sleep
 from typing import Literal
 from pathlib import Path
 from time import perf_counter
+import yaml
 
 def lock_flowpath(func):
     """Provide methods with exclusive access to components that alter the flowpath."""
@@ -45,6 +46,25 @@ class BrainSlosher(Instrument):
         
         # Thread-safe protection within a class instance.
         self.flowpath_lock = RLock()
+
+        # attributes to calculate progress
+        self._curr_step = 0
+        self._curr_wash = 0
+        self._curr_wash_elapsed_min = 0
+        self._progress = 0 
+        self.job: BrainSlosherJob = None
+
+    def get_progress(self) -> int:
+        """
+        Progress of current run between 0 - 100
+        """
+
+        cycle_pct = self._curr_step/len(self.job.protocol)
+        wash_pct = self._curr_wash/self.job.protocol[self._curr_step].washes
+        time_pct = self._curr_wash_elapsed_min/self.job.protocol[self._curr_step].duration_min
+
+        return round(cycle_pct + wash_pct + time_pct)
+
 
     def fill_chamber(self, solution: str, volume_ml: float) -> None:
         """
@@ -98,28 +118,6 @@ class BrainSlosher(Instrument):
             self.pump.dispense(pump_vol * 1000) # convert ml to ul
             volume_ml -= pump_vol
 
-    def get_config(self) -> BrainSlosherConfig:
-        """
-        Convienence method to get config
-        """
-        return self.config
-    
-    def set_fill_volume(self, volume: float) -> None:
-        """
-        Convienence method for setting fill volume key in config
-        
-        :param volume: wash volume in ml
-        """
-        self.config.fill_volume_ml = volume
-        
-    def set_drain_buffer_volume(self, volume: float) -> None:
-        """
-        Convienence method for setting drain buffer key in config
-        
-        :param volume: drain buffer volume in ml
-        """
-        self.config.drain_volume_buffer_ml = volume
-
     def prime_line(self, solution: str) -> None:
         """
         Prime line
@@ -155,20 +153,40 @@ class BrainSlosher(Instrument):
         :param washes: number of washes in cycle
 
         """
+        self._curr_wash = 0
         self.purge_line()
         for i in range(washes):
             self.prime_line(solution)
             try:
+                self._curr_wash = i
+                self._curr_wash_elapsed_min = 0
                 self.run_wash_step(duration_min=duration_min, solution=solution)
             finally:
                 self.resume_state_overrides.update(washes=washes-(i+1))
 
+    
+    def _load_job(self, job_path: str) -> BrainSlosherJob:
+        """
+            Rewrite to validate against BrainSlosherJob type       
+        """
+        
+        job_path = Path(job_path)
+        if not job_path.exists():
+            raise FileNotFoundError(f"Job does not exist at location: "
+                                    f"{job_path.resolve()}")
+        with open(job_path) as yaml_stream:
+            self.log.debug(f"Loading job from: {job_path.absolute()}")
+            job_dict = yaml.safe_load(yaml_stream)
+            job = BrainSlosherJob(**job_dict)  
+            return job
+    
     def _run_job_worker(self, job: BrainSlosherJob, job_path: Path):
         """
         Configure mixer for session        
         """
         
         self.mixer.set_mixing_speed(job.motor_speed_rpm)
+        self._job = job
         return super()._run_job_worker(job, job_path)
 
     def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):
@@ -206,6 +224,7 @@ class BrainSlosher(Instrument):
         duration_s = duration_min * 60
         while (perf_counter() - start_time_s) < duration_s:
             # Handle pause request if called in a "job" context.
+            self._curr_wash_elapsed_min = (perf_counter() - start_time_s)/60
             if self.job_worker and self.job_worker.is_alive() and self.pause_requested.is_set():
                 elapsed_time_s = round(perf_counter() - start_time_s)
                 self.log.warning(f"Aborting after {elapsed_time_s}[s].")

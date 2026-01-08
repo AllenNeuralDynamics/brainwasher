@@ -22,7 +22,6 @@ source = { editable = "." }
 dependencies = [
     { name = "coloredlogs" },
     { name = "datetime" },
-    { name = "device-spinner" },
     { name = "igraph" },
     { name = "mock" },
     { name = "pandas" },
@@ -30,9 +29,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pytest" },
     { name = "pyyaml" },
-    { name = "rpi-hardware-pwm" },
     { name = "ruff" },
-    { name = "runze-control" },
     { name = "sm16inpind" },
     { name = "sm16univin" },
     { name = "sm8mosind" },
@@ -43,7 +40,6 @@ dependencies = [
 requires-dist = [
     { name = "coloredlogs", specifier = ">=15.0.1" },
     { name = "datetime", specifier = ">=5.5" },
-    { name = "device-spinner", editable = "../device-spinner" },
     { name = "igraph", specifier = ">=0.11.5" },
     { name = "mock", specifier = ">=5.2.0" },
     { name = "pandas", specifier = ">=2.0.3" },
@@ -51,9 +47,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.11.4" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "rpi-hardware-pwm", git = "https://github.com/Pioreactor/rpi_hardware_pwm.git" },
     { name = "ruff", specifier = ">=0.9.9" },
-    { name = "runze-control", editable = "../runze-control" },
     { name = "sm16inpind", specifier = ">=1.0.1" },
     { name = "sm16univin", specifier = ">=1.0.3" },
     { name = "sm8mosind", specifier = ">=1.0.1" },
@@ -93,31 +87,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/2f/66/e284b9978fede3518
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f3/78/8e382b8cb4346119e2e04270b6eb4a01c5ee70b47a8a0244ecdb157204f7/DateTime-5.5-py3-none-any.whl", hash = "sha256:0abf6c51cb4ba7cee775ca46ccc727f3afdde463be28dbbe8803631fefd4a120", size = 52649, upload-time = "2024-03-21T07:26:47.849Z" },
 ]
-
-[[package]]
-name = "device-spinner"
-source = { editable = "../device-spinner" }
-dependencies = [
-    { name = "ruamel-yaml" },
-    { name = "toml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "black", marker = "extra == 'dev'" },
-    { name = "coverage", marker = "extra == 'dev'" },
-    { name = "flake8", marker = "extra == 'dev'" },
-    { name = "furo", marker = "extra == 'dev'" },
-    { name = "interrogate", marker = "extra == 'dev'" },
-    { name = "isort", marker = "extra == 'dev'" },
-    { name = "ruamel-yaml", specifier = ">=0.17.35" },
-    { name = "sphinx", marker = "extra == 'dev'" },
-    { name = "toml", specifier = ">=0.10.2" },
-]
-provides-extras = ["dev"]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=7.4.4" }]
 
 [[package]]
 name = "flexcache"
@@ -447,15 +416,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyserial"
-version = "3.5"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1e/7d/ae3f0a63f41e4d2f6cb66a5b57197850f919f59e558159a4dd3a818f5082/pyserial-3.5.tar.gz", hash = "sha256:3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb", size = 159125, upload-time = "2020-11-23T03:59:15.045Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/bc/587a445451b253b285629263eb51c2d8e9bcea4fc97826266d186f96f558/pyserial-3.5-py2.py3-none-any.whl", hash = "sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0", size = 90585, upload-time = "2020-11-23T03:59:13.41Z" },
-]
-
-[[package]]
 name = "pytest"
 version = "8.3.5"
 source = { registry = "https://pypi.org/simple" }
@@ -527,20 +487,6 @@ wheels = [
 ]
 
 [[package]]
-name = "rpi-hardware-pwm"
-version = "0.3.0"
-source = { git = "https://github.com/Pioreactor/rpi_hardware_pwm.git#eea3028b1e9c6354dea4a8914a6e6f33492f5502" }
-
-[[package]]
-name = "ruamel-yaml"
-version = "0.19.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c7/3b/ebda527b56beb90cb7652cb1c7e4f91f48649fbcd8d2eb2fb6e77cd3329b/ruamel_yaml-0.19.1.tar.gz", hash = "sha256:53eb66cd27849eff968ebf8f0bf61f46cdac2da1d1f3576dd4ccee9b25c31993", size = 142709, upload-time = "2026-01-02T16:50:31.84Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl", hash = "sha256:27592957fedf6e0b62f281e96effd28043345e0e66001f97683aa9a40c667c93", size = 118102, upload-time = "2026-01-02T16:50:29.201Z" },
-]
-
-[[package]]
 name = "ruff"
 version = "0.11.8"
 source = { registry = "https://pypi.org/simple" }
@@ -564,22 +510,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/7b/a9/eaa571eb70648c9bde3120a1d5892597de57766e376b831b06e7c1e43945/ruff-0.11.8-py3-none-win_amd64.whl", hash = "sha256:6e70d11043bef637c5617297bdedec9632af15d53ac1e1ba29c448da9341b0c4", size = 11597410, upload-time = "2025-05-01T14:53:16.571Z" },
     { url = "https://files.pythonhosted.org/packages/cd/be/f6b790d6ae98f1f32c645f8540d5c96248b72343b0a56fab3a07f2941897/ruff-0.11.8-py3-none-win_arm64.whl", hash = "sha256:304432e4c4a792e3da85b7699feb3426a0908ab98bf29df22a31b0cdd098fac2", size = 10713129, upload-time = "2025-05-01T14:53:22.27Z" },
 ]
-
-[[package]]
-name = "runze-control"
-source = { editable = "../runze-control" }
-dependencies = [
-    { name = "pyserial" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "enum-tools", extras = ["sphinx"], marker = "extra == 'dev'" },
-    { name = "furo", marker = "extra == 'dev'" },
-    { name = "pyserial" },
-    { name = "sphinx", marker = "extra == 'dev'" },
-]
-provides-extras = ["dev"]
 
 [[package]]
 name = "setuptools"
@@ -651,15 +581,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/1c/dc/0aff23d6036a4d3bf4f1d8c8204c5c79c4437e25e0ae94ffe4bbb55ee3c2/texttable-1.7.0.tar.gz", hash = "sha256:2d2068fb55115807d3ac77a4ca68fa48803e84ebb0ee2340f858107a36522638", size = 12831, upload-time = "2023-10-03T09:48:12.272Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/24/99/4772b8e00a136f3e01236de33b0efda31ee7077203ba5967fcc76da94d65/texttable-1.7.0-py2.py3-none-any.whl", hash = "sha256:72227d592c82b3d7f672731ae73e4d1f88cd8e2ef5b075a7a7f01a23a3743917", size = 10768, upload-time = "2023-10-03T09:48:10.434Z" },
-]
-
-[[package]]
-name = "toml"
-version = "0.10.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f", size = 22253, upload-time = "2020-11-01T01:40:22.204Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/44/6f/7120676b6d73228c96e17f1f794d8ab046fc910d781c8d151120c3f1569e/toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b", size = 16588, upload-time = "2020-11-01T01:40:20.672Z" },
 ]
 
 [[package]]

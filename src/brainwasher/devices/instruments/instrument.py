@@ -15,6 +15,7 @@ class Instrument:
         self.rxn_vessel = None
         self.job_worker: Thread = None
         self.pause_requested: Event = Event()
+        self._curr_step = 0
 
     def run(self, job_path: str):
         """Run the job specified from the specified filepath."""
@@ -32,15 +33,6 @@ class Instrument:
                                  daemon=True)
         self.job_worker.start()
 
-    @abstractmethod
-    def run_step(self, *args, **kwargs):
-        """The main function that gets called over and over."""
-        raise NotImplementedError("Implement me in the derived class!")
-
-    @abstractmethod
-    def validate_job_against_instrument(self, job: Job):
-        raise NotImplementedError("Implement me in th derived class!")
-
     def _load_job(self, job_path: str) -> Job:
         job_path = Path(job_path)
         if not job_path.exists():
@@ -53,6 +45,15 @@ class Instrument:
             job = Job(**job_dict)  # validate
             logging.debug(f"Job is a valid job.")
             return job
+
+    @abstractmethod
+    def run_step(self, *args, **kwargs):
+        """The main function that gets called over and over."""
+        raise NotImplementedError("Implement me in the derived class!")
+
+    @abstractmethod
+    def validate_job_against_instrument(self, job: Job):
+        raise NotImplementedError("Implement me in th derived class!")
 
     def _run_job_worker(self, job: Job, job_path: Path):
         """Start or resume a job from job_path"""
@@ -106,6 +107,7 @@ class Instrument:
                               f"{index + 1}/{len(job.protocol)} with "
                               f"{step.solution}")
                 # Run step.
+                self._curr_step = index
                 self.run_step(**kwargs)
                 # Handle pause state.
                 # Save current step if not completed (overrides present) or
