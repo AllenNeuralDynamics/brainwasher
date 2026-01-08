@@ -36,7 +36,7 @@ class ZMQServer(RouterServer):
         self.add_named_call("set_drain_buffer_volume", "self", "set_drain_buffer_volume")
         self.add_named_call("start", "self", "start_run")
         self.add_stream("state", 1, self.get_state)
-        self.add_stream("progress", 1, self.brainslosher.get_progress)
+        #self.add_stream("progress", 1, self.brainslosher.get_progress)
       
 
     def get_state(self) -> Literal["idle", "running"]:
