@@ -1,8 +1,8 @@
 from brainwasher.devices.instruments.brainslosher import BrainSlosher
 from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob
 from brainwasher.devices.vessels import ReactionVessel, WasteVessel
-# from brainwasher.devices.simulated_devices.syringe_pump import SimSyringePump
-# from brainwasher.devices.mixer import SimulatedMixer
+from brainwasher.devices.simulated_devices.syringe_pump import SimSyringePump
+from brainwasher.devices.mixer import SimulatedMixer
 from runze_control.multichannel_syringe_pump import SY01B
 from brainwasher.devices.pololu.pololu_tic_mixer import PololuTicMixer
 import logging
@@ -11,6 +11,8 @@ from pathlib import Path
 import time
 from datetime import datetime
 from typing import Literal
+
+logging.basicConfig(level=logging.DEBUG)
 
 class ZMQServer(RouterServer):
 
@@ -28,6 +30,7 @@ class ZMQServer(RouterServer):
         self.add_named_call("pause", "brainslosher", "pause")
         self.add_named_call("resume", "brainslosher", "run")
         self.add_named_call("stop", "brainslosher", "stop")
+        self.add_stream("progress", 1, self.brainslosher.get_progress)
 
         # TODO: Hacky?
         instances["self"] = self
@@ -36,8 +39,7 @@ class ZMQServer(RouterServer):
         self.add_named_call("set_drain_buffer_volume", "self", "set_drain_buffer_volume")
         self.add_named_call("start", "self", "start_run")
         self.add_stream("state", 1, self.get_state)
-        #self.add_stream("progress", 1, self.brainslosher.get_progress)
-      
+              
 
     def get_state(self) -> Literal["idle", "running"]:
         """
@@ -71,7 +73,7 @@ class ZMQServer(RouterServer):
         Convienence method to get config
         """
     
-        return self.brainslosher.config
+        return self.brainslosher.config.model_dump()
     
     def set_fill_volume(self, volume: float) -> None:
         """
@@ -105,10 +107,10 @@ def main():
                                 )
     chamber = ReactionVessel(name="chamber", max_volume_ul=50000)
     waste = WasteVessel(name="waste", max_volume_ul=50000)
-    # pump = SimSyringePump(syringe_volume_ul=config.max_syringe_volume_ml, name="sim")
-    # mixer = SimulatedMixer(max_rpm=200)
-    pump = SY01B(com_port="COM4", baudrate=9600, position_count=0, syringe_volume_ul=5000)
-    mixer = PololuTicMixer(200)
+    pump = SimSyringePump(syringe_volume_ul=config.max_syringe_volume_ml, name="sim")
+    mixer = SimulatedMixer(max_rpm=200)
+    # pump = SY01B(com_port="COM4", baudrate=9600, position_count=0, syringe_volume_ul=5000)
+    # mixer = PololuTicMixer(200)
     brainslosher = BrainSlosher(config=config,
                                 rxn_vessel=chamber,
                                 pump=pump,

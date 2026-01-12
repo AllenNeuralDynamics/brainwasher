@@ -59,11 +59,22 @@ class BrainSlosher(Instrument):
         Progress of current run between 0 - 100
         """
 
-        cycle_pct = self._curr_step/len(self.job.protocol)
-        wash_pct = self._curr_wash/self.job.protocol[self._curr_step].washes
-        time_pct = self._curr_wash_elapsed_min/self.job.protocol[self._curr_step].duration_min
+        if not self.job:
+            return 0
 
-        return round(cycle_pct + wash_pct + time_pct)
+        est_min = sum(step.washes * step.duration_min for step in self.job.protocol)
+
+        elapsed_minutes = 0
+        for i in range(self._curr_step):
+            step = self.job.protocol[i]
+            elapsed_minutes += step.washes * step.duration_min
+
+        current_step = self.job.protocol[self._curr_step]
+        elapsed_minutes += self._curr_wash * current_step.duration_min
+        elapsed_minutes += self._curr_wash_elapsed_min
+
+        pct_done = elapsed_minutes / est_min
+        return round(pct_done * 100, 1)
 
 
     def fill_chamber(self, solution: str, volume_ml: float) -> None:
@@ -187,7 +198,8 @@ class BrainSlosher(Instrument):
         
         self.mixer.set_mixing_speed(job.motor_speed_rpm)
         self._job = job
-        #self._step = 
+        self._step = 0 if not job.resume_state else job.resume_state.step
+
         return super()._run_job_worker(job, job_path)
 
     def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):
