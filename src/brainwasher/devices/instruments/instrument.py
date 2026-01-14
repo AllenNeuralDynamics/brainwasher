@@ -120,6 +120,8 @@ class Instrument:
                     self.pause_requested.clear()
                     self.log.info(f"System paused.")
                     return  # Will execute finally block first.
+            except Exception as e:
+                self.log.error(f"Error while running step {step}: {str(e)}")
             finally:
                 # Always save the current step in case of an unhandled exception
                 # or power failure.

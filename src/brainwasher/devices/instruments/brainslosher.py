@@ -11,6 +11,7 @@ from pathlib import Path
 from time import perf_counter
 import yaml
 
+
 def lock_flowpath(func):
     """Provide methods with exclusive access to components that alter the flowpath."""
     @wraps(func) # required for sphinx doc generation
@@ -52,24 +53,34 @@ class BrainSlosher(Instrument):
         self._curr_wash = 0
         self._curr_wash_elapsed_min = 0
         self._progress = 0 
-        self.job: BrainSlosherJob = None
+        self._job: BrainSlosherJob = None
+
+    def reset_state(self) -> None:
+        """
+        Reset state of machine by clearing job and progress attributes
+        """
+
+        self._curr_step = 0
+        self._curr_wash = 0
+        self._curr_wash_elapsed_min = 0
+        self._progress = 0 
+        self._job = None
 
     def get_progress(self) -> int:
         """
         Progress of current run between 0 - 100
         """
 
-        if not self.job:
+        if not self._job:
             return 0
-
-        est_min = sum(step.washes * step.duration_min for step in self.job.protocol)
+        est_min = sum(step.washes * step.duration_min for step in self._job.protocol)
 
         elapsed_minutes = 0
         for i in range(self._curr_step):
-            step = self.job.protocol[i]
+            step = self._job.protocol[i]
             elapsed_minutes += step.washes * step.duration_min
 
-        current_step = self.job.protocol[self._curr_step]
+        current_step = self._job.protocol[self._curr_step]
         elapsed_minutes += self._curr_wash * current_step.duration_min
         elapsed_minutes += self._curr_wash_elapsed_min
 
@@ -164,17 +175,24 @@ class BrainSlosher(Instrument):
         :param washes: number of washes in cycle
 
         """
-        self._curr_wash = 0
         self.purge_line()
+        self.resume_state_overrides.update(washes=washes)
+        prev_step = self._curr_wash # handle pause mid cycle
         for i in range(washes):
             self.prime_line(solution)
             try:
-                self._curr_wash = i
-                self._curr_wash_elapsed_min = 0
+                self._curr_wash = i + prev_step
                 self.run_wash_step(duration_min=duration_min, solution=solution)
-            finally:
-                self.resume_state_overrides.update(washes=washes-(i+1))
-
+            except Exception as e:
+                self.log.error(f"Error while performing wash {i + 1}: {str(e)}")
+                return
+            if self.pause_requested.is_set():
+                return
+            # update state to reflect was wash finished
+            self.resume_state_overrides.update(washes=washes-(i+1))
+            self._curr_wash_elapsed_min = 0
+        
+        self._curr_wash = 0
     
     def _load_job(self, job_path: str) -> BrainSlosherJob:
         """
@@ -200,7 +218,13 @@ class BrainSlosher(Instrument):
         self._job = job
         self._step = 0 if not job.resume_state else job.resume_state.step
 
-        return super()._run_job_worker(job, job_path)
+        super()._run_job_worker(job, job_path)
+
+        self.mixer.stop_mixing()
+
+        # clear job if finished
+        if not job.resume_state:
+            self._job = None
 
     def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):
         """
@@ -235,16 +259,17 @@ class BrainSlosher(Instrument):
         
         start_time_s = perf_counter()
         duration_s = duration_min * 60
+        prev_elapsed = self._curr_wash_elapsed_min  # handle pause mid wash
         while (perf_counter() - start_time_s) < duration_s:
             # Handle pause request if called in a "job" context.
-            self._curr_wash_elapsed_min = (perf_counter() - start_time_s)/60
+            elapsed_min = (perf_counter() - start_time_s)/60
+            self._curr_wash_elapsed_min = elapsed_min + prev_elapsed
+            self.resume_state_overrides.update(duration_min=duration_min - round(elapsed_min, 1)) # updated outside of pause so overrides always has upto date overrides
             if self.job_worker and self.job_worker.is_alive() and self.pause_requested.is_set():
-                elapsed_time_s = round(perf_counter() - start_time_s)
-                self.log.warning(f"Aborting after {elapsed_time_s}[s].")
-                self.resume_state_overrides.update(duration_min=round((duration_s - elapsed_time_s)/60, 1))
+                self.log.warning(f"Aborting after {self._curr_wash_elapsed_min * 60}[s].")
                 return
+        self.resume_state_overrides.update(duration_min=0)
         self.drain_chamber()    
-        self.mixer.stop_mixing()
         
 
 

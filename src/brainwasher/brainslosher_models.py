@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, field_validator
 from brainwasher.job import Job
 from pydantic import ValidationError, AfterValidator, BaseModel
 from typing import Optional, Annotated, Any
+from pathlib import Path
 
 class BrainSlosherResumeState(BaseModel):
 
@@ -46,7 +47,7 @@ class BrainSlosherJob(Job):
 
     def get_duration_s(self, start_step: int = 0):
         """Total job duration in seconds starting from the specified step."""
-        return sum([step.duration_min*60 for step in self.protocol[start_step:]])
+        return sum([step.duration_min * step.washes * 60 for step in self.protocol[start_step:]])
 
     def save_resume_state(self, step: int, starting_solution: dict[str, float],
                           **overrides: dict):
@@ -57,6 +58,7 @@ class BrainSlosherJob(Job):
 """pydantic model of brainwasher config."""
 
 class BrainSlosherConfig(BaseModel):
+    save_folder: Path = Field(default="../../brain_slosher_jobs/")
     selector_port_map: dict[str, int]
     max_syringe_volume_ml: float = Field(default=4.5, description="Maximum fill volume of the syringe to prevent chatter when operating.")
     prime_volume_ml: float = Field(default=11, description="Volume to prime lines.")

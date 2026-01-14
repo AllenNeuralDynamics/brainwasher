@@ -11,6 +11,8 @@ from pathlib import Path
 import time
 from datetime import datetime
 from typing import Literal
+from concurrent.futures import ThreadPoolExecutor
+
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -24,12 +26,12 @@ class ZMQServer(RouterServer):
         self.log = logging.getLogger(self.__class__.__name__)
         self.config = config or {}
         self.brainslosher: BrainSlosher = instances["brainslosher"]
-            
+        
         self.add_named_call("fill_chamber", "brainslosher", "fill_chamber")
         self.add_named_call("drain_chamber", "brainslosher", "drain_chamber")
         self.add_named_call("pause", "brainslosher", "pause")
-        self.add_named_call("resume", "brainslosher", "run")
-        self.add_named_call("stop", "brainslosher", "stop")
+        self.add_named_call("restart", "brainslosher", "start_run")
+        self.add_named_call("clear", "brainslosher", "reset_state")
         self.add_stream("progress", 1, self.brainslosher.get_progress)
 
         # TODO: Hacky?
@@ -37,10 +39,11 @@ class ZMQServer(RouterServer):
         self.add_named_call("get_config", "self", "get_config")
         self.add_named_call("set_fill_volume", "self", "set_fill_volume")
         self.add_named_call("set_drain_buffer_volume", "self", "set_drain_buffer_volume")
+        self.add_named_call("empty_waste", "self", "empty_waste")
         self.add_named_call("start", "self", "start_run")
+        self.add_named_call("resume", "self", "resume_run")
         self.add_stream("state", 1, self.get_state)
               
-
     def get_state(self) -> Literal["idle", "running"]:
         """
          Evaluate current state of brainslosher
@@ -48,10 +51,35 @@ class ZMQServer(RouterServer):
 
         if self.brainslosher.job_worker and self.brainslosher.job_worker.is_alive():
             return "running"
+        
+        elif self.brainslosher._job and self.brainslosher._job.resume_state:
+            return "paused"
+        
         else: 
             return "idle"
 
-    def start_run(self, job: BrainSlosherJob, job_path: str):
+    def resume_run(self):
+        """
+        Resume job
+        """
+        job = self.brainslosher._job
+        if not job or not job.resume_state:
+            logging.error("No job to resume")
+            return
+        
+        if not job.source_protocol.path:
+            logging.error("No source protocol path to save to.")
+            return
+        
+        # run pre check to catch error in main thread
+        if  self.brainslosher.rxn_vessel.solution != job.starting_solution:
+                raise ValueError("When starting, reaction vessel starting "
+                                 f"solution {self.brainslosher.rxn_vessel.solution} does not match the correct "
+                                 f"starting solution {job.starting_solution}. Please drain")
+        
+        self.brainslosher.run(job.source_protocol.path)
+
+    def start_run(self, job: BrainSlosherJob):
         """
         Set up a run by creating and saving job to specified path
         
@@ -61,13 +89,25 @@ class ZMQServer(RouterServer):
         """
         # validate and save job so instrument can run
         valid_job = BrainSlosherJob(**job)
-        print(valid_job)
+
+        # run pre check to catch error in main thread
+        if  self.brainslosher.rxn_vessel.solution != valid_job.starting_solution:
+                raise ValueError("When starting, reaction vessel starting "
+                                 f"solution {self.brainslosher.rxn_vessel.solution} does not match the correct "
+                                 f"starting solution {valid_job.starting_solution}. Please drain")
+
+        # create path for job
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        job_path = (
+            Path(self.brainslosher.config.save_folder)
+            / f"{valid_job.name}_{timestamp}.yaml"
+        )
+
+        valid_job.source_protocol.path = job_path
         with open(Path(job_path), "w") as f:
             f.write(valid_job.model_dump_json())
-
         self.brainslosher.run(job_path)
-        self.job = job
-
+        
     def get_config(self) -> BrainSlosherConfig:
         """
         Convienence method to get config
@@ -90,6 +130,12 @@ class ZMQServer(RouterServer):
         :param volume: drain buffer volume in ml
         """
         self.brainslosher.config.drain_volume_buffer_ml = volume
+
+    def empty_waste(self) -> None:
+        """
+        waste container was emptied
+        """
+        self.brainslosher.waste.purge_solution()
 
 
 def main():
