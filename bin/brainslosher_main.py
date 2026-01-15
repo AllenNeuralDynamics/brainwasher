@@ -42,6 +42,7 @@ class ZMQServer(RouterServer):
         self.add_named_call("empty_waste", "self", "empty_waste")
         self.add_named_call("start", "self", "start_run")
         self.add_named_call("resume", "self", "resume_run")
+        self.add_named_call("save_job", "self", "save_job")
         self.add_stream("error_check", 1, self.check_worker_errors)
         self.add_stream("state", 1, self.get_state)    
               
@@ -57,6 +58,7 @@ class ZMQServer(RouterServer):
         
         # if the file exists, append a counter to make it unique
         counter = 1
+        job_path = Path(self.brainslosher.config.save_folder) / f"{valid_job.name}.yaml"
         while job_path.exists():
             job_path = Path(self.brainslosher.config.save_folder) / f"{valid_job.name}_{counter}.yaml"
             counter += 1
