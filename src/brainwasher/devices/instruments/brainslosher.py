@@ -10,7 +10,7 @@ from typing import Literal
 from pathlib import Path
 from time import perf_counter
 import yaml
-
+from queue import Queue
 
 def lock_flowpath(func):
     """Provide methods with exclusive access to components that alter the flowpath."""
@@ -47,6 +47,9 @@ class BrainSlosher(Instrument):
         
         # Thread-safe protection within a class instance.
         self.flowpath_lock = RLock()
+
+        # queue to track errors that occur in job_worker in main thread
+        self.job_worker_error = Queue()
 
         # attributes to calculate progress
         self._curr_step = 0
@@ -211,14 +214,17 @@ class BrainSlosher(Instrument):
     
     def _run_job_worker(self, job: BrainSlosherJob, job_path: Path):
         """
-        Configure mixer for session        
+        Configure mixer and job state for session. Put any errors in queue to be accessed by main thread        
         """
         
         self.mixer.set_mixing_speed(job.motor_speed_rpm)
         self._job = job
         self._step = 0 if not job.resume_state else job.resume_state.step
 
-        super()._run_job_worker(job, job_path)
+        try:
+            super()._run_job_worker(job, job_path)
+        except Exception as e:
+            self.job_worker_error.put(e) # allows errors that occur in run thread to be used in main thread
 
         self.mixer.stop_mixing()
 

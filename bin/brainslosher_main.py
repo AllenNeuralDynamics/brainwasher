@@ -11,7 +11,7 @@ from pathlib import Path
 import time
 from datetime import datetime
 from typing import Literal
-from concurrent.futures import ThreadPoolExecutor
+import queue
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -42,8 +42,17 @@ class ZMQServer(RouterServer):
         self.add_named_call("empty_waste", "self", "empty_waste")
         self.add_named_call("start", "self", "start_run")
         self.add_named_call("resume", "self", "resume_run")
-        self.add_stream("state", 1, self.get_state)
+        self.add_stream("error_check", 1, self.check_worker_errors)
+        self.add_stream("state", 1, self.get_state)    
               
+
+    def check_worker_errors(self):
+        try:
+            err = self.brainslosher.job_worker_error.get_nowait()
+            return f"Error occured during run: {err}"
+        except queue.Empty as e:
+            pass
+            
     def get_state(self) -> Literal["idle", "running"]:
         """
          Evaluate current state of brainslosher
