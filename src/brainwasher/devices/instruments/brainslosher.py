@@ -225,7 +225,7 @@ class BrainSlosher(Instrument):
             super()._run_job_worker(job, job_path)
         except Exception as e:
             self.job_worker_error.put(e) # allows errors that occur in run thread to be used in main thread
-
+            raise e
         self.mixer.stop_mixing()
 
         # clear job if finished

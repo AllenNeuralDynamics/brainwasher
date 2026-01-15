@@ -45,7 +45,25 @@ class ZMQServer(RouterServer):
         self.add_stream("error_check", 1, self.check_worker_errors)
         self.add_stream("state", 1, self.get_state)    
               
+    def save_job(self, job: BrainSlosherJob):
+        """
+        Save job to local computer based on the job name
+        
+        :param job: job to save
+        """
 
+        # validate job 
+        valid_job = BrainSlosherJob(**job)
+        
+        # if the file exists, append a counter to make it unique
+        counter = 1
+        while job_path.exists():
+            job_path = Path(self.brainslosher.config.save_folder) / f"{valid_job.name}_{counter}.yaml"
+            counter += 1
+
+        with open(Path(job_path), "w") as f:
+            f.write(valid_job.model_dump_json())
+        
     def check_worker_errors(self):
         try:
             err = self.brainslosher.job_worker_error.get_nowait()
@@ -79,13 +97,7 @@ class ZMQServer(RouterServer):
         if not job.source_protocol.path:
             logging.error("No source protocol path to save to.")
             return
-        
-        # run pre check to catch error in main thread
-        if  self.brainslosher.rxn_vessel.solution != job.starting_solution:
-                raise ValueError("When starting, reaction vessel starting "
-                                 f"solution {self.brainslosher.rxn_vessel.solution} does not match the correct "
-                                 f"starting solution {job.starting_solution}. Please drain")
-        
+                
         self.brainslosher.run(job.source_protocol.path)
 
     def start_run(self, job: BrainSlosherJob):
@@ -98,12 +110,6 @@ class ZMQServer(RouterServer):
         """
         # validate and save job so instrument can run
         valid_job = BrainSlosherJob(**job)
-
-        # run pre check to catch error in main thread
-        if  self.brainslosher.rxn_vessel.solution != valid_job.starting_solution:
-                raise ValueError("When starting, reaction vessel starting "
-                                 f"solution {self.brainslosher.rxn_vessel.solution} does not match the correct "
-                                 f"starting solution {valid_job.starting_solution}. Please drain")
 
         # create path for job
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
