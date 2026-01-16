@@ -137,9 +137,9 @@ class BrainSlosher(Instrument):
         max_pump = self.config.max_syringe_volume_ml
         while volume_ml > 0:
             pump_vol = max_pump if volume_ml >= max_pump else volume_ml
-            self.pump.move_valve_to_position(solution)
+            self.pump.move_valve_to_position(self.config.selector_port_map[solution])
             self.pump.withdraw(pump_vol * 1000) # convert ml to ul
-            self.pump.move_valve_to_position(dispense_to)
+            self.pump.move_valve_to_position(self.config.selector_port_map[dispense_to])
             self.pump.dispense(pump_vol * 1000) # convert ml to ul
             volume_ml -= pump_vol
 
