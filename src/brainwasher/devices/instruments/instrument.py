@@ -70,7 +70,7 @@ class Instrument:
             if self.rxn_vessel.solution != job.resume_state.starting_solution:
                 raise ValueError("When resuming, reaction vessel starting "
                                  "solution does not match the correct resume "
-                                 "state starting solution.")
+                                 "state starting solution. Please drain.")
             job.clear_resume_state()
             job.record_resume()
         else:
@@ -82,7 +82,7 @@ class Instrument:
             if  self.rxn_vessel.solution != job.starting_solution:
                 raise ValueError("When starting, reaction vessel starting "
                                  "solution does not match the correct resume "
-                                 "state starting solution.")
+                                 "state starting solution. Please drain.")
             job.record_start()
         log_msg = f"{starting_or_resuming_msg} job: '{job.name}'"
         if start_step > 0:

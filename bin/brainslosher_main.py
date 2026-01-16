@@ -46,7 +46,7 @@ class ZMQServer(RouterServer):
         self.add_stream("error_check", 1, self.check_worker_errors)
         self.add_stream("state", 1, self.get_state)    
               
-    def save_job(self, job: BrainSlosherJob):
+    def save_job(self, job: dict):
         """
         Save job to local computer based on the job name
         
@@ -69,6 +69,7 @@ class ZMQServer(RouterServer):
     def check_worker_errors(self):
         try:
             err = self.brainslosher.job_worker_error.get_nowait()
+            logging.debug(f"Error occured durring run: {err}")
             return f"Error occured during run: {err}"
         except queue.Empty as e:
             pass
