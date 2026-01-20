@@ -266,7 +266,7 @@ class BrainSlosher(Instrument):
             raise ValueError(f"Solution {solution} is not currently plumbed based on config.")
 
         # Check if chamber is in correct state 
-        if self.rxn_vessel.solution != {solution: self.config.fill_volume_ml}:
+        if self.rxn_vessel.solution != {solution: self.config.fill_volume_ml * 1000}:
             self.log.info(f"Reaction vessel in incorrect state for wash step. Draining, priming, filling, and purging.")
             self.drain_chamber()
             self.prime_line(solution)
@@ -277,7 +277,7 @@ class BrainSlosher(Instrument):
         start_time_s = perf_counter()
         duration_s = duration_min * 60
         prev_elapsed = self._curr_wash_elapsed_min  # handle pause mid wash
-        self.log.info(f"Washing for {duration_min}")
+        self.log.info(f"Washing for {duration_min} {prev_elapsed}")
         while (perf_counter() - start_time_s) < duration_s:
             # Handle pause request if called in a "job" context.
             elapsed_min = (perf_counter() - start_time_s)/60

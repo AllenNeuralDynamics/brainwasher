@@ -28,9 +28,9 @@ class ZMQServer(RouterServer):
         self.brainslosher: BrainSlosher = instances["brainslosher"]
         
         self.add_named_call("fill_chamber", "brainslosher", "fill_chamber")
-        self.add_named_call("drain_chamber", "brainslosher", "drain_chamber")
+        self.add_named_call("drain_chamber", "brainslosher", "drain_chamber", kwargs={"volume_ml": self.brainslosher.rxn_vessel.max_volume_ul/1000})    # fully drain vessel since ui does not know current fill
         self.add_named_call("pause", "brainslosher", "pause")
-        self.add_named_call("restart", "brainslosher", "start_run")
+        self.add_named_call("restart", "brainslosher", "restart_run")
         self.add_named_call("clear", "brainslosher", "reset_state")
         self.add_stream("progress", 1, self.brainslosher.get_progress)
 
@@ -103,13 +103,23 @@ class ZMQServer(RouterServer):
                 
         self.brainslosher.run(job.source_protocol.path)
 
+    def restart_run(self, job: BrainSlosherJob):
+        """
+        Reset brainslosher and start run
+        
+        :param job: job to run
+  
+        """
+        # reset brainslosher 
+        self.brainslosher.reset_state()
+        self.start_run(job)
+
     def start_run(self, job: BrainSlosherJob):
         """
         Set up a run by creating and saving job to specified path
         
         :param job: job to run
-        :param jobPath: where to save job
-  
+          
         """
         # validate and save job so instrument can run
         valid_job = BrainSlosherJob(**job)
