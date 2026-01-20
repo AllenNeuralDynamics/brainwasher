@@ -107,7 +107,7 @@ class BrainSlosher(Instrument):
         self.withdraw_and_dispense_solution(solution, volume_ml, 'chamber')
 
     
-    def drain_chamber(self) -> None:
+    def drain_chamber(self, volume_ml) -> None:
         """
         Drain chamber
         """
@@ -115,7 +115,8 @@ class BrainSlosher(Instrument):
         if self.rxn_vessel.curr_volume_ul + self.waste.curr_volume_ul > self.waste.max_volume_ul:
             raise ValueError("Waste vessel will exceed max volume if chamber is drained. Please empty.")
 
-        volume_ml = self.rxn_vessel.curr_volume_ul/1000
+        volume_ml = volume_ml or self.rxn_vessel.curr_volume_ul/1000 
+        self.log.info(f"Draining chamber of {volume_ml}mL")
         self.withdraw_and_dispense_solution("drain", 
                                             volume_ml + self.config.drain_volume_buffer_ml, 
                                             "waste")
@@ -154,11 +155,14 @@ class BrainSlosher(Instrument):
         
         :param solution: solution to prime line with
         """
-        self.withdraw_and_dispense_solution(solution, self.config.purge_volume_ml, "waste")
+
+        self.log.info(f"Priming line with {self.config.prime_volume_ml}mL {solution}.")
+        self.withdraw_and_dispense_solution(solution, self.config.prime_volume_ml, "waste")
     
     def purge_line(self) -> None:
         """Purge line"""
         
+        self.log.info(f"Purging line of {self.config.purge_volume_ml}mL.")
         self.withdraw_and_dispense_solution("air", 
                                             self.config.purge_volume_ml, 
                                             "chamber")
@@ -262,6 +266,7 @@ class BrainSlosher(Instrument):
 
         # Check if chamber is in correct state 
         if self.rxn_vessel.solution != {solution: self.config.fill_volume_ml}:
+            self.log.info(f"Reaction vessel in incorrect state for wash step. Draining, priming, filling, and purging.")
             self.drain_chamber()
             self.prime_line(solution)
             self.fill_chamber(solution, 
