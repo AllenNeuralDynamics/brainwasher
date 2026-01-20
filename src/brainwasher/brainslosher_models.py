@@ -2,8 +2,13 @@
 
 from pydantic import BaseModel, Field, field_validator, EmailStr, ValidationError, AfterValidator
 from brainwasher.job import Job
-from typing import Optional, Annotated, Any
+from typing import Optional, Annotated, Any, Literal
 from pathlib import Path
+
+class BrainSlosherJobStatusMessage(BaseModel):
+    """Model of messages used to convey if brainslosher job failed or finished"""
+    status: Literal["Error", "Done"] = Field(..., description="Indicated if job is finished or erroed out.")
+    message: Optional[str] = Field(default=None, description="Optional message of additional info.")
 
 class BrainSlosherResumeState(BaseModel):
 

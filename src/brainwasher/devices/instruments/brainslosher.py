@@ -1,7 +1,7 @@
 from .instrument import Instrument
 from runze_control.multichannel_syringe_pump import SY01B
 from brainwasher.devices.pololu.pololu_tic_mixer import PololuTicMixer
-from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob
+from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob, BrainSlosherJobStatusMessage
 from brainwasher.devices.vessels import ReactionVessel, WasteVessel
 from threading import RLock, current_thread
 from functools import wraps
@@ -21,6 +21,7 @@ def lock_flowpath(func):
                            f"{current_thread().name} for {func.__name__} fn.")
             return func(self, *args, **kwds)
     return inner
+
 
 class BrainSlosher(Instrument):
     """
@@ -48,8 +49,8 @@ class BrainSlosher(Instrument):
         # Thread-safe protection within a class instance.
         self.flowpath_lock = RLock()
 
-        # queue to track errors that occur in job_worker in main thread
-        self.job_worker_error = Queue()
+        # queue to track events that occur in job_worker
+        self.job_worker_status: Queue[BrainSlosherJobStatusMessage] = Queue()
 
         # attributes to calculate progress
         self._curr_step = 0
@@ -232,15 +233,22 @@ class BrainSlosher(Instrument):
         self._step = 0 if not job.resume_state else job.resume_state.step
 
         try:
+            self.log.info("Job starting.")
             super()._run_job_worker(job, job_path)
-        except Exception as e:
-            self.job_worker_error.put(e) # allows errors that occur in run thread to be caught in main thread
-            raise e
-        self.mixer.stop_mixing()
+            self.log.info("Job finished.")
+            message = BrainSlosherJobStatusMessage(status="Done")
+            # clear job if finished
+            if not job.resume_state:
+                self._job = None
 
-        # clear job if finished
-        if not job.resume_state:
-            self._job = None
+        except Exception as e:
+            self.log.error(f"Error running job: {str(e)}.")
+            message = BrainSlosherJobStatusMessage(status="Error", message=str(e))
+            raise e
+        
+        finally:
+            self.job_worker_status.put(message) 
+            self.mixer.stop_mixing()
 
     def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):
         """
