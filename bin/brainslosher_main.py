@@ -3,9 +3,11 @@ from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob
 from brainwasher.devices.vessels import ReactionVessel, WasteVessel
 from brainwasher.devices.simulated_devices.syringe_pump import SimSyringePump
 from brainwasher.devices.mixer import SimulatedMixer
+from brainwasher.utils.email_issues import send_email
 from runze_control.multichannel_syringe_pump import SY01B
 from brainwasher.devices.pololu.pololu_tic_mixer import PololuTicMixer
 import logging
+import logging.config
 from one_liner.server import RouterServer
 from pathlib import Path
 import time
@@ -13,6 +15,8 @@ from datetime import datetime
 from typing import Literal
 import queue
 import argparse
+from device_spinner.config import Config
+from device_spinner.device_spinner import DeviceSpinner
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -36,6 +40,7 @@ class ZMQServer(RouterServer):
 
         # TODO: Hacky?
         instances["self"] = self
+        self.add_named_call("set_email", "self", "set_email")
         self.add_named_call("get_config", "self", "get_config")
         self.add_named_call("set_fill_volume", "self", "set_fill_volume")
         self.add_named_call("set_drain_buffer_volume", "self", "set_drain_buffer_volume")
@@ -45,7 +50,18 @@ class ZMQServer(RouterServer):
         self.add_named_call("save_job", "self", "save_job")
         self.add_stream("error_check", 1, self.check_worker_errors)
         self.add_stream("state", 1, self.get_state)    
-              
+
+    def set_email(self, email:str):
+        """
+        Set email to send errors to
+        """
+        # validate email
+        dump = self.brainslosher.config.model_dump()
+        dump.update({"user_email":email})
+        BrainSlosherConfig(**dump)
+        self.brainslosher.config.user_email = email
+            
+
     def save_job(self, job: dict):
         """
         Save job to local computer based on the job name
@@ -69,7 +85,12 @@ class ZMQServer(RouterServer):
     def check_worker_errors(self):
         try:
             err = self.brainslosher.job_worker_error.get_nowait()
-            logging.debug(f"Error occured durring run: {err}")
+            logging.warning(f"Error occured durring run: {err}")
+
+            if self.brainslosher.config.user_email:
+                send_email(subject="Error during brainslosher job!", 
+                        body='<h2>Error occured durring run:</h2>' + f'<h3>{err}. Please check device.</h3>', 
+                        to=[self.brainslosher.config.user_email])
             return f"Error occured during run: {err}"
         except queue.Empty as e:
             pass
@@ -169,39 +190,33 @@ class ZMQServer(RouterServer):
 def main():
     
     parser = argparse.ArgumentParser()
-
+    parser.add_argument("--config", type=str, default=r"bin\brainslosher_config.yaml")
     parser.add_argument("--log_level", type=str, default="INFO",
                         choices=["INFO", "DEBUG"])
+    parser.add_argument("--simulated", default=False, action="store_true",
+                        help="Simulate hardware device connections.")
 
     args = parser.parse_args()
     logger = logging.getLogger()
+    
     # Override console log level if specified.
     for handler in logger.handlers:
         if handler.get_name() == 'console':
             handler.setLevel(args.log_level)
-            
-    config = BrainSlosherConfig(selector_port_map= {
-                                                    "air": 4,
-                                                    "chamber": 6,
-                                                    "waste": 3,
-                                                    "drain":5,
-                                                    "PBS": 1,
-                                                    "diH20":2
-                                                    },
-                                drain_volume_buffer_ml=.5,
-                                fill_volume_ml=10 
-                                )
-    chamber = ReactionVessel(name="chamber", max_volume_ul=50000)
-    waste = WasteVessel(name="waste", max_volume_ul=50000)
-    pump = SimSyringePump(syringe_volume_ul=config.max_syringe_volume_ml, name="sim")
-    mixer = SimulatedMixer(max_rpm=200)
-    # pump = SY01B(com_port="COM4", baudrate=9600, position_count=0, syringe_volume_ul=5000)
-    # mixer = PololuTicMixer(200)
-    brainslosher = BrainSlosher(config=config,
-                                rxn_vessel=chamber,
-                                pump=pump,
-                                mixer=mixer,
-                                waste_vessel=waste)
+    
+    config_name = args.config if not args.simulated else r"bin\sim_brainslosher_config.yaml"
+    config = Config(config_name)
+    
+    # setup logging
+    logging.config.dictConfig(dict(config.cfg["logging"]))
+        
+    # Create the instrument.
+    device_specs = dict(config.cfg)
+    print(device_specs)
+    factory = DeviceSpinner()
+    device_trees = factory.create_devices_from_specs(device_specs["devices"])
+    brainslosher = device_trees["brainwasher"]
+
     server = ZMQServer(instances={"brainslosher":brainslosher})
     server.run()
 
