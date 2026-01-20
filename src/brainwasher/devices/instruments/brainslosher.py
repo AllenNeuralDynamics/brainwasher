@@ -102,6 +102,7 @@ class BrainSlosher(Instrument):
         if self.rxn_vessel.curr_volume_ul + volume_ml * 1000 > self.rxn_vessel.max_volume_ul:
             raise ValueError("Chamber will exceed max volume if filled. Please drain.")
         
+        self.log.info(f"Filling chamber with {volume_ml}mL of {solution}")
         self.rxn_vessel.add_solution(**{solution:volume_ml * 1000})
         self.withdraw_and_dispense_solution(solution, volume_ml, 'chamber')
 
@@ -137,11 +138,15 @@ class BrainSlosher(Instrument):
         max_pump = self.config.max_syringe_volume_ml
         while volume_ml > 0:
             pump_vol = max_pump if volume_ml >= max_pump else volume_ml
+            self.log.debug(f"Moving pump to {solution} valve.")
             self.pump.move_valve_to_position(self.config.selector_port_map[solution])
+            self.log.debug(f"Withdrawing {pump_vol}ml of {solution}.")
             self.pump.withdraw(pump_vol * 1000) # convert ml to ul
+            self.log.debug(f"Dispensing to {dispense_to}.")
             self.pump.move_valve_to_position(self.config.selector_port_map[dispense_to])
             self.pump.dispense(pump_vol * 1000) # convert ml to ul
             volume_ml -= pump_vol
+        self.log.debug(f"finished dispensing {volume_ml}mL of {solution} to {dispense_to}")
 
     def prime_line(self, solution: str) -> None:
         """
@@ -154,7 +159,7 @@ class BrainSlosher(Instrument):
     def purge_line(self) -> None:
         """Purge line"""
         
-        self.withdraw_and_dispense_solution(self.config.selector_port_map["air"], 
+        self.withdraw_and_dispense_solution("air", 
                                             self.config.purge_volume_ml, 
                                             "chamber")
         self.pump.reset_syringe_position()
@@ -224,7 +229,7 @@ class BrainSlosher(Instrument):
         try:
             super()._run_job_worker(job, job_path)
         except Exception as e:
-            self.job_worker_error.put(e) # allows errors that occur in run thread to be used in main thread
+            self.job_worker_error.put(e) # allows errors that occur in run thread to be caught in main thread
             raise e
         self.mixer.stop_mixing()
 
@@ -266,6 +271,7 @@ class BrainSlosher(Instrument):
         start_time_s = perf_counter()
         duration_s = duration_min * 60
         prev_elapsed = self._curr_wash_elapsed_min  # handle pause mid wash
+        self.log.info(f"Washing for {duration_min}")
         while (perf_counter() - start_time_s) < duration_s:
             # Handle pause request if called in a "job" context.
             elapsed_min = (perf_counter() - start_time_s)/60

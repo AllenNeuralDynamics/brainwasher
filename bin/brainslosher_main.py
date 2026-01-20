@@ -12,7 +12,7 @@ import time
 from datetime import datetime
 from typing import Literal
 import queue
-
+import argparse
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -158,6 +158,18 @@ class ZMQServer(RouterServer):
 
 def main():
     
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--log_level", type=str, default="INFO",
+                        choices=["INFO", "DEBUG"])
+
+    args = parser.parse_args()
+    logger = logging.getLogger()
+    # Override console log level if specified.
+    for handler in logger.handlers:
+        if handler.get_name() == 'console':
+            handler.setLevel(args.log_level)
+            
     config = BrainSlosherConfig(selector_port_map= {
                                                     "air": 4,
                                                     "chamber": 6,
