@@ -194,6 +194,7 @@ class BrainSlosher(Instrument):
             self.prime_line(solution)
             try:
                 self._curr_wash = i + prev_step
+                self.log.info(f"Starting wash step {i}")
                 self.run_wash_step(duration_min=duration_min, solution=solution)
             except Exception as e:
                 self.log.error(f"Error while performing wash {i + 1}: {str(e)}")
