@@ -94,7 +94,7 @@ devices:
         class: brainwasher.devices.instruments.brainslosher.BrainSlosher
         kwds:
             config: config
-            pump: source_pump
+            pump: pump
             mixer: mixer
             rxn_vessel: reaction_vessel
             waste_vessel: waste_vessel
