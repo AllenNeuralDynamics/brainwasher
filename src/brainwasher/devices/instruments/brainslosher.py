@@ -107,7 +107,7 @@ class BrainSlosher(Instrument):
         self.withdraw_and_dispense_solution(solution, volume_ml, 'chamber')
 
     
-    def drain_chamber(self, volume_ml) -> None:
+    def drain_chamber(self, volume_ml: float = None) -> None:
         """
         Drain chamber
         """
