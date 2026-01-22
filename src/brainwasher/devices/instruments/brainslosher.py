@@ -100,7 +100,7 @@ class BrainSlosher(Instrument):
             self.resume_state_overrides.get("duration_min")
             or self._job.resume_state.overrides["duration_min"]
         )
-        ramaining_washes = protocol[curr_step_index].washes - (
+        ramaining_washes = (
             self.resume_state_overrides.get("washes")
             or self._job.resume_state.overrides["washes"]
         )
