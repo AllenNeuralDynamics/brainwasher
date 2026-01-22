@@ -61,7 +61,7 @@ class BrainSlosherJob(Job):
 
 """pydantic model of brainwasher config."""
 
-class BrainSlosherConfig(BaseModel):
+class BrainSlosherConfig(BaseModel, validate_assignment=True,):
     save_folder: Path = Field(default="../../brain_slosher_jobs/")
     selector_port_map: dict[str, int]
     max_syringe_volume_ml: float = Field(default=4.5, description="Maximum fill volume of the syringe to prevent chatter when operating.")

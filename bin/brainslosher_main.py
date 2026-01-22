@@ -1,11 +1,6 @@
 from brainwasher.devices.instruments.brainslosher import BrainSlosher
 from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob
-from brainwasher.devices.vessels import ReactionVessel, WasteVessel
-from brainwasher.devices.simulated_devices.syringe_pump import SimSyringePump
-from brainwasher.devices.mixer import SimulatedMixer
 from brainwasher.utils.email_issues import send_email
-from runze_control.multichannel_syringe_pump import SY01B
-from brainwasher.devices.pololu.pololu_tic_mixer import PololuTicMixer
 import logging
 import logging.config
 from one_liner.server import RouterServer
@@ -55,10 +50,6 @@ class ZMQServer(RouterServer):
         """
         Set email to send errors to
         """
-        # validate email
-        dump = self.brainslosher.config.model_dump()
-        dump.update({"user_email":email})
-        BrainSlosherConfig(**dump)
         self.brainslosher.config.user_email = email
             
 
