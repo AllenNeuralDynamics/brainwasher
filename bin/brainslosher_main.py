@@ -81,7 +81,7 @@ class ZMQServer(RouterServer):
         with open(Path(job_path), "w") as f:
             f.write(valid_job.model_dump_json())
         
-    def check_job_status(self):
+    def check_job_status(self) -> dict:
         
         message = self.brainslosher.get_job_status()
         
@@ -93,10 +93,10 @@ class ZMQServer(RouterServer):
             send_email(subject="Error during brainslosher job!", 
                         body='<h2>Error occured durring run:</h2>' + f'<h3>{message.message}. Please check device.</h3>', 
                         to=[self.brainslosher.config.user_email])
-            return f"Error occured during run: {message.message}"
+            return message.model_dump()
         
         else:
-            return message.status
+            return message.model_dump()
         
     def resume_run(self):
         """

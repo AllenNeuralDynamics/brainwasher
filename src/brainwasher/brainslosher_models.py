@@ -5,7 +5,7 @@ from brainwasher.job import Job
 from typing import Optional, Annotated, Any, Literal
 from pathlib import Path
 
-class BrainSlosherJobStatusMessage(BaseModel):
+class BrainSlosherJobStatus(BaseModel):
     """Model of messages used to convey if brainslosher job failed or finished"""
     status: Literal["failed", "finished", "running", "paused", "idle"] = Field(..., description="Indicated if job is finished or errored out.")
     message: Optional[str] = Field(default=None, description="Optional message of additional info.")
