@@ -7,7 +7,7 @@ from pathlib import Path
 
 class BrainSlosherJobStatusMessage(BaseModel):
     """Model of messages used to convey if brainslosher job failed or finished"""
-    status: Literal["Error", "Done"] = Field(..., description="Indicated if job is finished or erroed out.")
+    status: Literal["failed", "finished", "running", "paused", "idle"] = Field(..., description="Indicated if job is finished or errored out.")
     message: Optional[str] = Field(default=None, description="Optional message of additional info.")
 
 class BrainSlosherResumeState(BaseModel):

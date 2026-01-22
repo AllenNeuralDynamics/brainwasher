@@ -48,8 +48,7 @@ class ZMQServer(RouterServer):
         self.add_named_call("start", "self", "start_run")
         self.add_named_call("resume", "self", "resume_run")
         self.add_named_call("save_job", "self", "save_job")
-        self.add_stream("check_worker_status", 1, self.check_worker_status)
-        self.add_stream("state", 1, self.get_state)    
+        self.add_stream("check_job_status", 1, self.check_job_status)
 
     def set_email(self, email:str):
         """
@@ -82,37 +81,23 @@ class ZMQServer(RouterServer):
         with open(Path(job_path), "w") as f:
             f.write(valid_job.model_dump_json())
         
-    def check_worker_status(self):
-        try:
-            message = self.brainslosher.job_worker_status.get_nowait()
-            
-            if message.status == "Done" and self.brainslosher.config.user_email:
-                send_email(subject="Brainslosher job is done!", 
-                        body='<h2>Brainslosher job is done!</h2>', 
+    def check_job_status(self):
+        
+        message = self.brainslosher.get_job_status()
+        
+        if message.status == "finished" and self.brainslosher.config.user_email:
+            send_email(subject="Brainslosher job is done!", 
+                    body='<h2>Brainslosher job is done!</h2>', 
+                    to=[self.brainslosher.config.user_email])
+        elif message.status == "failed" and self.brainslosher.config.user_email:   # Error!
+            send_email(subject="Error during brainslosher job!", 
+                        body='<h2>Error occured durring run:</h2>' + f'<h3>{message.message}. Please check device.</h3>', 
                         to=[self.brainslosher.config.user_email])
-            else:   # Error!
-                if self.brainslosher.config.user_email:
-                    send_email(subject="Error during brainslosher job!", 
-                            body='<h2>Error occured durring run:</h2>' + f'<h3>{message.message}. Please check device.</h3>', 
-                            to=[self.brainslosher.config.user_email])
-                return f"Error occured during run: {message.message}"
-        except queue.Empty as e:
-            pass
-            
-    def get_state(self) -> Literal["idle", "running"]:
-        """
-         Evaluate current state of brainslosher
-        """
-
-        if self.brainslosher.job_worker and self.brainslosher.job_worker.is_alive():
-            return "running"
+            return f"Error occured during run: {message.message}"
         
-        elif self.brainslosher._job and self.brainslosher._job.resume_state:
-            return "paused"
+        else:
+            return message.status
         
-        else: 
-            return "idle"
-
     def resume_run(self):
         """
         Resume job

@@ -15,7 +15,6 @@ class Instrument:
         self.rxn_vessel = None
         self.job_worker: Thread = None
         self.pause_requested: Event = Event()
-        self._curr_step = 0
 
     def run(self, job_path: str):
         """Run the job specified from the specified filepath."""
@@ -107,7 +106,6 @@ class Instrument:
                               f"{index + 1}/{len(job.protocol)} with "
                               f"{step.solution}")
                 # Run step.
-                self._curr_step = index
                 self.run_step(**kwargs)
                 # Handle pause state.
                 # Save current step if not completed (overrides present) or
