@@ -56,39 +56,51 @@ class BrainSlosher(Instrument):
         # attributes to calculate progress
         self._job: BrainSlosherJob = None
 
-    def reset_state(self) -> None:
+    def clear_job(self) -> None:
         """
-        Reset state of machine by clearing job
+        Clear job and update status
         """
+        if self.job_status.status == "running":
+            self.log.warning("Cannot reset state when instrument is running. Please pause.")
+            return 
         self._job = None
-        
         with self.job_status_lock:
             self.job_status = BrainSlosherJobStatus(status="idle")
+
+    def clear_status(self) -> None:
+        """clear status of failed if possible."""  
+        
+        if self.job_status.status != "failed":
+            self.log.warning("No failed status to clear.")
+            return 
+        
+        status = "paused" if self._job and self._job.resume_state else "idle"
+        with self.job_status_lock:
+            self.job_status = BrainSlosherJobStatus(status=status)
 
     def get_progress(self) -> int:
         """
         Progress of current run between 0 - 100
         """
 
-        if not self._job:
-            return 0
+        if not self._job and (not self.resume_state_overrides or not self._job.resume_state):
+            return 
         
         est_min = sum(step.washes * step.duration_min for step in self._job.protocol)
        
         elapsed_minutes = 0
         curr_step = self._job.resume_state.step if self._job.resume_state else 0
         curr_duration = self.resume_state_overrides.get("duration_min", None) or self._job.resume_state.overrides["duration_min"]
-        curr_elapsed = self._job.protocol[step].duration_min - curr_duration
+        curr_elapsed = self._job.protocol[curr_step].duration_min - curr_duration
         curr_wash = self.resume_state_overrides.get("washes", None) or self._job.resume_state.overrides["washes"]
 
         for i in range(curr_step):
             step = self._job.protocol[i]
             elapsed_minutes += step.washes * step.duration_min
-
+        print(elapsed_minutes, curr_step)
         current_step = self._job.protocol[curr_step]
-        elapsed_minutes += curr_wash * current_step.duration_min
+        elapsed_minutes += (curr_wash-1) * current_step.duration_min    # index 1
         elapsed_minutes += curr_elapsed
-        print(elapsed_minutes)
         pct_done = elapsed_minutes / est_min
         return round(pct_done * 100, 1)
 
@@ -262,6 +274,13 @@ class BrainSlosher(Instrument):
         with self.job_status_lock:
             return self.job_status
 
+    def get_job(self) -> dict | None:
+        """
+        Convienence method to get current job
+        """
+        if self._job:
+            return self._job.model_dump()
+
     def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):
         """
             Save resume state of job. Overwrite since solution is string and startign solution is dict
@@ -300,7 +319,7 @@ class BrainSlosher(Instrument):
         while (perf_counter() - start_time_s) < duration_s:
             # Handle pause request if called in a "job" context.
             elapsed_min = (perf_counter() - start_time_s)/60
-            self.resume_state_overrides.update(duration_min=duration_min - round(elapsed_min, 1)) # updated outside of pause so overrides always has upto date overrides
+            self.resume_state_overrides.update(duration_min=duration_min - round(elapsed_min, 3)) # updated outside of pause so overrides always has upto date overrides
             
             if self.job_worker and self.job_worker.is_alive() and self.pause_requested.is_set():
                 self.log.warning(f"Aborting after {elapsed_min * 60}[s].")
