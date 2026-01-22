@@ -85,7 +85,6 @@ class ZMQServer(RouterServer):
     def check_job_status(self) -> dict:
         
         message = self.brainslosher.get_job_status()
-
         if message.status == "finished" and self.brainslosher.config.user_email:
             send_email(subject="Brainslosher job is done!", 
                     body='<h2>Brainslosher job is done!</h2>', 
@@ -95,8 +94,9 @@ class ZMQServer(RouterServer):
                 send_email(subject="Error during brainslosher job!", 
                             body='<h2>Error occured durring run:</h2>' + f'<h3>{message.message}. Please check device.</h3>', 
                             to=[self.brainslosher.config.user_email])
+            msg_dump = message.model_dump()
             self.brainslosher.clear_status() # failed status caught so reset status
-            return message.model_dump()
+            return msg_dump
         
         else:
             return message.model_dump()

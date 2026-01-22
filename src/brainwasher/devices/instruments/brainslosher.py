@@ -79,7 +79,7 @@ class BrainSlosher(Instrument):
         
         status = "paused" if self._job and self._job.resume_state else "idle"
         with self.job_status_lock:
-            self.log(f"Clearing failed job status and setting to {status}")
+            self.log.info(f"Clearing failed job status and setting to {status}")
             self.job_status = BrainSlosherJobStatus(status=status)
 
     def get_progress(self) -> int:
