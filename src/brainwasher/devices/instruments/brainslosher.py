@@ -87,17 +87,15 @@ class BrainSlosher(Instrument):
         Progress of current run between 0 - 100
         """
 
-        # Early return if no job or no resume state
+        # return if no job or no resume state
         if not self._job or (not self.resume_state_overrides and not self._job.resume_state):
             return
 
         protocol = self._job.protocol
         curr_step_index = self._step - 1
-
-        # Estimated total duration (in minutes)
         est_min = sum(step.washes * step.duration_min for step in protocol)
 
-        # Current step overrides or resume state
+        # current step overrides or resume state
         curr_duration = (
             self.resume_state_overrides.get("duration_min")
             or self._job.resume_state.overrides["duration_min"]
@@ -107,15 +105,13 @@ class BrainSlosher(Instrument):
             or self._job.resume_state.overrides["washes"]
         )
 
-        # Elapsed minutes from completed steps
         elapsed_minutes = sum(step.washes * step.duration_min for step in protocol[:curr_step_index])
 
-        # Current step partial progress
+        # current step partial progress
         current_step = protocol[curr_step_index]
         elapsed_minutes += (curr_washes - 1) * current_step.duration_min
         elapsed_minutes += current_step.duration_min - curr_duration
 
-        # Percent done
         pct_done = elapsed_minutes / est_min
         return round(pct_done * 100, 1)
 
