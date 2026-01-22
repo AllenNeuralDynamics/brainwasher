@@ -95,12 +95,12 @@ class BrainSlosher(Instrument):
         curr_step_index = self._step - 1
         est_min = sum(step.washes * step.duration_min for step in protocol)
 
-        # current step overrides or resume state
-        curr_duration = (
+        # current step overrides or resume state inform what has already occured
+        remaining_duration = (
             self.resume_state_overrides.get("duration_min")
             or self._job.resume_state.overrides["duration_min"]
         )
-        curr_washes = (
+        ramaining_washes = protocol[curr_step_index].washes - (
             self.resume_state_overrides.get("washes")
             or self._job.resume_state.overrides["washes"]
         )
@@ -109,8 +109,7 @@ class BrainSlosher(Instrument):
 
         # current step partial progress
         current_step = protocol[curr_step_index]
-        elapsed_minutes += (curr_washes - 1) * current_step.duration_min
-        elapsed_minutes += current_step.duration_min - curr_duration
+        elapsed_minutes += ((current_step.washes - ramaining_washes) * current_step.duration_min) + (current_step.duration_min - remaining_duration)
 
         pct_done = elapsed_minutes / est_min
         return round(pct_done * 100, 1)
