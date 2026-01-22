@@ -56,6 +56,9 @@ class BrainSlosher(Instrument):
         # attributes to calculate progress
         self._job: BrainSlosherJob = None
 
+        # track current step for progress
+        self._step = 0
+
     def clear_job(self) -> None:
         """
         Clear job and update status
@@ -76,6 +79,7 @@ class BrainSlosher(Instrument):
         
         status = "paused" if self._job and self._job.resume_state else "idle"
         with self.job_status_lock:
+            self.log(f"Clearing failed job status and setting to {status}")
             self.job_status = BrainSlosherJobStatus(status=status)
 
     def get_progress(self) -> int:
@@ -83,24 +87,35 @@ class BrainSlosher(Instrument):
         Progress of current run between 0 - 100
         """
 
-        if not self._job and (not self.resume_state_overrides or not self._job.resume_state):
-            return 
-        
-        est_min = sum(step.washes * step.duration_min for step in self._job.protocol)
-       
-        elapsed_minutes = 0
-        curr_step = self._job.resume_state.step if self._job.resume_state else 0
-        curr_duration = self.resume_state_overrides.get("duration_min", None) or self._job.resume_state.overrides["duration_min"]
-        curr_elapsed = self._job.protocol[curr_step].duration_min - curr_duration
-        curr_wash = self.resume_state_overrides.get("washes", None) or self._job.resume_state.overrides["washes"]
+        # Early return if no job or no resume state
+        if not self._job or (not self.resume_state_overrides and not self._job.resume_state):
+            return
 
-        for i in range(curr_step):
-            step = self._job.protocol[i]
-            elapsed_minutes += step.washes * step.duration_min
-        print(elapsed_minutes, curr_step)
-        current_step = self._job.protocol[curr_step]
-        elapsed_minutes += (curr_wash-1) * current_step.duration_min    # index 1
-        elapsed_minutes += curr_elapsed
+        protocol = self._job.protocol
+        curr_step_index = self._step - 1
+
+        # Estimated total duration (in minutes)
+        est_min = sum(step.washes * step.duration_min for step in protocol)
+
+        # Current step overrides or resume state
+        curr_duration = (
+            self.resume_state_overrides.get("duration_min")
+            or self._job.resume_state.overrides["duration_min"]
+        )
+        curr_washes = (
+            self.resume_state_overrides.get("washes")
+            or self._job.resume_state.overrides["washes"]
+        )
+
+        # Elapsed minutes from completed steps
+        elapsed_minutes = sum(step.washes * step.duration_min for step in protocol[:curr_step_index])
+
+        # Current step partial progress
+        current_step = protocol[curr_step_index]
+        elapsed_minutes += (curr_washes - 1) * current_step.duration_min
+        elapsed_minutes += current_step.duration_min - curr_duration
+
+        # Percent done
         pct_done = elapsed_minutes / est_min
         return round(pct_done * 100, 1)
 
@@ -201,6 +216,7 @@ class BrainSlosher(Instrument):
         :param washes: number of washes in cycle
 
         """
+        self._step += 1
         self.purge_line()
         self.resume_state_overrides.update(washes=washes)
         for i in range(washes):
@@ -249,9 +265,10 @@ class BrainSlosher(Instrument):
             # clear job if finished
             if not job.resume_state:
                 self._job = None
+                self._step = 0
                 self.log.info("Job finished.")
                 message = BrainSlosherJobStatus(status="finished")
-            
+
             else: 
                 self.log.info("Job paused.")
                 message = BrainSlosherJobStatus(status="paused")
