@@ -11,6 +11,8 @@ def send_email(
     subject: str,
     body: str,
     to: list[str],
+    from_email: str = "svc_mpe@alleninstitute.org",
+    server_name: str =  "aidc-mx-1.corp.alleninstitute.org"
 ) -> None:
     """
     Compile subject and body into an email, and send using the computer's SMTP server.
@@ -22,10 +24,10 @@ def send_email(
     msg.attach(html_part)
 
     msg["Subject"] = subject
-    msg["From"] = "svc_mpe@alleninstitute.org"
+    msg["From"] = from_email
     msg["To"] = ", ".join(to)
 
-    smtp_server =  "aidc-mx-1.corp.alleninstitute.org"
+    smtp_server =  server_name
 
     # Send message
     try:
