@@ -206,7 +206,6 @@ def main():
     factory = DeviceSpinner()
     device_trees = factory.create_devices_from_specs(device_specs["devices"])
     brainslosher = device_trees["brainwasher"]
-    print(brainslosher, device_trees)
     server = ZMQServer(instances={"brainslosher":brainslosher})
     server.run()
 
