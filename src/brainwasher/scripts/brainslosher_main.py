@@ -80,6 +80,7 @@ class ZMQServer(RouterServer):
             send_email(subject="Brainslosher job is done!", 
                     body='<h2>Brainslosher job is done!</h2>', 
                     to=[self.brainslosher.config.user_email])
+            self.brainslosher.clear_status() # finished status caught so reset status
         elif message.status == "failed": # error!
             if self.brainslosher.config.user_email:
                 send_email(subject="Error during brainslosher job!", 
