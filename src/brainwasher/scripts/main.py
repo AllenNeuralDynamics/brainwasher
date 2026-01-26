@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Instantiate objects from list of dicts."""
 
 from datetime import datetime
