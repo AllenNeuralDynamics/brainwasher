@@ -1,5 +1,5 @@
 from brainwasher.devices.mixer import Mixer
-from ticlib import TicUSB
+from ticlib import TicSerial
 
 MICROSTEP_FACTORS = {
     0: 1,
@@ -30,7 +30,7 @@ class PololuTicMixer(Mixer):
                  min_rpm: float = 0,
                  steps_per_rev: int = 200,
                  name: str = None):
-        self.tic = TicUSB()
+        self.tic = TicSerial()
         self.steps_per_rev = steps_per_rev
         super().__init__(min_rpm=min_rpm, max_rpm=max_rpm, name=name)
 
