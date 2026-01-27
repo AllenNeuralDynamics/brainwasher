@@ -123,6 +123,7 @@ class ZMQServer(RouterServer):
         self.brainslosher.reset_state()
         self.start_run(job)
 
+    
     def start_run(self, job: BrainSlosherJob):
         """
         Set up a run by creating and saving job to specified path
