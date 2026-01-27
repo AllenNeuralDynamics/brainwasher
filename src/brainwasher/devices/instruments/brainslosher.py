@@ -240,8 +240,8 @@ class BrainSlosher(Instrument):
 
         """
         self._step += 1
+        self.resume_state_overrides.update(washes=washes, duration_min=duration_min)
         self.purge_line()
-        self.resume_state_overrides.update(washes=washes)
         for i in range(washes):
             self.prime_line(solution)
             try:
@@ -249,7 +249,7 @@ class BrainSlosher(Instrument):
                 self.run_wash_step(duration_min=duration_min, solution=solution)
             except Exception as e:
                 self.log.error(f"Error while performing wash {i + 1}: {str(e)}")
-                return e
+                raise e
             if self.pause_requested.is_set():
                 return
             # update state to reflect was wash finished

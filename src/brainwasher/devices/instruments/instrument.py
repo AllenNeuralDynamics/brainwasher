@@ -120,7 +120,7 @@ class Instrument:
                     return  # Will execute finally block first.
             except Exception as e:
                 self.log.error(f"Error while running step {step}: {str(e)}")
-                return e
+                raise e
             finally:
                 # Always save the current step in case of an unhandled exception
                 # or power failure.
