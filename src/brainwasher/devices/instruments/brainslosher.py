@@ -6,7 +6,7 @@ from brainwasher.devices.vessels import ReactionVessel, WasteVessel
 from threading import RLock, current_thread, Lock
 from functools import wraps
 from time import sleep
-from typing import Literal
+from typing import Literal, Union
 from pathlib import Path
 from time import perf_counter
 import yaml
@@ -70,11 +70,35 @@ class BrainSlosher(Instrument):
         with self.job_status_lock:
             self.job_status = BrainSlosherJobStatus(status="idle")
 
+    def get_job(self) -> dict | None:
+        """
+        Convienence method to get current job
+        """
+        if self._job:
+            return self._job.model_dump()
+    
+    def set_job(self, job: Union[dict, BrainSlosherJob] ) ->  None:
+        """
+        Convienence method to set current job
+
+        :param job: dict or BrainSlosherJob 
+
+        """
+        if self.job_status.status == "running":
+            self.log.warning("Cannot set job when instrument is running. Please pause.")
+            return 
+        
+        self._job = BrainSlosherJob(**job) if type(job) == dict else job
+        status = "paused" if self._job.resume_state else "idle"
+        with self.job_status_lock:
+            self.log.info(f"Job set and setting to {status}")
+            self.job_status = BrainSlosherJobStatus(status=status)
+
     def clear_status(self) -> None:
         """clear status of failed if possible."""  
         
-        if self.job_status.status != "failed":
-            self.log.warning("No failed status to clear.")
+        if self.job_status.status == "running":
+            self.log.warning("Cannot clear state while running.")
             return 
         
         status = "paused" if self._job and self._job.resume_state else "idle"
@@ -88,7 +112,11 @@ class BrainSlosher(Instrument):
         """
 
         # return if no job or no resume state
-        if not self._job or (not self.resume_state_overrides and not self._job.resume_state):
+        
+        if not self._job:
+            return 0
+            
+        if (not self.resume_state_overrides or (not self.resume_state_overrides.get("duration_min") and not self.resume_state_overrides.get("washes"))) and not self._job.resume_state:
             return
 
         protocol = self._job.protocol
@@ -221,7 +249,7 @@ class BrainSlosher(Instrument):
                 self.run_wash_step(duration_min=duration_min, solution=solution)
             except Exception as e:
                 self.log.error(f"Error while performing wash {i + 1}: {str(e)}")
-                return
+                return e
             if self.pause_requested.is_set():
                 return
             # update state to reflect was wash finished
@@ -285,13 +313,6 @@ class BrainSlosher(Instrument):
 
         with self.job_status_lock:
             return self.job_status
-
-    def get_job(self) -> dict | None:
-        """
-        Convienence method to get current job
-        """
-        if self._job:
-            return self._job.model_dump()
 
     def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):
         """

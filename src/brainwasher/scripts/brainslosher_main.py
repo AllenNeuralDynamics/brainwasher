@@ -12,6 +12,7 @@ import queue
 import argparse
 from device_spinner.config import Config
 from device_spinner.device_spinner import DeviceSpinner
+import yaml
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -32,6 +33,7 @@ class ZMQServer(RouterServer):
         self.add_named_call("restart", "brainslosher", "restart_run")
         self.add_named_call("clear", "brainslosher", "clear_job")
         self.add_named_call("get_job", "brainslosher", "get_job")
+        self.add_named_call("set_job", "brainslosher", "set_job")
         self.add_stream("progress", 1, self.brainslosher.get_progress)
 
         # TODO: Hacky?
@@ -71,27 +73,29 @@ class ZMQServer(RouterServer):
             counter += 1
 
         with open(Path(job_path), "w") as f:
-            f.write(valid_job.model_dump_json())
+            yaml.dump(valid_job.model_dump(), f)
         
     def check_job_status(self) -> dict:
         
         message = self.brainslosher.get_job_status()
-        if message.status == "finished" and self.brainslosher.config.user_email:
-            send_email(subject="Brainslosher job is done!", 
-                    body='<h2>Brainslosher job is done!</h2>', 
-                    to=[self.brainslosher.config.user_email])
+        msg_dump = message.model_dump()
+        
+        if message.status == "finished":
+            if self.brainslosher.config.user_email:
+                send_email(subject="Brainslosher job is done!", 
+                        body='<h2>Brainslosher job is done!</h2>', 
+                        to=[self.brainslosher.config.user_email])
             self.brainslosher.clear_status() # finished status caught so reset status
+        
         elif message.status == "failed": # error!
             if self.brainslosher.config.user_email:
                 send_email(subject="Error during brainslosher job!", 
                             body='<h2>Error occured durring run:</h2>' + f'<h3>{message.message}. Please check device.</h3>', 
                             to=[self.brainslosher.config.user_email])
-            msg_dump = message.model_dump()
             self.brainslosher.clear_status() # failed status caught so reset status
-            return msg_dump
+            
         
-        else:
-            return message.model_dump()
+        return msg_dump
         
     def resume_run(self):
         """
@@ -138,7 +142,7 @@ class ZMQServer(RouterServer):
 
         valid_job.source_protocol.path = job_path
         with open(Path(job_path), "w") as f:
-            f.write(valid_job.model_dump_json())
+            yaml.dump(valid_job.model_dump(), f)
         self.brainslosher.run(job_path)
         
     def get_job(self) -> BrainSlosherJob | None:
