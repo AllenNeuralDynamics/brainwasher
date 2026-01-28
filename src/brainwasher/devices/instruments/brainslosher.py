@@ -103,7 +103,7 @@ class BrainSlosher(Instrument):
         
         status = "paused" if self._job and self._job.resume_state else "idle"
         with self.job_status_lock:
-            self.log.info(f"Clearing failed job status and setting to {status}")
+            self.log.info(f"Clearing {self.job_status.status} job status and setting to {status}")
             self.job_status = BrainSlosherJobStatus(status=status)
 
     def get_progress(self) -> int:
@@ -115,8 +115,9 @@ class BrainSlosher(Instrument):
         
         if not self._job:
             return 0
-            
-        if (not self.resume_state_overrides or (not self.resume_state_overrides.get("duration_min") and not self.resume_state_overrides.get("washes"))) and not self._job.resume_state:
+
+        print()    
+        if (not self.resume_state_overrides or (self.resume_state_overrides.get("duration_min") is None and self.resume_state_overrides.get("washes") is None)) and not self._job.resume_state:
             return
 
         protocol = self._job.protocol

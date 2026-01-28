@@ -30,7 +30,6 @@ class ZMQServer(RouterServer):
         self.add_named_call("fill_chamber", "brainslosher", "fill_chamber")
         self.add_named_call("drain_chamber", "brainslosher", "drain_chamber", kwargs={"volume_ml": self.brainslosher.rxn_vessel.max_volume_ul/1000})    # fully drain vessel since ui does not know current fill
         self.add_named_call("pause", "brainslosher", "pause")
-        self.add_named_call("restart", "brainslosher", "restart_run")
         self.add_named_call("clear", "brainslosher", "clear_job")
         self.add_named_call("get_job", "brainslosher", "get_job")
         self.add_named_call("set_job", "brainslosher", "set_job")
@@ -94,7 +93,6 @@ class ZMQServer(RouterServer):
                             to=[self.brainslosher.config.user_email])
             self.brainslosher.clear_status() # failed status caught so reset status
             
-        
         return msg_dump
         
     def resume_run(self):
