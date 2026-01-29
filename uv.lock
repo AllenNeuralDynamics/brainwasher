@@ -72,7 +72,7 @@ requires-dist = [
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "ruff", specifier = ">=0.9.9" },
-    { name = "runze-control", git = "https://github.com/AllenNeuralDynamics/runze-control.git" },
+    { name = "runze-control", git = "https://github.com/AllenNeuralDynamics/runze-control.git?branch=brain-slosher-fix" },
 ]
 
 [package.metadata.requires-dev]
@@ -1024,7 +1024,7 @@ wheels = [
 [[package]]
 name = "runze-control"
 version = "0.0.3"
-source = { git = "https://github.com/AllenNeuralDynamics/runze-control.git#0cc344aaecb6f1eae0c33d653711602af74d6f5f" }
+source = { git = "https://github.com/AllenNeuralDynamics/runze-control.git?branch=brain-slosher-fix#9d66123c506b14645d263416ee3b4a106e1cf96d" }
 dependencies = [
     { name = "pyserial" },
 ]
