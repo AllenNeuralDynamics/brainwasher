@@ -54,16 +54,19 @@ logging:
             - file
             #- web_handler
 devices:
-    config: 
-      class: brainwasher.brainslosher_models.BrainSlosherConfig
-      kwds:
-        selector_port_map:
+    selector_port_map:
+        class: builtins.dict
+        kwds:
             air: 4
             chamber: 6
             waste: 3
             drain: 5
             PBS: 1
             diH20: 2
+    config: 
+      class: brainwasher.brainslosher_models.BrainSlosherConfig
+      kwds:
+        selector_port_map: selector_port_map
         drain_volume_buffer_ml: .5
         fill_volume_ml: 10 
     rxn_vessel:
@@ -80,6 +83,7 @@ devices:
     pump:
         class: runze_control.multichannel_syringe_pump.SY01B
         kwds:
+            position_map: selector_port_map
             com_port: "COM4" 
             baudrate: 9600 
             position_count: 0
