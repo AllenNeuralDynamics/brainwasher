@@ -88,6 +88,7 @@ devices:
         class: brainwasher.devices.pololu.pololu_tic_mixer.PololuTicMixer
         kwds:
             max_rpm:  500
+            serial: "00477970"
     
 # Full System:
     brainwasher:
