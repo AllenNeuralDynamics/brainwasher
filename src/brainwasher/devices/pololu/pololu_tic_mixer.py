@@ -59,7 +59,7 @@ class TicCmd:
 
     def set_step_mode(self, step_mode) -> int:
         logging.debug(f"Setting step mode to {step_mode}.")
-        self._run("--step_mode", str(int(step_mode)))
+        self._run("--step-mode", str(int(step_mode)))
     
     def _parse_status(self, starts_with: str) -> str:
         """
