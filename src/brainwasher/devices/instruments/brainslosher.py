@@ -116,24 +116,20 @@ class BrainSlosher(Instrument):
         if not self._job:
             return 0
 
-        if not self.resume_state_overrides and not self._job.resume_state.overrides:
+        # choose override source
+        overrides = (
+            self.resume_state_overrides
+             if not self._job.resume_state else getattr(self._job.resume_state, "overrides", None)
+        )
+
+        if not overrides:
             return
 
-        # current step overrides or resume state inform what has already occured
-        if self.resume_state_overrides:
-            keys = list(self.resume_state_overrides.keys())
-            if "duration_min" not in keys and "washes" not in keys:
-                return
-            
-            remaining_duration = self.resume_state_overrides["duration_min"]
-            ramaining_washes = self.resume_state_overrides["washes"]
-        
-        if self._job.resume_state:
-            keys = list(self._job.resume_state.overrides)
-            if "duration_min" not in keys and "washes" not in keys:
-                return
-            self._job.resume_state.overrides["duration_min"]
-            self._job.resume_state.overrides["washes"]
+        try:
+            remaining_duration = overrides["duration_min"]
+            remaining_washes = overrides["washes"]
+        except KeyError:
+            return
 
         protocol = self._job.protocol
         curr_step_index = self._step - 1
@@ -143,7 +139,7 @@ class BrainSlosher(Instrument):
 
         # current step partial progress
         current_step = protocol[curr_step_index]
-        elapsed_minutes += ((current_step.washes - ramaining_washes) * current_step.duration_min) + (current_step.duration_min - remaining_duration)
+        elapsed_minutes += ((current_step.washes - remaining_washes) * current_step.duration_min) + (current_step.duration_min - remaining_duration)
 
         pct_done = elapsed_minutes / est_min
         return round(pct_done * 100, 1)
