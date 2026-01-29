@@ -86,7 +86,7 @@ devices:
             position_map: selector_port_map
             com_port: "COM4" 
             baudrate: 9600 
-            position_count: 0
+            position_count: 6
             syringe_volume_ul: 5000
     mixer:
         class: brainwasher.devices.pololu.pololu_tic_mixer.PololuTicMixer
