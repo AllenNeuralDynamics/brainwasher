@@ -2,28 +2,6 @@ from brainwasher.devices.mixer import Mixer
 import subprocess
 import logging
 
-MICROSTEP_FACTORS = {
-    0: 1,
-    1: 2,
-    2: 4,
-    3: 8,
-    4: 16,
-    5: 32,
-    6: 2,   # 1/2 step 100%
-    7: 64,
-    8: 128,
-    9: 256,
-}
-
-OPERATION_STATE = {
-    "reset": 0,
-    "reenergized": 2,
-    "soft_error": 4,  
-    "waiting_for_err_line": 6,
-    "starting_up"  : 8,
-    "normal": 10
-}
-
 class TicCmd:
     """Minimal ticcmd wrapper for USB control."""
 
@@ -81,15 +59,15 @@ class PololuTicMixer(Mixer):
     def __init__(self, serial:str, max_rpm: float,
                  min_rpm: float = 0,
                  steps_per_rev: int = 200,
-                 microstep_mode: int = 16,
+                 microstep_factor: int = 16,
                  name: str = None):
         
         self.tic = TicCmd(serial=serial)
         self.steps_per_rev = steps_per_rev
 
         # put mixer in corret microstep mode
-        self.tic.set_step_mode(microstep_mode)
-        self.microstep_mode = microstep_mode
+        self.tic.set_step_mode(microstep_factor)
+        self.microstep_factor = microstep_factor
 
         super().__init__(min_rpm=min_rpm, max_rpm=max_rpm, name=name)
 
@@ -97,7 +75,7 @@ class PololuTicMixer(Mixer):
         
         # convert rpms to microsteps per 10,000 secs
         logging.debug(f"Setting rpm to {rpm}")
-        microsteps_per_rev = self.steps_per_rev * MICROSTEP_FACTORS[self.microstep_mode]
+        microsteps_per_rev = self.steps_per_rev * self.microstep_factor
         steps_per_10000_secs = (rpm/60) * microsteps_per_rev * 10000
         logging.debug(f"rpm of {rpm} converted to {steps_per_10000_secs} steps/10000s.")
         self.tic.set_target_velocity(round(steps_per_10000_secs))
