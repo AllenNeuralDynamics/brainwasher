@@ -115,23 +115,29 @@ class BrainSlosher(Instrument):
         
         if not self._job:
             return 0
-   
-        if (not self.resume_state_overrides or (self.resume_state_overrides.get("duration_min") is None and self.resume_state_overrides.get("washes") is None)) and not self._job.resume_state:
+
+        if not self.resume_state_overrides and not self._job.resume_state.overrides:
             return
+
+        # current step overrides or resume state inform what has already occured
+        if self.resume_state_overrides:
+            keys = list(self.resume_state_overrides.keys())
+            if "duration_min" not in keys and "washes" not in keys:
+                return
+            
+            remaining_duration = self.resume_state_overrides["duration_min"]
+            ramaining_washes = self.resume_state_overrides["washes"]
+        
+        if self._job.resume_state.overrides:
+            keys = list(self._job.resume_state.overrides)
+            if "duration_min" not in keys and "washes" not in keys:
+                return
+            self._job.resume_state.overrides["duration_min"]
+            self._job.resume_state.overrides["washes"]
 
         protocol = self._job.protocol
         curr_step_index = self._step - 1
         est_min = sum(step.washes * step.duration_min for step in protocol)
-
-        # current step overrides or resume state inform what has already occured
-        remaining_duration = (
-            self.resume_state_overrides.get("duration_min")
-            or self._job.resume_state.overrides["duration_min"]
-        )
-        ramaining_washes = (
-            self.resume_state_overrides.get("washes")
-            or self._job.resume_state.overrides["washes"]
-        )
 
         elapsed_minutes = sum(step.washes * step.duration_min for step in protocol[:curr_step_index])
 
@@ -276,6 +282,7 @@ class BrainSlosher(Instrument):
         """
         
         self.mixer.set_mixing_speed(job.motor_speed_rpm)
+        self.mixer._start_mixing()
         self._job = job
         self._step = 0 if not job.resume_state else job.resume_state.step
 
