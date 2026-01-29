@@ -115,8 +115,7 @@ class BrainSlosher(Instrument):
         
         if not self._job:
             return 0
-
-        print()    
+   
         if (not self.resume_state_overrides or (self.resume_state_overrides.get("duration_min") is None and self.resume_state_overrides.get("washes") is None)) and not self._job.resume_state:
             return
 
@@ -192,7 +191,7 @@ class BrainSlosher(Instrument):
         max_pump = self.config.max_syringe_volume_ml
         while volume_ml > 0:
             pump_vol = max_pump if volume_ml >= max_pump else volume_ml
-            self.log.debug(f"Moving pump to {solution} valve.")
+            self.log.debug(f"Moving pump to {solution} valve {self.config.selector_port_map[solution]}.")
             self.pump.move_valve_to_position(self.config.selector_port_map[solution])
             self.log.debug(f"Withdrawing {pump_vol}ml of {solution}.")
             self.pump.withdraw(pump_vol * 1000) # convert ml to ul
