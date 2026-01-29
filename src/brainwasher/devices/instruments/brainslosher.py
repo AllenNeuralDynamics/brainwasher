@@ -128,7 +128,7 @@ class BrainSlosher(Instrument):
             remaining_duration = self.resume_state_overrides["duration_min"]
             ramaining_washes = self.resume_state_overrides["washes"]
         
-        if self._job.resume_state.overrides:
+        if self._job.resume_state:
             keys = list(self._job.resume_state.overrides)
             if "duration_min" not in keys and "washes" not in keys:
                 return
