@@ -97,6 +97,6 @@ devices:
             config: config
             pump: pump
             mixer: mixer
-            rxn_vessel: reaction_vessel
+            rxn_vessel: rxn_vessel
             waste_vessel: waste_vessel
       
