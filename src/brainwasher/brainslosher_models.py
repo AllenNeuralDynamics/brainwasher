@@ -6,8 +6,8 @@ from typing import Optional, Annotated, Any, Literal
 from pathlib import Path
 
 class BrainSlosherJobStatus(BaseModel):
-    """Model of messages used to convey if brainslosher job failed or finished"""
-    status: Literal["failed", "finished", "running", "paused", "idle"] = Field(..., description="Indicated if job is finished or errored out.")
+    """Model of messages used to convey state of brainslosher job"""
+    status: Literal["failed", "finished", "running", "paused", "idle"] = Field(..., description="Indicated if status of job.")
     message: Optional[str] = Field(default=None, description="Optional message of additional info.")
 
 class BrainSlosherResumeState(BaseModel):

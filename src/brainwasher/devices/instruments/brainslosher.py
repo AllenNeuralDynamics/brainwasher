@@ -116,20 +116,12 @@ class BrainSlosher(Instrument):
         if not self._job:
             return 0
 
-        # choose override source
-        overrides = (
-            self.resume_state_overrides
-             if not self._job.resume_state else getattr(self._job.resume_state, "overrides", None)
-        )
-
-        if not overrides:
+        overrides = self.resume_state_overrides
+        if not overrides or not overrides.get("duration_min") or not overrides.get("washes"):
             return
-
-        try:
-            remaining_duration = overrides["duration_min"]
-            remaining_washes = overrides["washes"]
-        except KeyError:
-            return
+    
+        remaining_duration = overrides["duration_min"]
+        remaining_washes = overrides["washes"]
 
         protocol = self._job.protocol
         curr_step_index = self._step - 1
@@ -243,9 +235,7 @@ class BrainSlosher(Instrument):
         """
         self._step += 1
         self.resume_state_overrides.update(washes=washes, duration_min=duration_min)
-        self.purge_line()
         for i in range(washes):
-            self.prime_line(solution)
             try:
                 self.log.info(f"Starting wash step {i}")
                 self.run_wash_step(duration_min=duration_min, solution=solution)
