@@ -378,11 +378,11 @@ class BrainSlosher(Instrument):
         """
         job = self._job
         if not job or not job.resume_state:
-            logging.error("No job to resume")
+            self.log.error("No job to resume")
             return
         
         if not job.source_protocol.path:
-            logging.error("No source protocol path to save to.")
+            self.log.error("No source protocol path to save to.")
             return
                 
         self.run(job.source_protocol.path)
