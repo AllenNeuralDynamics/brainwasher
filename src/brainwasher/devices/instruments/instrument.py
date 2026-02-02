@@ -14,7 +14,7 @@ class Instrument:
         self.log = logging.getLogger(__name__ + "." + self.__class__.__name__)
         self.rxn_vessel = None
         self.job_worker: Thread = None
-        self.pause_requested: Event = None
+        self.pause_requested: Event = Event()
 
     def run(self, job_path: str):
         """Run the job specified from the specified filepath."""
@@ -32,15 +32,6 @@ class Instrument:
                                  daemon=True)
         self.job_worker.start()
 
-    @abstractmethod
-    def run_step(self, *args, **kwargs):
-        """The main function that gets called over and over."""
-        raise NotImplementedError("Implement me in the derived class!")
-
-    @abstractmethod
-    def validate_job_against_instrument(self, job: Job):
-        raise NotImplementedError("Implement me in th derived class!")
-
     def _load_job(self, job_path: str) -> Job:
         job_path = Path(job_path)
         if not job_path.exists():
@@ -54,7 +45,15 @@ class Instrument:
             logging.debug(f"Job is a valid job.")
             return job
 
-    @lock_flowpath
+    @abstractmethod
+    def run_step(self, *args, **kwargs):
+        """The main function that gets called over and over."""
+        raise NotImplementedError("Implement me in the derived class!")
+
+    @abstractmethod
+    def validate_job_against_instrument(self, job: Job):
+        raise NotImplementedError("Implement me in th derived class!")
+
     def _run_job_worker(self, job: Job, job_path: Path):
         """Start or resume a job from job_path"""
         # When starting/resuming, ensure the current rxn vessel solution is
@@ -70,7 +69,7 @@ class Instrument:
             if self.rxn_vessel.solution != job.resume_state.starting_solution:
                 raise ValueError("When resuming, reaction vessel starting "
                                  "solution does not match the correct resume "
-                                 "state starting solution.")
+                                 "state starting solution. Please drain.")
             job.clear_resume_state()
             job.record_resume()
         else:
@@ -82,7 +81,7 @@ class Instrument:
             if  self.rxn_vessel.solution != job.starting_solution:
                 raise ValueError("When starting, reaction vessel starting "
                                  "solution does not match the correct resume "
-                                 "state starting solution.")
+                                 "state starting solution. Please drain.")
             job.record_start()
         log_msg = f"{starting_or_resuming_msg} job: '{job.name}'"
         if start_step > 0:
@@ -102,7 +101,7 @@ class Instrument:
                                   f"{start_step_overrides}.")
                 # Convert step parameters to valid function parameters.
                 kwargs = step.model_dump(exclude='solution')  # omit **solution
-                kwargs.update(step.solution)  # splat **solution
+                kwargs.update({"solution":step.solution})  # splat **solution
                 self.log.info(f"Conducting step: "
                               f"{index + 1}/{len(job.protocol)} with "
                               f"{step.solution}")
@@ -119,20 +118,30 @@ class Instrument:
                     self.pause_requested.clear()
                     self.log.info(f"System paused.")
                     return  # Will execute finally block first.
+            except Exception as e:
+                self.log.error(f"Error while running step {step}: {str(e)}")
+                raise e
             finally:
                 # Always save the current step in case of an unhandled exception
                 # or power failure.
-                job.save_resume_state(resume_step, step.solution,
+                self.save_resume_state(job, resume_step, step.solution,
                                       **self.resume_state_overrides)
                 self.resume_state_overrides = {}
                 with open(job_path, "w") as job_file:
-                    yaml.dump(job.model_dump(exclude_none=True), job_file)
+                   yaml.dump(job.model_dump(exclude_none=True), job_file)
                 self.log.debug(f"Job progress saved to: {job_path}")
         job.clear_resume_state()
         job.record_finish()
         with open(job_path, "w") as job_file:
-            yaml.dump(job.model_dump(exclude_none=True), job_file)
+            yaml.dump(job.model_dump(exclude_none=True),job_file)
         self.log.info(f"Finished job: {job.name} from {job_path}")
+
+    def save_resume_state( job: Job, resume_step: int, starting_solution: dict, overrides: dict):
+        """
+            Save resume state of job
+        """
+        job.save_resume_state(resume_step, starting_solution,
+                                      **overrides)
 
     def pause(self):
         """Request that the system pause the currently running protocol and

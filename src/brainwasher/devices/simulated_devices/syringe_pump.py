@@ -47,3 +47,6 @@ class SimSyringePump:
 
     def is_busy(self):
         return False
+    
+    def move_valve_to_position(self, solution:str):
+        pass

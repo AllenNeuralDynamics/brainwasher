@@ -4,7 +4,8 @@ from pydantic import BaseModel, AfterValidator
 from typing import Optional, Annotated, Any
 from brainwasher.job import Job
 from pydantic import ValidationError
-
+from pydantic import BaseModel, computed_field
+from functools import cached_property
 
 class WashStep(BaseModel):
     # FIXME: this should be retrieved from the function signature.
@@ -68,3 +69,19 @@ class BrainwasherResumeState(BaseModel):
 class BrainwasherJob(Job):
     protocol: Optional[list[WashStep]] = list()
     resume_state: Optional[BrainwasherResumeState] = None
+
+    def get_duration_s(self, start_step: int = 0):
+        """Total job duration in seconds starting from the specified step."""
+        return sum([step.duration_s for step in self.protocol[start_step:]])
+    
+    @computed_field
+    @cached_property
+    def stock_chemical_volumes_ul(self) -> dict[str, float]:
+        """Dict of total chemical volumes (in microliters) needed across all
+        steps."""
+        stock_chemicals = {}
+        for step in self.protocol:
+            for chemical_name, volume_ul in step.solution.items():
+                curr_volume_ul = stock_chemicals.get(chemical_name, 0)
+                stock_chemicals[chemical_name] = curr_volume_ul + volume_ul
+        return stock_chemicals
