@@ -5,12 +5,11 @@ from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob,
 from brainwasher.devices.vessels import ReactionVessel, WasteVessel
 from threading import RLock, current_thread, Lock
 from functools import wraps
-from time import sleep
+from datetime import datetime
 from typing import Literal, Union
 from pathlib import Path
 from time import perf_counter
 import yaml
-from queue import Queue
 
 def lock_flowpath(func):
     """Provide methods with exclusive access to components that alter the flowpath."""
@@ -353,5 +352,108 @@ class BrainSlosher(Instrument):
         self.resume_state_overrides.update(duration_min=0)
         self.drain_chamber()    
         
+    def save_job(self, job: dict):
+        """
+        Save job to local computer based on the job name
+        
+        :param job: job to save
+        """
 
+        # validate job 
+        valid_job = BrainSlosherJob(**job)
+        
+        # if the file exists, append a counter to make it unique
+        counter = 1
+        job_path = Path(self.config.save_folder) / f"{valid_job.name}.yaml"
+        while job_path.exists():
+            job_path = Path(self.config.save_folder) / f"{valid_job.name}_{counter}.yaml"
+            counter += 1
 
+        with open(Path(job_path), "w") as f:
+            yaml.dump(valid_job.model_dump(), f)
+
+    def resume_run(self):
+        """
+        Resume job
+        """
+        job = self._job
+        if not job or not job.resume_state:
+            logging.error("No job to resume")
+            return
+        
+        if not job.source_protocol.path:
+            logging.error("No source protocol path to save to.")
+            return
+                
+        self.run(job.source_protocol.path)
+
+    def restart_run(self, job: BrainSlosherJob):
+        """
+        Reset brainslosher and start run
+        
+        :param job: job to run
+  
+        """
+        # reset brainslosher 
+        self.reset_state()
+        self.start_run(job)
+
+    
+    def start_run(self, job: BrainSlosherJob):
+        """
+        Set up a run by creating and saving job to specified path
+        
+        :param job: job to run
+          
+        """
+        # validate and save job so instrument can run
+        valid_job = BrainSlosherJob(**job)
+
+        # create path for job
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        job_path = (
+            Path(self.config.save_folder)
+            / f"{valid_job.name}_{timestamp}.yaml"
+        )
+
+        valid_job.source_protocol.path = job_path
+        with open(Path(job_path), "w") as f:
+            yaml.dump(valid_job.model_dump(), f)
+        self.run(job_path)
+        
+    def get_job(self) -> BrainSlosherJob | None:
+        """
+        Convienence method to get current job
+        """
+    
+        return self._job
+
+    
+    def get_config(self) -> BrainSlosherConfig:
+        """
+        Convienence method to get config
+        """
+    
+        return self.config.model_dump()
+    
+    def set_fill_volume(self, volume: float) -> None:
+        """
+        Convienence method for setting fill volume key in config
+        
+        :param volume: wash volume in ml
+        """
+        self.config.fill_volume_ml = volume
+        
+    def set_drain_buffer_volume(self, volume: float) -> None:
+        """
+        Convienence method for setting drain buffer key in config
+        
+        :param volume: drain buffer volume in ml
+        """
+        self.config.drain_volume_buffer_ml = volume
+
+    def empty_waste(self) -> None:
+        """
+        waste container was emptied
+        """
+        self.waste.purge_solution()

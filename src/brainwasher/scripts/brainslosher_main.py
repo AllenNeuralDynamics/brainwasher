@@ -33,18 +33,18 @@ class ZMQServer(RouterServer):
         self.add_named_call("clear", "brainslosher", "clear_job")
         self.add_named_call("get_job", "brainslosher", "get_job")
         self.add_named_call("set_job", "brainslosher", "set_job")
+        self.add_named_call("get_config", "brainslosher", "get_config")
+        self.add_named_call("set_fill_volume", "brainslosher", "set_fill_volume")
+        self.add_named_call("set_drain_buffer_volume", "brainslosher", "set_drain_buffer_volume")
+        self.add_named_call("empty_waste", "brainslosher", "empty_waste")
+        self.add_named_call("start", "brainslosher", "start_run")
+        self.add_named_call("resume", "brainslosher", "resume_run")
+        self.add_named_call("save_job", "brainslosher", "save_job")
         self.add_stream("progress", 1, self.brainslosher.get_progress)
 
-        # TODO: Hacky?
+        # Patch in extra client-interface-functionality without altering the instrument class by adding it to RouterServer directly.
         instances["self"] = self
         self.add_named_call("set_email", "self", "set_email")
-        self.add_named_call("get_config", "self", "get_config")
-        self.add_named_call("set_fill_volume", "self", "set_fill_volume")
-        self.add_named_call("set_drain_buffer_volume", "self", "set_drain_buffer_volume")
-        self.add_named_call("empty_waste", "self", "empty_waste")
-        self.add_named_call("start", "self", "start_run")
-        self.add_named_call("resume", "self", "resume_run")
-        self.add_named_call("save_job", "self", "save_job")
         self.add_stream("check_job_status", 1, self.check_job_status)
 
     def set_email(self, email:str):
@@ -53,27 +53,6 @@ class ZMQServer(RouterServer):
         """
         self.brainslosher.config.user_email = email
             
-
-    def save_job(self, job: dict):
-        """
-        Save job to local computer based on the job name
-        
-        :param job: job to save
-        """
-
-        # validate job 
-        valid_job = BrainSlosherJob(**job)
-        
-        # if the file exists, append a counter to make it unique
-        counter = 1
-        job_path = Path(self.brainslosher.config.save_folder) / f"{valid_job.name}.yaml"
-        while job_path.exists():
-            job_path = Path(self.brainslosher.config.save_folder) / f"{valid_job.name}_{counter}.yaml"
-            counter += 1
-
-        with open(Path(job_path), "w") as f:
-            yaml.dump(valid_job.model_dump(), f)
-        
     def check_job_status(self) -> dict:
         
         message = self.brainslosher.get_job_status()
@@ -94,93 +73,6 @@ class ZMQServer(RouterServer):
             self.brainslosher.clear_status() # failed status caught so reset status
             
         return msg_dump
-        
-    def resume_run(self):
-        """
-        Resume job
-        """
-        job = self.brainslosher._job
-        if not job or not job.resume_state:
-            logging.error("No job to resume")
-            return
-        
-        if not job.source_protocol.path:
-            logging.error("No source protocol path to save to.")
-            return
-                
-        self.brainslosher.run(job.source_protocol.path)
-
-    def restart_run(self, job: BrainSlosherJob):
-        """
-        Reset brainslosher and start run
-        
-        :param job: job to run
-  
-        """
-        # reset brainslosher 
-        self.brainslosher.reset_state()
-        self.start_run(job)
-
-    
-    def start_run(self, job: BrainSlosherJob):
-        """
-        Set up a run by creating and saving job to specified path
-        
-        :param job: job to run
-          
-        """
-        # validate and save job so instrument can run
-        valid_job = BrainSlosherJob(**job)
-
-        # create path for job
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        job_path = (
-            Path(self.brainslosher.config.save_folder)
-            / f"{valid_job.name}_{timestamp}.yaml"
-        )
-
-        valid_job.source_protocol.path = job_path
-        with open(Path(job_path), "w") as f:
-            yaml.dump(valid_job.model_dump(), f)
-        self.brainslosher.run(job_path)
-        
-    def get_job(self) -> BrainSlosherJob | None:
-        """
-        Convienence method to get current job
-        """
-    
-        return self.brainslosher._job
-
-    
-    def get_config(self) -> BrainSlosherConfig:
-        """
-        Convienence method to get config
-        """
-    
-        return self.brainslosher.config.model_dump()
-    
-    def set_fill_volume(self, volume: float) -> None:
-        """
-        Convienence method for setting fill volume key in config
-        
-        :param volume: wash volume in ml
-        """
-        self.brainslosher.config.fill_volume_ml = volume
-        
-    def set_drain_buffer_volume(self, volume: float) -> None:
-        """
-        Convienence method for setting drain buffer key in config
-        
-        :param volume: drain buffer volume in ml
-        """
-        self.brainslosher.config.drain_volume_buffer_ml = volume
-
-    def empty_waste(self) -> None:
-        """
-        waste container was emptied
-        """
-        self.brainslosher.waste.purge_solution()
-
 
 def main():
     
