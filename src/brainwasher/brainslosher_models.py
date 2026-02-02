@@ -1,10 +1,14 @@
 """pydantic model of brainwasher job."""
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, EmailStr, ValidationError, AfterValidator
 from brainwasher.job import Job
-from pydantic import ValidationError, AfterValidator, BaseModel
-from typing import Optional, Annotated, Any
+from typing import Optional, Annotated, Any, Literal
 from pathlib import Path
+
+class BrainSlosherJobStatus(BaseModel):
+    """Model of messages used to convey state of brainslosher job"""
+    status: Literal["failed", "finished", "running", "paused", "idle"] = Field(..., description="Indicated if status of job.")
+    message: Optional[str] = Field(default=None, description="Optional message of additional info.")
 
 class BrainSlosherResumeState(BaseModel):
 
@@ -57,7 +61,7 @@ class BrainSlosherJob(Job):
 
 """pydantic model of brainwasher config."""
 
-class BrainSlosherConfig(BaseModel):
+class BrainSlosherConfig(BaseModel, validate_assignment=True,):
     save_folder: Path = Field(default="../../brain_slosher_jobs/")
     selector_port_map: dict[str, int]
     max_syringe_volume_ml: float = Field(default=4.5, description="Maximum fill volume of the syringe to prevent chatter when operating.")
@@ -65,7 +69,8 @@ class BrainSlosherConfig(BaseModel):
     purge_volume_ml: float = Field(default=4.5, description="Volume to purge drain line.")
     drain_volume_buffer_ml: float = Field(..., description="Buffer to add to draining volume to ensure chamber is completly empty.")
     fill_volume_ml: float = Field(..., description="Volume to fill chamber completly.")
-    
+    user_email: Optional[EmailStr] = Field(default=None, description="Optional email to send errors to.")    # validates email with email-validator package
+
     @field_validator("selector_port_map")
     def check_required_keys(cls, v: dict[str, int]):
         """Check that air, chamber, and waste are in map"""

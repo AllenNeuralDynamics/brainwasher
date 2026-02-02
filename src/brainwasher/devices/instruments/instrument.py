@@ -15,7 +15,6 @@ class Instrument:
         self.rxn_vessel = None
         self.job_worker: Thread = None
         self.pause_requested: Event = Event()
-        self._curr_step = 0
 
     def run(self, job_path: str):
         """Run the job specified from the specified filepath."""
@@ -107,7 +106,6 @@ class Instrument:
                               f"{index + 1}/{len(job.protocol)} with "
                               f"{step.solution}")
                 # Run step.
-                self._curr_step = index
                 self.run_step(**kwargs)
                 # Handle pause state.
                 # Save current step if not completed (overrides present) or
@@ -122,6 +120,7 @@ class Instrument:
                     return  # Will execute finally block first.
             except Exception as e:
                 self.log.error(f"Error while running step {step}: {str(e)}")
+                raise e
             finally:
                 # Always save the current step in case of an unhandled exception
                 # or power failure.
@@ -129,12 +128,12 @@ class Instrument:
                                       **self.resume_state_overrides)
                 self.resume_state_overrides = {}
                 with open(job_path, "w") as job_file:
-                    yaml.dump(job.model_dump(exclude_none=True), job_file)
+                   yaml.dump(job.model_dump(exclude_none=True), job_file)
                 self.log.debug(f"Job progress saved to: {job_path}")
         job.clear_resume_state()
         job.record_finish()
         with open(job_path, "w") as job_file:
-            yaml.dump(job.model_dump(exclude_none=True), job_file)
+            yaml.dump(job.model_dump(exclude_none=True),job_file)
         self.log.info(f"Finished job: {job.name} from {job_path}")
 
     def save_resume_state( job: Job, resume_step: int, starting_solution: dict, overrides: dict):

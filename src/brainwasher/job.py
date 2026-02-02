@@ -3,7 +3,7 @@
 from pathlib import Path
 from pydantic import BaseModel, computed_field, field_serializer, model_serializer, Field
 
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import cached_property
 from typing import Optional, Any, Literal, Union
 import logging
@@ -80,22 +80,22 @@ class Job(BaseModel):
 
     def record_start(self, timestamp: datetime = None):
         """Record a start event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now()
+        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
         self.history.events.append(StartEvent(timestamp=timestamp))
 
     def record_finish(self, timestamp: datetime = None):
         """Record a finish event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now()
+        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
         self.history.events.append(FinishEvent(timestamp=timestamp))
 
     def record_pause(self, timestamp: datetime = None):
         """Record a finish event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now()
+        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
         self.history.events.append(PauseEvent(timestamp=timestamp))
 
     def record_resume(self, timestamp: datetime = None):
         """Record a finish event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now()
+        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
         self.history.events.append(ResumeEvent(timestamp=timestamp))
 
     def save_resume_state(self, step: int, starting_solution: dict[str, float],
@@ -109,7 +109,7 @@ class Job(BaseModel):
         self.history = History()
 
     def set_source_protocol(self, path: Path, access_timestamp: datetime = None):
-        access_timestamp = access_timestamp if access_timestamp else datetime.now()
+        access_timestamp = access_timestamp if access_timestamp else datetime.now(timezone.utc)
         self.source_protocol = SourceProtocol(path=path,
                                               accessed=access_timestamp)
 
