@@ -421,15 +421,16 @@ class BrainSlosher(Instrument):
             yaml.dump(valid_job.model_dump(), f)
         self.run(job_path)
         
-    def get_job(self) -> BrainSlosherJob | None:
+    def get_job(self) -> dict | None:
         """
         Convienence method to get current job
         """
     
-        return self._job
+        if self._job:
+            return self._job.model_dump()
 
     
-    def get_config(self) -> BrainSlosherConfig:
+    def get_config(self) -> dict:
         """
         Convienence method to get config
         """
