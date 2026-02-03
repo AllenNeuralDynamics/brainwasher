@@ -1,3 +1,11 @@
+# brainslosher
+
+## Package Installation
+To use the software, in the root directory, run
+```bash
+uv run --group brainslosher_group brainslosher --simulated 
+```
+
 # brainwasher
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)

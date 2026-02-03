@@ -4,13 +4,35 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "brainwasher"
-version = "0.1.0"
+version = "0.2.0"
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "pytest>=8.3.5",
-    "ruff>=0.9.9",
+   "pytest>=8.3.5",
+   "ruff>=0.9.9",
+   "coloredlogs>=15.0.1",
+   "device-spinner",
+   "runze-control",
+   "mock>=5.2.0",
+   "pydantic>=2.11.4",
+   "datetime>=5.5",
+   "pyyaml>=6.0.2",
+   "pydantic-settings>=2.12.0",
+   "email-validator>=2.3.0",    
+]
+
+[project.scripts]
+brainwasher = "brainwasher.scripts.main:main"
+brainslosher = "brainwasher.scripts.brainslosher_main:main"
+
+[dependency-groups]
+dev = ["pytest"]
+brainwasher_group = [
+    "pyharp",
+    "rpi-hardware-pwm",    
+    "vicivalve",
+    "inpromptu",
     "Pint>=0.21.1",
     "pandas>=2.0.3",
     "igraph>=0.11.5",
@@ -18,27 +40,22 @@ dependencies = [
     "SM8mosind>=1.0.1",
     "SM16univin>=1.0.3",
     "smbus2>=0.5.0",
-    "coloredlogs>=15.0.1",
-    "device-spinner",
-    "runze-control",
-    "vicivalve",
-    "inpromptu",
-    "mock>=5.2.0",
-    "pydantic>=2.11.4",
-    "datetime>=5.5",
-    "pyyaml>=6.0.2",
-    "pyharp",
-    "rpi-hardware-pwm",
 ]
 
+brainslosher_group = [
+    "one-liner",
+    "ticlib",
+    "email-validator>=2.3.0",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "tests"]
 
 [tool.uv.sources]
-device-spinner = { path = "../device-spinner", editable = true }
-runze-control = { path = "../runze-control", editable = true }
-vicivalve = { path = "../../external_projects/vicivalve", editable = true }
-inpromptu = { path = "../inpromptu", editable = true }
-pyharp = { path = "../pyharp", editable = true }
+device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
+one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git" }
+runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "brain-slosher-fix" }
+pyharp = { git = "https://github.com/AllenNeuralDynamics/pyharp.git"  }
+vicivalve = { git = "https://gitlab.com/Poofjunior/vicivalve.git"}
+inpromptu = { git = "https://github.com/Poofjunior/inpromptu.git" }
 rpi-hardware-pwm = { git = "https://github.com/Pioreactor/rpi_hardware_pwm.git" }

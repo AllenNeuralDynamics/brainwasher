@@ -1,11 +1,11 @@
 """pydantic model of job instance of protocol"""
 
 from pathlib import Path
-from pydantic import BaseModel, computed_field, field_serializer, model_serializer, AfterValidator, Field
-from pydantic import ValidationError
-from datetime import datetime
+from pydantic import BaseModel, computed_field, field_serializer, model_serializer, Field
+
+from datetime import datetime, timezone
 from functools import cached_property
-from typing import Annotated, Optional, Any, Literal, Union
+from typing import Optional, Any, Literal, Union
 import logging
 
 
@@ -20,28 +20,8 @@ class SourceProtocol(BaseModel):
         return str(Path(path).resolve()) if path else None
 
 
-class WashStep(BaseModel):
-    # FIXME: this should be retrieved from the function signature.
-    # https://github.com/pydantic/pydantic/issues/1391
-    # Warning: names & default values must match those in brainwasher.run_wash_step
-    intermittent_mixing_on_time_s: Optional[float] = None
-    intermittent_mixing_off_time_s: Optional[float] = None
-    mix_speed_rpm: Optional[float] = 0
-    duration_s: Optional[float] = 0
-    solution: dict[str, float]
-
-    @property
-    def components(self):
-        """names of chemical components used in this step."""
-        return set(self.solution.keys())
-
-    @property
-    def solution_volume_ul(self):
-        """Total solution volume computed from chemical sums.
-
-        Does not need to be represented in pydantic model.
-        """
-        return sum(self.solution.values())
+class Step(BaseModel):
+    pass
 
 
 class Event(BaseModel):
@@ -68,39 +48,9 @@ class ResumeEvent(Event):
 class RestartEvent(Event):
     pass
 
-
 class ResumeState(BaseModel):
+    pass
 
-    @staticmethod
-    def values_in_wash_step(overrides: dict):
-        """Ensure keys in the overrides dict exist as WashStep fields.
-
-        .. note::
-           WashStep `solution` field cannot be overwritten.
-
-        """
-        override_keys = set(overrides.keys())
-        valid_wash_step_model_fields = set(WashStep.model_fields) - {"solution"}
-        if not override_keys.issubset(valid_wash_step_model_fields):
-            raise ValueError(f"Override fields must all be valid WashStep "
-                             f"fields and cannot include the solution field. "
-                             f"overrides: {override_keys}, "
-                             f"WashSteps: {valid_wash_step_model_fields}")
-        # Validate override values against WashStep value constraints.
-        try:  # Lazy way: try making a valid WashStep.
-            wash_step = WashStep(**overrides, solution={})
-        except ValidationError as e:
-            extra_msg = "Error validating ResumeState overrides against WashStep values."
-            raise ValueError(extra_msg) from e
-            raise
-        return overrides
-
-    step: int
-    starting_solution: dict[str, float]  # Required since we need to know
-                                         # How to handle waste.
-    # overrides are a subset of WashStep fields whose values will override
-    # those in a WashStep.
-    overrides: Annotated[Optional[dict[str, Any]], AfterValidator(values_in_wash_step)] = None
 
 
 class History(BaseModel):
@@ -112,13 +62,13 @@ class Job(BaseModel):
     name: str
     starting_solution: dict[str, float]
     source_protocol: Optional[SourceProtocol] = SourceProtocol()
-    protocol: Optional[list[WashStep]] = list()
+    protocol: Optional[list[Step]] = list()
     resume_state: Optional[ResumeState] = None
     history: Optional[History] = History()
 
     def get_duration_s(self, start_step: int = 0):
         """Total job duration in seconds starting from the specified step."""
-        return sum([step.duration_s for step in self.protocol[start_step:]])
+        raise NotImplementedError()
 
     @cached_property
     def chemicals(self) -> set[str]:
@@ -128,44 +78,30 @@ class Job(BaseModel):
         # Include starting solution chemicals.
         return step_components | set(self.starting_solution.keys())
 
-    @computed_field
-    @cached_property
-    def stock_chemical_volumes_ul(self) -> dict[str, float]:
-        """Dict of total chemical volumes (in microliters) needed across all
-        steps."""
-        stock_chemicals = {}
-        for step in self.protocol:
-            for chemical_name, volume_ul in step.solution.items():
-                curr_volume_ul = stock_chemicals.get(chemical_name, 0)
-                stock_chemicals[chemical_name] = curr_volume_ul + volume_ul
-        return stock_chemicals
-
     def record_start(self, timestamp: datetime = None):
         """Record a start event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now()
+        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
         self.history.events.append(StartEvent(timestamp=timestamp))
 
     def record_finish(self, timestamp: datetime = None):
         """Record a finish event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now()
+        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
         self.history.events.append(FinishEvent(timestamp=timestamp))
 
     def record_pause(self, timestamp: datetime = None):
         """Record a finish event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now()
+        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
         self.history.events.append(PauseEvent(timestamp=timestamp))
 
     def record_resume(self, timestamp: datetime = None):
         """Record a finish event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now()
+        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
         self.history.events.append(ResumeEvent(timestamp=timestamp))
 
     def save_resume_state(self, step: int, starting_solution: dict[str, float],
                           **overrides: dict):
-        self.resume_state = ResumeState(step=step,
-                                        starting_solution=starting_solution,
-                                        overrides=overrides)
-
+        raise NotImplementedError()
+        
     def clear_resume_state(self):
         self.resume_state = None
 
@@ -173,7 +109,7 @@ class Job(BaseModel):
         self.history = History()
 
     def set_source_protocol(self, path: Path, access_timestamp: datetime = None):
-        access_timestamp = access_timestamp if access_timestamp else datetime.now()
+        access_timestamp = access_timestamp if access_timestamp else datetime.now(timezone.utc)
         self.source_protocol = SourceProtocol(path=path,
                                               accessed=access_timestamp)
 

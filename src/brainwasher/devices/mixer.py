@@ -80,6 +80,8 @@ class SimulatedMixer(Mixer):
     def _stop_mixing(self):
         pass
 
+    def _set_mixing_speed(self, rpm: float):
+        pass
 
 class PWMMixer(Mixer):
     """An open loop mixing device."""
