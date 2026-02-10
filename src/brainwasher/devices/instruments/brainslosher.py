@@ -305,7 +305,9 @@ class BrainSlosher(Instrument):
                 self.job_status = message 
             self.mixer.stop_mixing()
             # fill with last liquid washed
-            self.fill_chamber(last_solution, self.config.fill_volume_ml) 
+            if self.rxn_vessel.curr_volume_ul != {last_solution: self.config.fill_volume_ml * 1000}:
+                self.drain_chamber()
+                self.fill_chamber(last_solution, self.config.fill_volume_ml) 
     
     def get_job_status(self) -> BrainSlosherJobStatus:
         """
