@@ -45,6 +45,12 @@ class BrainSlosher(Instrument):
         self.waste = waste_vessel
         self.resume_state_overrides = {}
         
+        # drain chamber completley to put instrument in known state
+        self.drain_chamber(self.config.fill_volume_ml)
+
+        # need to reset pump ever init
+        self.pump.reset_syringe_position()
+
         # Thread-safe protection within a class instance.
         self.flowpath_lock = RLock()
 
@@ -270,13 +276,14 @@ class BrainSlosher(Instrument):
         self.mixer._start_mixing()
         self._job = job
         self._step = 0 if not job.resume_state else job.resume_state.step
+        last_solution = self._job.protocol[-1].solution
 
         try:
             self.log.info("Job starting.")
             with self.job_status_lock:
                 self.job_status = BrainSlosherJobStatus(status="running") 
             super()._run_job_worker(job, job_path)
-           
+
             # clear job if finished
             if not job.resume_state:
                 self._job = None
@@ -297,6 +304,8 @@ class BrainSlosher(Instrument):
             with self.job_status_lock:
                 self.job_status = message 
             self.mixer.stop_mixing()
+            # fill with last liquid washed
+            self.fill_chamber(last_solution, self.config.fill_volume_ml) 
     
     def get_job_status(self) -> BrainSlosherJobStatus:
         """
