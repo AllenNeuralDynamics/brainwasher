@@ -293,10 +293,13 @@ class BrainSlosher(Instrument):
 
             else: 
                 self.log.info("Job paused.")
+                resume_step = job.resume_state.step
+                last_solution = self._job.protocol[resume_step].solution
                 message = BrainSlosherJobStatus(status="paused")
 
         except Exception as e:
             self.log.error(f"Error running job: {str(e)}.")
+            last_solution = self._job.protocol[self._step].solution
             message = BrainSlosherJobStatus(status="failed", message=str(e))
             raise e
         
