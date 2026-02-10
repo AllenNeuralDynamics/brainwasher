@@ -163,10 +163,11 @@ class BrainSlosher(Instrument):
         Drain chamber
         """
         
-        if self.rxn_vessel.curr_volume_ul + self.waste.curr_volume_ul > self.waste.max_volume_ul:
+        volume_ml = volume_ml or self.rxn_vessel.curr_volume_ul/1000 
+
+        if volume_ml + self.waste.curr_volume_ul > self.waste.max_volume_ul:
             raise ValueError("Waste vessel will exceed max volume if chamber is drained. Please empty.")
 
-        volume_ml = volume_ml or self.rxn_vessel.curr_volume_ul/1000 
         self.log.info(f"Draining chamber of {volume_ml}mL")
         self.withdraw_and_dispense_solution("drain", 
                                             volume_ml + self.config.drain_volume_buffer_ml, 
