@@ -41,6 +41,7 @@ class ZMQServer(RouterServer):
         self.add_named_call("resume", "brainslosher", "resume_run")
         self.add_named_call("save_job", "brainslosher", "save_job")
         self.add_stream("progress", 1, self.brainslosher.get_progress)
+        self.add_stream("check_job_status", 1, self.brainslosher.get_job_status_message)
 
         # Patch in extra client-interface-functionality without altering the instrument class by adding it to RouterServer directly.
         instances["self"] = self

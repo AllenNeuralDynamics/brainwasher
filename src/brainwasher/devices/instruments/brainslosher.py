@@ -309,12 +309,12 @@ class BrainSlosher(Instrument):
         for func in self.job_status_change_callbacks:
             func(self.job_status)
     
-    def get_job_status(self) -> BrainSlosherJobStatus:
+    def get_job_status_message(self) -> str:
         """
-        Getter function that returns the job_status attribute
+        Getter function that returns the job_status message
         """
 
-        return self.job_status
+        return self.job_status.message
 
     def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):
         """
