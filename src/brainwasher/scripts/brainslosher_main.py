@@ -1,5 +1,5 @@
 from brainwasher.devices.instruments.brainslosher import BrainSlosher
-from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob
+from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob, BrainSlosherJobStatus
 from brainwasher.utils.email_issues import send_email
 import logging
 import logging.config
@@ -45,34 +45,28 @@ class ZMQServer(RouterServer):
         # Patch in extra client-interface-functionality without altering the instrument class by adding it to RouterServer directly.
         instances["self"] = self
         self.add_named_call("set_email", "self", "set_email")
-        self.add_stream("check_job_status", 1, self.check_job_status)
+        self.brainslosher.add_job_status_listener(self.alert_on_job_status_change)
 
     def set_email(self, email:str):
         """
         Set email to send errors to
         """
         self.brainslosher.config.user_email = email
-            
-    def check_job_status(self) -> dict:
-        
-        message = self.brainslosher.get_job_status()
-        msg_dump = message.model_dump()
-        
+
+    def alert_on_job_status_change(self, job_status: JobStatus):
+        """Send an email on certain job status changes."""
+        message = job_status
         if message.status == "finished":
             if self.brainslosher.config.user_email:
-                send_email(subject="Brainslosher job is done!", 
-                        body='<h2>Brainslosher job is done!</h2>', 
+                send_email(subject="Brainslosher job is done!",
+                        body='<h2>Brainslosher job is done!</h2>',
                         to=[self.brainslosher.config.user_email])
-            self.brainslosher.clear_status() # finished status caught so reset status
-        
         elif message.status == "failed": # error!
             if self.brainslosher.config.user_email:
-                send_email(subject="Error during brainslosher job!", 
-                            body='<h2>Error occured durring run:</h2>' + f'<h3>{message.message}. Please check device.</h3>', 
+                send_email(subject="Error during brainslosher job!",
+                            body='<h2>Error occured durring run:</h2>'
+                                 + f'<h3>{message.message}. Please check device.</h3>',
                             to=[self.brainslosher.config.user_email])
-            self.brainslosher.clear_status() # failed status caught so reset status
-            
-        return msg_dump
 
 def main():
     

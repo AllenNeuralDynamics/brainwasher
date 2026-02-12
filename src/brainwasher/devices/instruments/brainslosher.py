@@ -3,7 +3,7 @@ from runze_control.multichannel_syringe_pump import SY01B
 from brainwasher.devices.pololu.pololu_tic_mixer import PololuTicMixer
 from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob, BrainSlosherJobStatus
 from brainwasher.devices.vessels import ReactionVessel, WasteVessel
-from threading import RLock, current_thread, Lock
+from threading import RLock, current_thread
 from functools import wraps
 from datetime import datetime
 from typing import Literal, Union
@@ -49,8 +49,8 @@ class BrainSlosher(Instrument):
         self.flowpath_lock = RLock()
 
         # attribute to track events that occur in job_worker
-        self.job_status_lock = Lock()
         self.job_status: BrainSlosherJobStatus = BrainSlosherJobStatus(status="idle")
+        self.job_status_change_callbacks = set()
 
         # attributes to calculate progress
         self._job: BrainSlosherJob = None
@@ -66,8 +66,7 @@ class BrainSlosher(Instrument):
             self.log.warning("Cannot reset state when instrument is running. Please pause.")
             return 
         self._job = None
-        with self.job_status_lock:
-            self.job_status = BrainSlosherJobStatus(status="idle")
+        self.update_job_status("idle")
 
     def get_job(self) -> dict | None:
         """
@@ -89,9 +88,8 @@ class BrainSlosher(Instrument):
         
         self._job = BrainSlosherJob(**job) if type(job) == dict else job
         status = "paused" if self._job.resume_state else "idle"
-        with self.job_status_lock:
-            self.log.info(f"Job set and setting to {status}")
-            self.job_status = BrainSlosherJobStatus(status=status)
+        self.log.info(f"Job set and setting to {status}")
+        self.update_job_status(status)
 
     def clear_status(self) -> None:
         """clear status of failed if possible."""  
@@ -101,9 +99,11 @@ class BrainSlosher(Instrument):
             return 
         
         status = "paused" if self._job and self._job.resume_state else "idle"
-        with self.job_status_lock:
-            self.log.info(f"Clearing {self.job_status.status} job status and setting to {status}")
-            self.job_status = BrainSlosherJobStatus(status=status)
+        self.log.info(f"Clearing {self.job_status.status} job status and setting to {status}")
+        self.update_job_status(status)
+
+    def add_job_status_listener(self, func: callable):
+        self.job_status_change_callbacks.update(func)
 
     def get_progress(self) -> int:
         """
@@ -273,8 +273,8 @@ class BrainSlosher(Instrument):
 
         try:
             self.log.info("Job starting.")
-            with self.job_status_lock:
-                self.job_status = BrainSlosherJobStatus(status="running") 
+            message = BrainSlosherJobStatus(status="running")
+            self.update_job_status("running")
             super()._run_job_worker(job, job_path)
            
             # clear job if finished
@@ -294,17 +294,27 @@ class BrainSlosher(Instrument):
             raise e
         
         finally:
-            with self.job_status_lock:
-                self.job_status = message 
+            self.update_job_status(message)
             self.mixer.stop_mixing()
+
+    def update_job_status(status_message: str):
+        """
+        Specify the current job status and alert listeners (if any) upon
+        a status change.
+        """
+
+        old_status_message = self.job_status.message
+        self.job_status.message = status_message
+        if old_status_message != status_message:  # Alert listeners to change.
+        for func in self.job_status_change_callbacks:
+            func(self.job_status)
     
     def get_job_status(self) -> BrainSlosherJobStatus:
         """
         Getter function that returns the job_status attribute
         """
 
-        with self.job_status_lock:
-            return self.job_status
+        return self.job_status
 
     def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):
         """
