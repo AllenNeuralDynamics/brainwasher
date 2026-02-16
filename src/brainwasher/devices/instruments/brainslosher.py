@@ -46,6 +46,7 @@ class BrainSlosher(Instrument):
         self.resume_state_overrides = {}
         
         # need to reset pump every init
+        self.pump.move_valve_to_position(self.config.selector_port_map["waste"])
         self.pump.reset_syringe_position()
 
         # drain chamber completley to put instrument in known state
