@@ -45,11 +45,11 @@ class BrainSlosher(Instrument):
         self.waste = waste_vessel
         self.resume_state_overrides = {}
         
+        # need to reset pump every init
+        self.pump.reset_syringe_position()
+
         # drain chamber completley to put instrument in known state
         self.drain_chamber(self.config.fill_volume_ml)
-
-        # need to reset pump ever init
-        self.pump.reset_syringe_position()
 
         # Thread-safe protection within a class instance.
         self.flowpath_lock = RLock()
@@ -277,7 +277,6 @@ class BrainSlosher(Instrument):
         self.mixer._start_mixing()
         self._job = job
         self._step = 0 if not job.resume_state else job.resume_state.step
-        last_solution = self._job.protocol[-1].solution
 
         try:
             self.log.info("Job starting.")
@@ -294,13 +293,10 @@ class BrainSlosher(Instrument):
 
             else: 
                 self.log.info("Job paused.")
-                resume_step = job.resume_state.step
-                last_solution = self._job.protocol[resume_step].solution
                 message = BrainSlosherJobStatus(status="paused")
 
         except Exception as e:
             self.log.error(f"Error running job: {str(e)}.")
-            last_solution = self._job.protocol[self._step].solution
             message = BrainSlosherJobStatus(status="failed", message=str(e))
             raise e
         
@@ -308,10 +304,7 @@ class BrainSlosher(Instrument):
             with self.job_status_lock:
                 self.job_status = message 
             self.mixer.stop_mixing()
-            # fill with last liquid washed
-            if self.rxn_vessel.curr_volume_ul != {last_solution: self.config.fill_volume_ml * 1000}:
-                self.drain_chamber()
-                self.fill_chamber(last_solution, self.config.fill_volume_ml) 
+        
     
     def get_job_status(self) -> BrainSlosherJobStatus:
         """
@@ -344,14 +337,11 @@ class BrainSlosher(Instrument):
         if solution not in self.config.selector_port_map.keys():
             raise ValueError(f"Solution {solution} is not currently plumbed based on config.")
 
-        # Check if chamber is in correct state 
-        if self.rxn_vessel.solution != {solution: self.config.fill_volume_ml * 1000}:
-            self.log.info(f"Reaction vessel in incorrect state for wash step. Draining, priming, filling, and purging.")
-            self.drain_chamber()
-            self.prime_line(solution)
-            self.fill_chamber(solution, 
-                              self.config.fill_volume_ml)
-            self.purge_line()
+        self.drain_chamber()
+        self.prime_line(solution)
+        self.fill_chamber(solution, 
+                            self.config.fill_volume_ml)
+        self.purge_line()
         
         start_time_s = perf_counter()
         duration_s = duration_min * 60
@@ -365,7 +355,6 @@ class BrainSlosher(Instrument):
                 self.log.warning(f"Aborting after {elapsed_min * 60}[s].")
                 return
         self.resume_state_overrides.update(duration_min=0)
-        self.drain_chamber()    
         
     def save_job(self, job: dict):
         """
