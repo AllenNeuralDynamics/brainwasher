@@ -45,15 +45,15 @@ class BrainSlosher(Instrument):
         self.waste = waste_vessel
         self.resume_state_overrides = {}
         
+        # Thread-safe protection within a class instance.
+        self.flowpath_lock = RLock()
+
         # need to reset pump every init
         self.pump.move_valve_to_position(self.config.selector_port_map["waste"])
         self.pump.reset_syringe_position()
 
         # drain chamber completley to put instrument in known state
         self.drain_chamber(self.config.fill_volume_ml)
-
-        # Thread-safe protection within a class instance.
-        self.flowpath_lock = RLock()
 
         # attribute to track events that occur in job_worker
         self.job_status_lock = Lock()
