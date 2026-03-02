@@ -66,6 +66,7 @@ devices:
             diH20: 2
         drain_volume_buffer_ml: .5
         fill_volume_ml: 10 
+        instrument_name: Simulated Brainslosher
     rxn_vessel:
         class: brainwasher.devices.vessels.ReactionVessel
         skip_kwds: [name]

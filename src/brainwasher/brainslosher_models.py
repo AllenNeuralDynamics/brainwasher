@@ -70,6 +70,7 @@ class BrainSlosherConfig(BaseModel, validate_assignment=True,):
     drain_volume_buffer_ml: float = Field(..., description="Buffer to add to draining volume to ensure chamber is completly empty.")
     fill_volume_ml: float = Field(..., description="Volume to fill chamber completly.")
     user_email: Optional[EmailStr] = Field(default=None, description="Optional email to send errors to.")    # validates email with email-validator package
+    instrument_name: Optional[str] = Field(default=None, description="Optional instrument name.") 
 
     @field_validator("selector_port_map")
     def check_required_keys(cls, v: dict[str, int]):
