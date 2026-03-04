@@ -6,7 +6,7 @@ from brainwasher.devices.vessels import ReactionVessel, WasteVessel
 from threading import RLock, current_thread, Lock
 from functools import wraps
 from datetime import datetime
-from typing import Literal, Union
+from typing import Literal, Union, Optional
 from pathlib import Path
 from time import perf_counter
 import yaml
@@ -34,7 +34,8 @@ class BrainSlosher(Instrument):
                 rxn_vessel: ReactionVessel,
                 pump: SY01B, 
                 mixer: PololuTicMixer, 
-                waste_vessel: WasteVessel):
+                waste_vessel: WasteVessel, 
+                job: Optional[BrainSlosherJob] = None):
         
         super().__init__()
 
@@ -59,8 +60,8 @@ class BrainSlosher(Instrument):
         self.job_status_lock = Lock()
         self.job_status: BrainSlosherJobStatus = BrainSlosherJobStatus(status="idle")
 
-        # attributes to calculate progress
-        self._job: BrainSlosherJob = None
+        # current job to run
+        self._job: BrainSlosherJob = job
 
         # track current step for progress
         self._step = 0
