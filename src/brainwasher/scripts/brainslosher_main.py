@@ -78,7 +78,7 @@ def main():
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=r"src\brainwasher\scripts\brainslosher_config.yaml")
-    parser.add_argument("--log_level", type=str, default="INFO",
+    parser.add_argument("--log-level", type=str, default="INFO",
                         choices=["INFO", "DEBUG"])
     parser.add_argument("--simulated", default=False, action="store_true",
                         help="Simulate hardware device connections.")
