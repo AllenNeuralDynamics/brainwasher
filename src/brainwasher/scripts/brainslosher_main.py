@@ -1,18 +1,14 @@
 from brainwasher.devices.instruments.brainslosher import BrainSlosher
-from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob
 from brainwasher.utils.email_issues import send_email
 import logging
 import logging.config
 from one_liner.server import RouterServer
-from pathlib import Path
 import time
-from datetime import datetime
-from typing import Literal
-import queue
 import argparse
 from device_spinner.config import Config
 from device_spinner.device_spinner import DeviceSpinner
-import yaml
+import os
+import brainwasher
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -96,6 +92,16 @@ def main():
     
     # setup logging
     logging.config.dictConfig(dict(config.cfg["logging"]))
+    
+    # set up formating for log server
+    old_factory = logging.getLogRecordFactory()
+    def record_factory(*args, **kwargs):
+        record = old_factory(*args, **kwargs)
+        record.project = "brainslosher"
+        record.version = brainwasher.__version__
+        record.comp_id = os.getenv("aibs_comp_id", "unknown")
+        return record
+    logging.setLogRecordFactory(record_factory)
         
     # Create the instrument.
     device_specs = dict(config.cfg)
