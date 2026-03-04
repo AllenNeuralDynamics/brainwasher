@@ -400,7 +400,7 @@ class BrainSlosher(Instrument):
   
         """
         # reset brainslosher 
-        self.reset_state()
+        self.clear_job()
         self.start_run(job)
 
     
