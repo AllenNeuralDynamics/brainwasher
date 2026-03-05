@@ -440,7 +440,6 @@ class BrainSlosher(Instrument):
         """
         Convienence method to get config
         """
-    
         return self.config.model_dump()
     
     def set_fill_volume(self, volume: float) -> None:
