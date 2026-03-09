@@ -51,7 +51,7 @@ logging:
             handlers:
             - console
             - file
-            #- web_handler
+            - web_handler
 devices:
     config: 
       class: brainwasher.brainslosher_models.BrainSlosherConfig

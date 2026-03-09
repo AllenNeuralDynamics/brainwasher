@@ -90,6 +90,12 @@ def main():
     config_name = args.config if not args.simulated else r"src\brainwasher\scripts\sim_brainslosher_config.yaml"
     config = Config(config_name)    # TODO: Should have some sort of validation here 
     
+    # Create the instrument.
+    device_specs = dict(config.cfg)
+    factory = DeviceSpinner()
+    device_trees = factory.create_devices_from_specs(device_specs["devices"])
+    brainslosher = device_trees["brainwasher"]
+
     # setup logging
     logging.config.dictConfig(dict(config.cfg["logging"]))
     
@@ -100,14 +106,14 @@ def main():
         record.project = "brainslosher"
         record.version = brainwasher.__version__
         record.comp_id = os.getenv("aibs_comp_id", "unknown")
+        
+        # set message prefix for log server readability
+        prefix = f"{brainslosher.config.instrument_name}: " if brainslosher.config.instrument_name else ""
+        record.msg = f"{prefix}{record.msg}"
         return record
     logging.setLogRecordFactory(record_factory)
-        
-    # Create the instrument.
-    device_specs = dict(config.cfg)
-    factory = DeviceSpinner()
-    device_trees = factory.create_devices_from_specs(device_specs["devices"])
-    brainslosher = device_trees["brainwasher"]
+
+    # start server
     server = ZMQServer(instances={"brainslosher":brainslosher}, **config.cfg.get("router_server_kwargs", {}))
     server.run()
 
