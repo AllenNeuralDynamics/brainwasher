@@ -90,14 +90,14 @@ def main():
     config_name = args.config if not args.simulated else r"src\brainwasher\scripts\sim_brainslosher_config.yaml"
     config = Config(config_name)    # TODO: Should have some sort of validation here 
     
+    # setup logging
+    logging.config.dictConfig(dict(config.cfg["logging"]))  # set logging config before instantiating devices to not clear loggers
+
     # Create the instrument.
     device_specs = dict(config.cfg)
     factory = DeviceSpinner()
     device_trees = factory.create_devices_from_specs(device_specs["devices"])
     brainslosher = device_trees["brainwasher"]
-
-    # setup logging
-    logging.config.dictConfig(dict(config.cfg["logging"]))
     
     # set up formating for log server
     old_factory = logging.getLogRecordFactory()

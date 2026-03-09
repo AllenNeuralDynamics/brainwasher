@@ -5,7 +5,7 @@ from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob,
 from brainwasher.devices.vessels import ReactionVessel, WasteVessel
 from threading import RLock, current_thread, Lock
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Literal, Union, Optional
 from pathlib import Path
 from time import perf_counter
@@ -281,7 +281,7 @@ class BrainSlosher(Instrument):
         self._step = 0 if not job.resume_state else job.resume_state.step
 
         try:
-            self.log.info("Job starting.")
+            self.log.info(f"Job starting. Job estimated finish at {timedelta(seconds=job.get_duration_s()) + datetime.now()}")
             with self.job_status_lock:
                 self.job_status = BrainSlosherJobStatus(status="running") 
             super()._run_job_worker(job, job_path)
@@ -318,7 +318,7 @@ class BrainSlosher(Instrument):
 
     def save_resume_state(self, job: BrainSlosherJob, resume_step: int, starting_solution: str, **kwargs):
         """
-            Save resume state of job. Overwrite since solution is string and startign solution is dict
+            Save resume state of job. Overwrite since solution is string and starting solution is dict
         """
         job.save_resume_state(resume_step, {starting_solution: self.config.fill_volume_ml*1000}, **kwargs)
 
