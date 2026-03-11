@@ -4,6 +4,6 @@
 ## Fixed Issues
 
 
-## TODOs
+## Merge Checklist
 * [ ] update the changelog
 * [ ] bump the version
