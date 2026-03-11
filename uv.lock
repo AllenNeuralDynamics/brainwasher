@@ -78,7 +78,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 brainslosher-group = [
     { name = "email-validator", specifier = ">=2.3.0" },
-    { name = "one-liner", git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git" },
+    { name = "one-liner", git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git?branch=main" },
     { name = "ticlib" },
 ]
 brainwasher-group = [
@@ -431,8 +431,8 @@ wheels = [
 
 [[package]]
 name = "one-liner"
-version = "0.1.1.dev1"
-source = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git#1d3e7592b150f3eaf7fd7276097e70072de830c9" }
+version = "0.1.1.dev2"
+source = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git?branch=main#22aa37370c3678726ebacb2f0a2e8ae263a94704" }
 dependencies = [
     { name = "orjson" },
     { name = "pydantic" },

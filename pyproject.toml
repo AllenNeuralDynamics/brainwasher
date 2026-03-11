@@ -53,7 +53,7 @@ pythonpath = ["src", "tests"]
 
 [tool.uv.sources]
 device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
-one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git" }
+one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", branch = "main"}
 runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "brain-slosher-fix" }
 pyharp = { git = "https://github.com/AllenNeuralDynamics/pyharp.git"  }
 vicivalve = { git = "https://gitlab.com/Poofjunior/vicivalve.git"}

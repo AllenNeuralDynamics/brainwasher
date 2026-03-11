@@ -1,18 +1,14 @@
 from brainwasher.devices.instruments.brainslosher import BrainSlosher
-from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob
 from brainwasher.utils.email_issues import send_email
 import logging
 import logging.config
 from one_liner.server import RouterServer
-from pathlib import Path
 import time
-from datetime import datetime
-from typing import Literal
-import queue
 import argparse
 from device_spinner.config import Config
 from device_spinner.device_spinner import DeviceSpinner
-import yaml
+import os
+import brainwasher
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -92,17 +88,33 @@ def main():
             handler.setLevel(args.log_level)
     
     config_name = args.config if not args.simulated else r"src\brainwasher\scripts\sim_brainslosher_config.yaml"
-    config = Config(config_name)
+    config = Config(config_name)    # TODO: Should have some sort of validation here 
     
     # setup logging
-    logging.config.dictConfig(dict(config.cfg["logging"]))
-        
+    logging.config.dictConfig(dict(config.cfg["logging"]))  # set logging config before instantiating devices to not clear loggers
+
     # Create the instrument.
     device_specs = dict(config.cfg)
     factory = DeviceSpinner()
     device_trees = factory.create_devices_from_specs(device_specs["devices"])
     brainslosher = device_trees["brainwasher"]
-    server = ZMQServer(instances={"brainslosher":brainslosher})
+    
+    # set up formating for log server
+    old_factory = logging.getLogRecordFactory()
+    def record_factory(*args, **kwargs):
+        record = old_factory(*args, **kwargs)
+        record.project = "brainslosher"
+        record.version = brainwasher.__version__
+        record.comp_id = os.getenv("aibs_comp_id", "unknown")
+        
+        # set message prefix for log server readability
+        prefix = f"{brainslosher.config.instrument_name}: " if brainslosher.config.instrument_name else ""
+        record.msg = f"{prefix}{record.msg}"
+        return record
+    logging.setLogRecordFactory(record_factory)
+
+    # start server
+    server = ZMQServer(instances={"brainslosher":brainslosher}, **config.cfg.get("router_server_kwargs", {}))
     server.run()
 
     while not server.context.closed:

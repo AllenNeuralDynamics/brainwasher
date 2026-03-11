@@ -53,6 +53,9 @@ logging:
             - console
             - file
             #- web_handler
+router_server_kwargs:
+    rpc_port: 5555
+    broadcast_port: 5556
 devices:
     selector_port_map:
         class: builtins.dict
