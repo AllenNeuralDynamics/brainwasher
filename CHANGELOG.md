@@ -3,6 +3,10 @@
 # main
 * Rework Brainslosher `run_wash_step` function to drain -> fill -> mix, similar to the Brainwasher's `run_wash_step` function.
 
+# v0.3.0
+* Drains chamber in thread in initialization function to unblock interaction during draining
+
+
 # v0.1.0
 * Tease out common functionality from brainwasher class into a base `Instrument` class.
 * Create Brainslosher class deriving from base `Instrument` class
