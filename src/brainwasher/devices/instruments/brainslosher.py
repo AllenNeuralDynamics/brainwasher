@@ -3,7 +3,7 @@ from runze_control.multichannel_syringe_pump import SY01B
 from brainwasher.devices.pololu.pololu_tic_mixer import PololuTicMixer
 from brainwasher.brainslosher_models import BrainSlosherConfig, BrainSlosherJob, BrainSlosherJobStatus
 from brainwasher.devices.vessels import ReactionVessel, WasteVessel
-from threading import RLock, current_thread, Lock
+from threading import RLock, current_thread, Lock, Thread
 from functools import wraps
 from datetime import datetime, timedelta
 from typing import Literal, Union, Optional
@@ -53,8 +53,9 @@ class BrainSlosher(Instrument):
         self.pump.move_valve_to_position(self.config.selector_port_map["waste"])
         self.pump.reset_syringe_position()
 
-        # drain chamber completley to put instrument in known state
-        self.drain_chamber(self.config.fill_volume_ml)
+        # drain chamber completley to put instrument in known state.
+        # execute long running task in thread 
+        Thread(target=self.drain_chamber, args=[self.config.fill_volume_ml]).start()
 
         # attribute to track events that occur in job_worker
         self.job_status_lock = Lock()
