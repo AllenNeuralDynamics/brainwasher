@@ -160,7 +160,7 @@ class BrainSlosher(Instrument):
         self.rxn_vessel.add_solution(**{solution:volume_ml * 1000})
         self.withdraw_and_dispense_solution(solution, volume_ml, 'chamber')
 
-    
+    @lock_flowpath    
     def drain_chamber(self, volume_ml: float = None) -> None:
         """
         Drain chamber
