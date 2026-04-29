@@ -5,11 +5,13 @@ from time import sleep
 
 # Uncomment for some prolific log statements.
 import logging
+
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 logger.handlers[-1].setFormatter(
-   logging.Formatter(fmt='%(asctime)s:%(levelname)s: %(message)s'))
+    logging.Formatter(fmt="%(asctime)s:%(levelname)s: %(message)s")
+)
 
 
 stir_plate = RCTBasic("/dev/ttyACM0")
@@ -22,8 +24,8 @@ print()
 rpm = 600
 print(f"set stir speed to {rpm} [rpm]")
 stir_plate.set_stir_speed(rpm)
-print(f"Enabling stirring.")
+print("Enabling stirring.")
 stir_plate.enable_stirring()
 sleep(3.0)
-print(f"Disabling stirring.")
+print("Disabling stirring.")
 stir_plate.disable_stirring()

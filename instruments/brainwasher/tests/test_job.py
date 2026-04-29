@@ -1,5 +1,5 @@
-from brainwasher.brainwasher_job import BrainwasherJob as Job
-from brainwasher.brainwasher_job import WashStep
+from instruments.brainwasher.src.brainwasher.brainwasher_job import BrainwasherJob as Job
+from instruments.brainwasher.src.brainwasher.brainwasher_job import WashStep
 
 
 def make_dummy_job():

@@ -1,12 +1,14 @@
-"commands for IKA RCT Basic device."""
+"commands for IKA RCT Basic device."
 
 from enum import Enum
 
 try:
-    from enum import StrEnum # 3.11+
+    from enum import StrEnum  # 3.11+
 except ImportError:
+
     class StrEnum(str, Enum):
         pass
+
 
 class Cmd(StrEnum):
     """Stirrer/Heater commands."""
@@ -44,7 +46,6 @@ class OperatingMode(StrEnum):
 
 
 class ErrorCode(StrEnum):
-
     WatchdogError = "E2"
     InternalTemperatureExceeded = "E3"
     MotorControlUnavailable = "E4"
@@ -60,4 +61,3 @@ class ErrorCode(StrEnum):
     HeaterSwitchFault = "E31"
     HotplateSafetyTempExceedsSetSafetyTemp = "E44"
     PlateSafetyTempExceedsPlateTemperature = "E46"  # ?
-

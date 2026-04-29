@@ -5,9 +5,8 @@ from dataclasses import dataclass, field
 
 @dataclass(kw_only=True)
 class Vessel:
-
     name: str
-    max_volume_ul: float   # Max volume until the vessel is considered "filled."
+    max_volume_ul: float  # Max volume until the vessel is considered "filled."
     solution: dict = field(default_factory=dict)
 
     @property
@@ -33,5 +32,4 @@ class ReactionVessel(Vessel):
 
 @dataclass(kw_only=True)
 class WasteVessel(Vessel):
-
     compatible_chemicals: set = field(default_factory=set)

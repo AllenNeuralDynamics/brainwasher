@@ -2,8 +2,6 @@
 
 import logging
 import pandas as pd
-import re
-from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 from pint import UnitRegistry
@@ -41,7 +39,7 @@ class Protocol:
 
     def get_duration_s(self, step: int):
         """Return the duration in seconds"""
-        return self.ureg(self.df.loc[step, "Duration"]).to('seconds').m
+        return self.ureg(self.df.loc[step, "Duration"]).to("seconds").m
 
     def get_mix_speed_percent(self, step: int):
         parsed_mix_speed = self.ureg(self.df.loc[step, "Mix Speed"])
@@ -61,7 +59,7 @@ class Protocol:
         chemicals = self.get_chemicals(step)
         all_chemicals = self.get_chemicals()
         # Parse string for volume fraction.
-        qty_words = [q.strip() for q in solution_str.split(',')]
+        qty_words = [q.strip() for q in solution_str.split(",")]
         for qty_word in qty_words:
             found_chemical = None
             qty = None
@@ -71,18 +69,21 @@ class Protocol:
                     qty = self.ureg(qty_word.rstrip(chemical))
                     # Convert 'amount' to microliters.
                     if type(qty) != self.ureg.Quantity:
-                        raise ValueError("Solution specification for step "
-                                         f"{step} has no units!")
+                        raise ValueError(
+                            f"Solution specification for step {step} has no units!"
+                        )
                     if qty.units == self.ureg.percent:
-                        ul = float((qty.magnitude / 100.) * max_volume_ul)
+                        ul = float((qty.magnitude / 100.0) * max_volume_ul)
                     else:
-                        ul = float(qty.to('uL').magnitude)
+                        ul = float(qty.to("uL").magnitude)
                     solution[chemical] = ul
             if not all([found_chemical, qty]):
-                raise RuntimeError(f"Cannot parse solution on step {step}: {solution_str}")
+                raise RuntimeError(
+                    f"Cannot parse solution on step {step}: {solution_str}"
+                )
         # TODO: Infer remaining percents if any are missing.
         ## If any quantities are specified as a percent, infer any missing qty.
-        #if any([i.units == self.ureg.percent for i in solution.values()]):
+        # if any([i.units == self.ureg.percent for i in solution.values()]):
         #    print("found percent!!")
         return solution
 
@@ -99,6 +100,3 @@ class Protocol:
             # Validate solution spec as "all percent" or "all volume-based"
             # Lazy way: iterate through all function calls and cache everything.
             self.get_solution(index, max_volume_ul)
-
-
-

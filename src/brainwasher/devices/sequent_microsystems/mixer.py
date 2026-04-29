@@ -7,8 +7,9 @@ import lib8mosind
 class OnOffMixer(Mixer):
     """An open loop mixing device."""
 
-    def __init__(self, board_address: int, channel: int,
-                 max_rpm: float, name: str = None):
+    def __init__(
+        self, board_address: int, channel: int, max_rpm: float, name: str = None
+    ):
         super().__init__(max_rpm=max_rpm, name=name)
         self.board_address = board_address
         self.channel = channel
@@ -25,8 +26,14 @@ class OnOffMixer(Mixer):
 class PWMMixer(Mixer):
     """An open loop mixing device."""
 
-    def __init__(self, board_address: int, channel: int, max_rpm: float,
-                 invert: bool = False, name: str = None):
+    def __init__(
+        self,
+        board_address: int,
+        channel: int,
+        max_rpm: float,
+        invert: bool = False,
+        name: str = None,
+    ):
         super().__init__(max_rpm=max_rpm, name=name)
         self.board_address = board_address
         self.channel = channel
@@ -41,7 +48,7 @@ class PWMMixer(Mixer):
 
     def set_mixing_speed(self, rpm: float):
         super().set_mixing_speed(rpm)
-        duty_cycle = min(rpm/self.max_rpm * 100, 100)  # Set value in percent
+        duty_cycle = min(rpm / self.max_rpm * 100, 100)  # Set value in percent
         self.duty_cycle = duty_cycle
 
     def start_mixing(self):

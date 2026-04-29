@@ -15,7 +15,6 @@ DEAD_TIME_S = 0.01
 
 
 class NCValve(BaseNCValve, BaseSolenoidValve):
-
     def __init__(self, board_address: int, channel: int, name: str = None):
         super().__init__(name=name)
         self.board_address = board_address
@@ -43,7 +42,6 @@ class NCValve(BaseNCValve, BaseSolenoidValve):
 
 
 class ThreeTwoValve(BaseThreeTwoValve, BaseSolenoidValve):
-
     def __init__(self, board_address: int, channel: int, name: str = None):
         super().__init__(name=name)
         self.board_address = board_address
@@ -65,9 +63,9 @@ class ThreeTwoValve(BaseThreeTwoValve, BaseSolenoidValve):
         sleep(DEAD_TIME_S)
 
     def select_way(self, way: Union[int, str]):
-        if way in ['A', 0]:
+        if way in ["A", 0]:
             self.energize()
-        elif way in ['B', 1]:
+        elif way in ["B", 1]:
             self.deenergize()
         else:
             raise ValueError("Invalid argument.")

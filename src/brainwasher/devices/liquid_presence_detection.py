@@ -12,5 +12,6 @@ class BooleanLiquidDetectionSensor:
 class BubbleDetectionSensor(BooleanLiquidDetectionSensor):
     pass
 
+
 class LeakDetectionSensor(BooleanLiquidDetectionSensor):
     pass

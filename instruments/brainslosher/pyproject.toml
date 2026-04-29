@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brainslosher"
+version = "0.3.0"
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+   "brainwasher>=8.3.5",
+   "runze-control",
+   "pydantic>=2.11.4",
+   "datetime>=5.5",
+   "pyyaml>=6.0.2",
+   "pydantic-settings>=2.12.0",
+    "one-liner",
+    "ticlib",
+    "email-validator>=2.3.0",
+]
+
+[project.scripts]
+brainslosher = "brainslosher.scripts.brainslosher_main:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5","ruff>=0.9.9"
+    ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+
+[tool.uv.sources]
+brainwasher = { workspace = true }
+one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", branch = "main"}
+runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "brain-slosher-fix" }
+

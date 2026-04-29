@@ -1,17 +1,15 @@
 """Simulated Selector"""
+
 import logging
 
 
-
-
 class SimSyringePump:
-
     def __init__(self, syringe_volume_ul: int, name: str = None):
         logger_name = self.__class__.__name__ + (f".{name}" if name else "")
         self.log = logging.getLogger(logger_name)
-        self.syringe_volume_ul = syringe_volume_ul # more of a "capacity."
+        self.syringe_volume_ul = syringe_volume_ul  # more of a "capacity."
         self.curr_volume_ul = 0
-        self.speed_percent = 100.
+        self.speed_percent = 100.0
 
     def reset_syringe_position(self):
         pass
@@ -27,12 +25,11 @@ class SimSyringePump:
         return self.curr_volume_ul
 
     def get_position_percent(self):
-        return 100. * self.curr_volume_ul/self.syringe_volume_ul
-
+        return 100.0 * self.curr_volume_ul / self.syringe_volume_ul
 
     def move_absolute_in_percent(self, percent: float, wait: bool = True):
         self.log.debug(f"Moving plunger to {percent}% full scale range")
-        self.curr_volume_ul = percent/100. * self.syringe_volume_ul
+        self.curr_volume_ul = percent / 100.0 * self.syringe_volume_ul
 
     def withdraw(self, microliters, wait: bool = True):
         if not wait:
@@ -47,6 +44,6 @@ class SimSyringePump:
 
     def is_busy(self):
         return False
-    
-    def move_valve_to_position(self, solution:str):
+
+    def move_valve_to_position(self, solution: str):
         pass

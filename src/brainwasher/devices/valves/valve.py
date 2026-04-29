@@ -1,11 +1,11 @@
 """Generic Valve Base Class"""
+
 import logging
 
 from typing import Union
 
 
 class Valve:
-
     def __init__(self, name: str = None):
         logger_name = self.__class__.__name__ + (f".{name}" if name else "")
         self.log = logging.getLogger(logger_name)
@@ -40,7 +40,6 @@ class NOValve(IsolationValve):
 
 
 class NCSolenoidValve(NCValve, SolenoidValve):
-
     def open(self):
         self.energize()
 
@@ -49,7 +48,6 @@ class NCSolenoidValve(NCValve, SolenoidValve):
 
 
 class NOSolenoidValve(NOValve, SolenoidValve):
-
     def open(self):
         self.deenergize()
 
@@ -63,6 +61,7 @@ class ThreeTwoValve(Valve):
     def select_way(self, way: Union[int, str]):
         """Select way 'A' (0) or 'B' (1)."""
         raise NotImplementedError
+
 
 class ThreeTwoSolenoidValve(SolenoidValve):
     pass

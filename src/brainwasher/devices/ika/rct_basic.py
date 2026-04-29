@@ -1,8 +1,8 @@
 """TigerController Serial Port Abstraction"""
+
 from brainwasher.devices.ika.rct_basic_device_codes import *
-from enum import Enum
 from serial import Serial, SerialException
-from time import sleep, perf_counter
+from time import perf_counter
 from typing import Union
 import logging
 
@@ -28,14 +28,15 @@ class RCTBasic:
         self.log = logging.getLogger(__name__)
         self.skipped_replies = 0
         try:
-            self.ser = Serial(com_port, RCTBasic.BAUD_RATE,
-                              timeout=RCTBasic.TIMEOUT)
+            self.ser = Serial(com_port, RCTBasic.BAUD_RATE, timeout=RCTBasic.TIMEOUT)
             self.ser.reset_input_buffer()
             self.ser.reset_output_buffer()
-        except SerialException as e:
-            logging.error("Error: could not open connection to the RCT Basic"
-                  "device. Is the device plugged in and powered on? Is "
-                  "another program using it?")
+        except SerialException:
+            logging.error(
+                "Error: could not open connection to the RCT Basic"
+                "device. Is the device plugged in and powered on? Is "
+                "another program using it?"
+            )
             raise
         self._last_cmd_send_time = perf_counter()
 
@@ -85,18 +86,16 @@ class RCTBasic:
         msg_termination = "\r\n"
 
         self.log.debug(f"Sending: {repr(cmd_str)}")
-        self.ser.write(cmd_str.encode('ascii'))
+        self.ser.write(cmd_str.encode("ascii"))
         self._last_cmd_send_time = perf_counter()
         while self.ser.out_waiting:
             pass
-        reply = \
-            self.ser.read_until(msg_termination.encode("ascii")).decode("utf8")
+        reply = self.ser.read_until(msg_termination.encode("ascii")).decode("utf8")
         self.log.debug(f"Reply: {repr(reply)}")
         try:
             self._check_reply_for_errors(reply)
-        except RuntimeError as e:
-            self.log.error("Error occurred when sending: "
-                           f"{repr(cmd_str)}")
+        except RuntimeError:
+            self.log.error(f"Error occurred when sending: {repr(cmd_str)}")
             raise
         return reply
 
@@ -117,9 +116,10 @@ class RCTBasic:
     def _check_reply_for_errors(reply: str):
         try:
             # Try to convert the reply to Error code enum.
-            error_enum = ErrorCode(reply.rstrip('\r\n'))
-            raise RuntimeError("Error: device replied with error code "
-                               f"{error_num.name}, code: {error_num.value}.")
+            error_enum = ErrorCode(reply.rstrip("\r\n"))
+            raise RuntimeError(
+                "Error: device replied with error code "
+                f"{error_num.name}, code: {error_num.value}."
+            )
         except ValueError:
             pass
-

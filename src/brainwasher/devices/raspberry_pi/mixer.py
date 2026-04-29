@@ -4,31 +4,32 @@ from brainwasher.devices.mixer import PWMMixer
 from rpi_hardware_pwm import HardwarePWM
 
 
-
 class PWMMixer(PWMMixer):
     """An open loop mixing device."""
-    PI5_GPIO_PIN_TO_CHANNEL = \
-    {
-        12: 0,
-        13: 1,
-        18: 2,
-        19: 3
-    }
 
-    def __init__(self, gpio_pin: str, frequency_hz: float = 20000,
-                 min_rpm: float = 333., max_rpm: float = 6000.,
-                 min_duty_cycle_percent: float = 40,
-                 max_duty_cycle_percent: float = 100,
-                 name: str = None):
+    PI5_GPIO_PIN_TO_CHANNEL = {12: 0, 13: 1, 18: 2, 19: 3}
+
+    def __init__(
+        self,
+        gpio_pin: str,
+        frequency_hz: float = 20000,
+        min_rpm: float = 333.0,
+        max_rpm: float = 6000.0,
+        min_duty_cycle_percent: float = 40,
+        max_duty_cycle_percent: float = 100,
+        name: str = None,
+    ):
         self.pwm_chan = self.__class__.PI5_GPIO_PIN_TO_CHANNEL[gpio_pin]
-        self.pwm = HardwarePWM(pwm_channel=self.pwm_chan, hz=frequency_hz,
-                               chip=0)
+        self.pwm = HardwarePWM(pwm_channel=self.pwm_chan, hz=frequency_hz, chip=0)
         self.duty_cycle_percent = 0
-        super().__init__(min_rpm=min_rpm, max_rpm=max_rpm,
-                         frequency_hz=frequency_hz,
-                         min_duty_cycle_percent=min_duty_cycle_percent,
-                         max_duty_cycle_percent=max_duty_cycle_percent,
-                         name=name)
+        super().__init__(
+            min_rpm=min_rpm,
+            max_rpm=max_rpm,
+            frequency_hz=frequency_hz,
+            min_duty_cycle_percent=min_duty_cycle_percent,
+            max_duty_cycle_percent=max_duty_cycle_percent,
+            name=name,
+        )
 
     def _set_mixing_speed(self, rpm: float):
         # Point Slope Formula. Convert RPM to duty cycle.
@@ -43,12 +44,9 @@ class PWMMixer(PWMMixer):
 
 
 if __name__ == "__main__":
-    from time import sleep
-
-    mixer = PWMMixer(18, 20000,
-                     333, 6000, 40, 100)
+    mixer = PWMMixer(18, 20000, 333, 6000, 40, 100)
     mixer.set_mixing_speed(6000)
     mixer.start_mixing()
-    #sleep(1)
+    # sleep(1)
     input()
     mixer.stop_mixing()

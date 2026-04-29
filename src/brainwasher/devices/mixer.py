@@ -1,9 +1,9 @@
 """Generic Base Class Mixer"""
+
 import logging
 
 
 class Mixer:
-
     def __init__(self, max_rpm: float, min_rpm: float = 0, name: str = None):
         logger_name = self.__class__.__name__ + (f".{name}" if name else "")
         self.log = logging.getLogger(logger_name)
@@ -12,16 +12,14 @@ class Mixer:
         self.rpm = 0
 
     def percent_to_rpm(self, percent: float):
-        return ((percent - self.percent_range[0])
-                / (self.percent_range[1] - self.percent_range[0])
-                * (self.rpm_range[1] - self.rpm_range[0])
-                + self.rpm_range[0])
+        return (percent - self.percent_range[0]) / (
+            self.percent_range[1] - self.percent_range[0]
+        ) * (self.rpm_range[1] - self.rpm_range[0]) + self.rpm_range[0]
 
     def rpm_to_percent(self, rpm: float):
-        return ((rpm - self.rpm_range[0])
-                / (self.rpm_range[1] - self.rpm_range[0])
-                * (self.percent_range[1] - self.percent_range[0])
-                + self.percent_range[0])
+        return (rpm - self.rpm_range[0]) / (self.rpm_range[1] - self.rpm_range[0]) * (
+            self.percent_range[1] - self.percent_range[0]
+        ) + self.percent_range[0]
 
     def set_mixing_speed_percent(self, percent: float):
         # Clamp percent
@@ -83,15 +81,19 @@ class SimulatedMixer(Mixer):
     def _set_mixing_speed(self, rpm: float):
         pass
 
+
 class PWMMixer(Mixer):
     """An open loop mixing device."""
 
-    def __init__(self, max_rpm: float,
-                 min_rpm: float = 0,
-                 frequency_hz: float = 20000,
-                 min_duty_cycle_percent: float = 0,
-                 max_duty_cycle_percent: float = 100,
-                 name: str = None):
+    def __init__(
+        self,
+        max_rpm: float,
+        min_rpm: float = 0,
+        frequency_hz: float = 20000,
+        min_duty_cycle_percent: float = 0,
+        max_duty_cycle_percent: float = 100,
+        name: str = None,
+    ):
         """Init. Note that some configurations have a minimum (nonzero) signal
         value that corresponds to a minimum rpm and a maximum signal value
         different from 100% that corresponds to the maximum rpm.

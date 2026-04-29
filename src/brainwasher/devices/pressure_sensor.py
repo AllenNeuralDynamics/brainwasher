@@ -2,7 +2,6 @@
 
 
 class PressureSensor:
-
     def get_pressure_psig(self):
         raise NotImplementedError
 

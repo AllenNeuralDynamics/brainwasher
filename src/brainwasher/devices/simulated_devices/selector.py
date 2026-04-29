@@ -1,10 +1,10 @@
 """Simulated Selector"""
+
 import logging
 from typing import Union
 
 
 class SimSelector:
-
     def __init__(self, positions: int, position_map: dict = None, name: str = None):
         logger_name = self.__class__.__name__ + (f".{name}" if name else "")
         self.log = logging.getLogger(logger_name)
@@ -17,9 +17,7 @@ class SimSelector:
 
 
 class SimCloseableSelector(SimSelector):
-
-    def __init__(self, port_count: int, port_map: dict = None,
-                 name: str = None):
+    def __init__(self, port_count: int, port_map: dict = None, name: str = None):
         self.port_count = port_count
         self.port_map = port_map
         super().__init__(positions=port_count, position_map=port_map, name=name)

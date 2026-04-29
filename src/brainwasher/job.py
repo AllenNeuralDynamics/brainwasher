@@ -1,16 +1,16 @@
 """pydantic model of job instance of protocol"""
 
 from pathlib import Path
-from pydantic import BaseModel, computed_field, field_serializer, model_serializer, Field
+from pydantic import BaseModel, field_serializer
 
 from datetime import datetime, timezone
 from functools import cached_property
-from typing import Optional, Any, Literal, Union
-import logging
+from typing import Optional, Literal
 
 
 class SourceProtocol(BaseModel):
     """Path denoting the job or protocol that this job was generated from."""
+
     path: Optional[Path] = None
     accessed: Optional[datetime] = None
 
@@ -30,7 +30,7 @@ class Event(BaseModel):
 
 
 class StartEvent(Event):
-    type: Literal["start"] = "start" # TODO: how to make this fixed.
+    type: Literal["start"] = "start"  # TODO: how to make this fixed.
 
 
 class FinishEvent(Event):
@@ -48,9 +48,9 @@ class ResumeEvent(Event):
 class RestartEvent(Event):
     pass
 
+
 class ResumeState(BaseModel):
     pass
-
 
 
 class History(BaseModel):
@@ -59,6 +59,7 @@ class History(BaseModel):
 
 class Job(BaseModel):
     """Local job, derived from a protocol, to be run on an instrument."""
+
     name: str
     starting_solution: dict[str, float]
     source_protocol: Optional[SourceProtocol] = SourceProtocol()
@@ -73,8 +74,9 @@ class Job(BaseModel):
     @cached_property
     def chemicals(self) -> set[str]:
         """Extract set of chemicals from all solutions across all steps"""
-        step_components = set([chemical for step in self.protocol
-                          for chemical in step.components])
+        step_components = set(
+            [chemical for step in self.protocol for chemical in step.components]
+        )
         # Include starting solution chemicals.
         return step_components | set(self.starting_solution.keys())
 
@@ -98,10 +100,11 @@ class Job(BaseModel):
         timestamp = timestamp if timestamp else datetime.now(timezone.utc)
         self.history.events.append(ResumeEvent(timestamp=timestamp))
 
-    def save_resume_state(self, step: int, starting_solution: dict[str, float],
-                          **overrides: dict):
+    def save_resume_state(
+        self, step: int, starting_solution: dict[str, float], **overrides: dict
+    ):
         raise NotImplementedError()
-        
+
     def clear_resume_state(self):
         self.resume_state = None
 
@@ -109,9 +112,10 @@ class Job(BaseModel):
         self.history = History()
 
     def set_source_protocol(self, path: Path, access_timestamp: datetime = None):
-        access_timestamp = access_timestamp if access_timestamp else datetime.now(timezone.utc)
-        self.source_protocol = SourceProtocol(path=path,
-                                              accessed=access_timestamp)
+        access_timestamp = (
+            access_timestamp if access_timestamp else datetime.now(timezone.utc)
+        )
+        self.source_protocol = SourceProtocol(path=path, accessed=access_timestamp)
 
     def model_dump(self, **kwargs):
         """Override model dump to always exclude empty resume_state since this field
