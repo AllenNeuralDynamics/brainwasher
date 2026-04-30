@@ -3,6 +3,10 @@
 # main
 * Rework Brainslosher `run_wash_step` function to drain -> fill -> mix, similar to the Brainwasher's `run_wash_step` function.
 
+# v1.0.0
+* Refactors structure to have instruments as uv workspaces
+* Renames project to mixology
+
 # v0.3.0
 * Drains chamber in thread in initialization function to unblock interaction during draining
 
