@@ -105,7 +105,7 @@ devices:
             max_volume_ul: 250000
             compatible_chemicals: !!set {dcm}
     mixer:
-        class: brainwasher.devices.raspberry_pi.mixer.PWMMixer
+        class: brainwasher.devices.raspberry_pi.mixer.RaspberryPiPWMMixer
         kwds:
             gpio_pin: 18
             min_rpm: 333

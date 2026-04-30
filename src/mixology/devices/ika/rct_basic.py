@@ -1,6 +1,6 @@
 """TigerController Serial Port Abstraction"""
 
-from brainwasher.devices.ika.rct_basic_device_codes import *
+from mixology.devices.ika.rct_basic_device_codes import *
 from serial import Serial, SerialException
 from time import perf_counter
 from typing import Union

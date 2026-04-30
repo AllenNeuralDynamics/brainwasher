@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from brainwasher.devices.ika.rct_basic import RCTBasic
+from mixology.devices.ika.rct_basic import RCTBasic
 from time import sleep
 
 # Uncomment for some prolific log statements.

@@ -2,7 +2,7 @@
 
 import logging
 
-from brainwasher.devices.pressure_sensor import PressureSensor
+from mixology.devices.pressure_sensor import PressureSensor
 
 
 class SimPressureSensor(PressureSensor):

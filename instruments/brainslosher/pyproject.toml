@@ -9,15 +9,16 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-   "brainwasher>=8.3.5",
+   "mixology",
+   "device-spinner",
    "runze-control",
    "pydantic>=2.11.4",
    "datetime>=5.5",
    "pyyaml>=6.0.2",
    "pydantic-settings>=2.12.0",
-    "one-liner",
-    "ticlib",
-    "email-validator>=2.3.0",
+   "one-liner",
+   "email-validator>=2.3.0",
+
 ]
 
 [project.scripts]
@@ -32,7 +33,8 @@ dev = [
 pythonpath = ["src", "tests"]
 
 [tool.uv.sources]
-brainwasher = { workspace = true }
+mixology = { workspace = true }
 one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", branch = "main"}
-runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "brain-slosher-fix" }
+runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "fix-dynamic-version" }
+device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
 

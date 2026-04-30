@@ -1,6 +1,6 @@
 """Liquid Detection Sensor abstraction on top of Sequent Microsystems 16-input board"""
 
-from brainwasher.devices.pressure_sensor import PressureSensor as BasePressureSensor
+from mixology.devices.pressure_sensor import PressureSensor as BasePressureSensor
 import lib16univin
 
 

@@ -54,7 +54,7 @@ logging:
             - web_handler
 devices:
     config: 
-      class: brainwasher.brainslosher_models.BrainSlosherConfig
+      class: brainslosher.brainslosher_models.BrainSlosherConfig
       kwds:
         selector_port_map:
             air: 4
@@ -67,29 +67,29 @@ devices:
         fill_volume_ml: 10 
         instrument_name: Simulated Brainslosher
     rxn_vessel:
-        class: brainwasher.devices.vessels.ReactionVessel
+        class: mixology.devices.vessels.ReactionVessel
         skip_kwds: [name]
         kwds:
             max_volume_ul: 50000
             name: reaction_vessel
     waste_vessel:
-        factory: brainwasher.devices.vessels.WasteVessel
+        factory: mixology.devices.vessels.WasteVessel
         kwds:
             max_volume_ul: 50000
             name: waste_vessel
     pump:
-        class: brainwasher.devices.simulated_devices.syringe_pump.SimSyringePump
+        class: mixology.devices.simulated_devices.syringe_pump.SimSyringePump
         kwds:
             name: "sim" 
             syringe_volume_ul: 5000
     mixer:
-        class: brainwasher.devices.mixer.SimulatedMixer
+        class: mixology.devices.mixer.SimulatedMixer
         kwds:
             max_rpm:  500
     
 # Full System:
-    brainwasher:
-        class: brainwasher.devices.instruments.brainslosher.BrainSlosher
+    brainslosher:
+        class: brainslosher.brainslosher.BrainSlosher
         kwds:
             config: config
             pump: pump

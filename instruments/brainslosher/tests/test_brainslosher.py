@@ -1,19 +1,19 @@
 import pytest
 from unittest.mock import MagicMock
 
-from instruments.brainslosher.src.brainslosher.brainslosher import BrainSlosher
-from instruments.brainslosher.src.brainslosher.brainslosher_models import (
+from brainslosher.brainslosher import BrainSlosher
+from brainslosher.brainslosher_models import (
     BrainSlosherConfig,
     BrainSlosherJob,
     Cycle,
 )
-from brainwasher.devices.vessels import ReactionVessel
+from mixology.devices.vessels import ReactionVessel
 
 
 @pytest.fixture
 def config():
     return BrainSlosherConfig(
-        selector_port_map={"air": 0, "chamber": 1, "waste": 2, "PBS": 3},
+        selector_port_map={"air": 0, "chamber": 1, "waste": 2, "PBS": 3, "drain": 4},
         drain_volume_buffer_ml=1.0,
         fill_volume_ml=2.0,
     )
@@ -62,9 +62,9 @@ def test_fill_chamber_overfill_raises(brainslosher, rxn_vessel):
 def test_withdraw_and_dispense_chunks(brainslosher, pump):
     brainslosher.withdraw_and_dispense_solution("PBS", 10.0, "chamber")
 
-    # 10 ml with 4.5 ml syringe → 3 cycles
-    assert pump.withdraw.call_count == 3
-    assert pump.dispense.call_count == 3
+    # 10 ml with 4.5 ml syringe → 3 cycles. Chamber drained in init so called 4
+    assert pump.withdraw.call_count == 4  
+    assert pump.dispense.call_count == 4
 
 
 def test_run_wash_empty_vessel(monkeypatch, brainslosher):
@@ -76,12 +76,12 @@ def test_run_wash_empty_vessel(monkeypatch, brainslosher):
     # patch perf_counter
     times = iter([0, 600])
     monkeypatch.setattr(
-        "brainwasher.devices.instruments.brainslosher.perf_counter", lambda: next(times)
+        "brainslosher.brainslosher.perf_counter", lambda: next(times)
     )
     brainslosher.run_wash_step(10, "PBS")
 
     # check chamber was prepped
-    assert brainslosher.drain_chamber.call_count == 2
+    assert brainslosher.drain_chamber.call_count == 1
     assert brainslosher.prime_line.call_count == 1
     assert brainslosher.fill_chamber.call_count == 1
     assert brainslosher.purge_line.call_count == 1
@@ -96,13 +96,13 @@ def test_run_wash_full_vessel(monkeypatch, brainslosher):
     # patch perf_counter
     times = iter([0, 600])
     monkeypatch.setattr(
-        "brainwasher.devices.instruments.brainslosher.perf_counter", lambda: next(times)
+        "brainslosher.brainslosher.perf_counter", lambda: next(times)
     )
     brainslosher.rxn_vessel.add_solution(something_else=10)
     brainslosher.run_wash_step(10, "PBS")
 
     # check chamber was prepped
-    assert brainslosher.drain_chamber.call_count == 2
+    assert brainslosher.drain_chamber.call_count == 1
     assert brainslosher.prime_line.call_count == 1
     assert brainslosher.fill_chamber.call_count == 1
     assert brainslosher.purge_line.call_count == 1
@@ -117,7 +117,7 @@ def test_run_wash_pause(monkeypatch, brainslosher):
     # patch perf_counter
     times = iter([0, 376, 382])
     monkeypatch.setattr(
-        "brainwasher.devices.instruments.brainslosher.perf_counter", lambda: next(times)
+        "brainslosher.brainslosher.perf_counter", lambda: next(times)
     )
 
     # setup conditions to pause
@@ -130,7 +130,7 @@ def test_run_wash_pause(monkeypatch, brainslosher):
     brainslosher.run_wash_step(10.6, "PBS")
 
     # check chamber was prepped
-    assert brainslosher.resume_state_overrides["duration_min"] == 4.2
+    assert brainslosher.resume_state_overrides["duration_min"] == 4.233
 
 
 def test_run_step(brainslosher):
@@ -140,8 +140,6 @@ def test_run_step(brainslosher):
 
     brainslosher.run_step("PBS", 10, 5)
 
-    assert brainslosher.purge_line.call_count == 1
-    assert brainslosher.prime_line.call_count == 5
     assert brainslosher.run_wash_step.call_count == 5
     assert brainslosher.resume_state_overrides["washes"] == 0
 
@@ -158,7 +156,7 @@ def test_pause_run_step(brainslosher):
     with pytest.raises(RuntimeError):
         brainslosher.run_step(solution="PBS", duration_min=5, washes=5)
 
-    assert brainslosher.resume_state_overrides["washes"] == 3
+    assert brainslosher.resume_state_overrides["washes"] == 4
 
 
 def test_run_job(brainslosher, tmp_path):

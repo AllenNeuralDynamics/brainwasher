@@ -1,4 +1,4 @@
-from instruments.brainslosher.src.brainslosher.brainslosher_models import (
+from brainslosher.brainslosher_models import (
     BrainSlosherConfig,
 )
 import pytest

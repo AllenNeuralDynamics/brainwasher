@@ -7,7 +7,7 @@
 from os.path import dirname, abspath
 from pathlib import Path
 from datetime import date
-from brainwasher import __version__ as package_version
+from mixology import __version__ as package_version
 
 INSTITUTE_NAME = "Allen Institute for Neural Dynamics"
 

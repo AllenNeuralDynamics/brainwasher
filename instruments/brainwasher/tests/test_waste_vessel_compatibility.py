@@ -1,11 +1,18 @@
 from device_spinner.device_spinner import DeviceSpinner
 from device_spinner.config import Config
 from pathlib import Path
+import sys
+from unittest.mock import MagicMock
 
+# Create a dummy fcntl module for Windows
+if sys.platform == 'win32':
+    sys.modules['fcntl'] = MagicMock()
+    sys.modules['smbus2'] = MagicMock()
+    sys.modules['lib8mosind'] = MagicMock()
 
-import instruments.brainwasher.src.brainwasher.brainwasher
+import brainwasher.brainwasher
 
-instruments.brainwasher.src.brainwasher.brainwasher.SIMULATED = True
+brainwasher.brainwasher.SIMULATED = True
 
 
 def get_simulated_brainwasher():
@@ -14,7 +21,7 @@ def get_simulated_brainwasher():
     # This is kinda clunky and doesn't support dynamically changing fields or
     # where or not the high-level brainwaser is considred SIMULATED.
     pkg_dir = Path(__file__).parent.parent
-    cfg_file = pkg_dir / Path("bin") / Path("sim_instrument_config.yaml")
+    cfg_file = pkg_dir / Path("src/brainwasher/scripts") /Path("sim_instrument_config.yaml")
     if not cfg_file.exists():
         raise FileNotFoundError(
             f"Cannot find {cfg_file.name} from path: {cfg_file.resolve()}"

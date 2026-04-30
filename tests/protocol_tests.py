@@ -1,6 +1,6 @@
 #!/usr/bin/env/python3
 
-from brainwasher.protocol import Protocol
+from mixology.protocol import Protocol
 from io import StringIO
 from pint import UnitRegistry
 

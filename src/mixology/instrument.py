@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from pathlib import Path
-from brainwasher.job import Job
+from mixology.job import Job
 from threading import Thread, Event
 import logging
 from datetime import timedelta
@@ -35,7 +35,7 @@ class Instrument:
         )
         self.job_worker.start()
 
-    def _load_job(self, job_path: str) -> Job:
+    def _load_job(self, job_path: str ) -> Job:
         job_path = Path(job_path)
         if not job_path.exists():
             raise FileNotFoundError(

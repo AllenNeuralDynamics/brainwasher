@@ -7,25 +7,19 @@ name = "brainwasher"
 version = "0.3.0"
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dependencies = [
-    "brainwasher>=8.3.5",
+    "mixology",
     "runze-control",
-    "pyharp",
-    "rpi-hardware-pwm",    
-    "vicivalve",
     "inpromptu",
-    "Pint>=0.21.1",
     "igraph>=0.11.5",
-    "SM16inpind>=1.0.1",
-    "SM8mosind>=1.0.1",
-    "SM16univin>=1.0.3",
-    "smbus2>=0.5.0",
+    "device-spinner"
 ]
 
 [project.scripts]
 brainwasher = "brainwasher.scripts.main:main"
 
+[dependency-groups]
 dev = [
     "pytest>=8.3.5",
     "ruff>=0.9.9"
@@ -36,9 +30,7 @@ dev = [
 pythonpath = ["src", "tests"]
 
 [tool.uv.sources]
-brainwasher = { workspace = true }
-runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "brain-slosher-fix" }
-pyharp = { git = "https://github.com/AllenNeuralDynamics/pyharp.git"  }
-vicivalve = { git = "https://gitlab.com/Poofjunior/vicivalve.git"}
+mixology = { workspace = true }
+runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "fix-dynamic-version" }
 inpromptu = { git = "https://github.com/Poofjunior/inpromptu.git" }
-rpi-hardware-pwm = { git = "https://github.com/Pioreactor/rpi_hardware_pwm.git" }
+device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}

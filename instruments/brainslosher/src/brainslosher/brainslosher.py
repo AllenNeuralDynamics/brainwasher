@@ -1,14 +1,14 @@
-from .....src.brainwasher.instrument import Instrument
+from mixology.instrument import Instrument
 from runze_control.multichannel_syringe_pump import SY01B
-from brainwasher.devices.pololu.pololu_tic_mixer import (
+from mixology.devices.pololu.pololu_tic_mixer import (
     PololuTicMixer,
 )
-from instruments.brainslosher.src.brainslosher.brainslosher_models import (
+from brainslosher.brainslosher_models import (
     BrainSlosherConfig,
     BrainSlosherJob,
     BrainSlosherJobStatus,
 )
-from brainwasher.devices.vessels import ReactionVessel, WasteVessel
+from mixology.devices.vessels import ReactionVessel, WasteVessel
 from threading import RLock, current_thread, Lock, Thread
 from functools import wraps
 from datetime import datetime, timedelta

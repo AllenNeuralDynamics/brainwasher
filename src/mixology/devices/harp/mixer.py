@@ -1,9 +1,41 @@
 """Harp Valve Controller PWM-based Mixer"""
+from mixology.devices.mixer import PWMMixer
+from pyharp.device import Device, MessageType
+from pyharp.messages import HarpMessage, WriteU8HarpMessage
+from struct import unpack
+from enum import IntEnum
 
-from brainwasher.devices.mixer import PWMMixer
+class AppRegs(IntEnum):
+    ValvesState = 32
+    ValvesSet = 33
+    ValvesClear = 34
+    ValveConfigs0 = 35
+    ValveConfigs1 = 36
+    ValveConfigs2 = 37
+    ValveConfigs3 = 38
+    ValveConfigs4 = 39
+    ValveConfigs5 = 40
+    ValveConfigs6 = 41
+    ValveConfigs7 = 42
+    ValveConfigs8 = 43
+    ValveConfigs9 = 44
+    ValveConfigs10 = 45
+    ValveConfigs11 = 46
+    ValveConfigs12 = 47
+    ValveConfigs13 = 48
+    ValveConfigs14 = 49
+    ValveConfigs15 = 50
+    AuxGPIODir = 51
+    AuxGPIOState = 52
+    AuxGPIOSet = 53
+    AuxGPIOClear = 54
 
+    AuxGPIOInputRiseEvent = 55
+    AuxGPIOInputFallEvent = 56
+    AuxGPIOInputRisingInputs = 57
+    AuxGPIOFallingInputs = 58
 
-class PWMMixer(PWMMixer):
+class HarpPWMMixer(PWMMixer):
     """An open loop mixing device."""
 
     def __init__(
@@ -47,14 +79,14 @@ class PWMMixer(PWMMixer):
         valve_cfg = (normalized_percent, normalized_percent, 0)
         data_fmt = "<ffL"
         reply = self.device.send(
-            WriteU8ArrayMessage(
+            WriteU8HarpMessage(
                 AppRegs.ValveConfigs0 + self.channel, data_fmt, valve_cfg
             ).frame
         )
         self.log.debug(f"Received reply data: {unpack(data_fmt, bytes(reply.payload))}")
         if reply.message_type == MessageType.WRITE_ERROR:
             raise RuntimeError(
-                f"Sending: {msg_type}({register}, {data}) replied with a WRITE_ERROR."
+                f"Sending: {HarpMessage.WriteU8}({AppRegs.ValveConfigs0}, {valve_cfg}) replied with a WRITE_ERROR."
             )
 
     def _start_mixing(self):
@@ -65,7 +97,7 @@ class PWMMixer(PWMMixer):
 
 
 if __name__ == "__main__":
-    mixer = PWMMixer("/dev/ttyACM0", 0, 333, 6000, 20000, 40, 100)
+    mixer = HarpPWMMixer("/dev/ttyACM0", 0, 333, 6000, 20000, 40, 100)
     mixer.set_mixing_speed(1200)
     mixer.start_mixing()
     input()

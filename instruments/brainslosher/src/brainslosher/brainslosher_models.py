@@ -8,7 +8,7 @@ from pydantic import (
     ValidationError,
     AfterValidator,
 )
-from brainwasher.job import Job
+from mixology.job import Job
 from typing import Optional, Annotated, Any, Literal
 from pathlib import Path
 

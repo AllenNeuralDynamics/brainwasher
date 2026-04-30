@@ -1,5 +1,5 @@
-from instruments.brainslosher.src.brainslosher.brainslosher import BrainSlosher
-from brainwasher.utils.email_issues import send_email
+from brainslosher.brainslosher import BrainSlosher
+from brainslosher.utils.email_issues import send_email
 import logging
 import logging.config
 from one_liner.server import RouterServer
@@ -8,7 +8,7 @@ import argparse
 from device_spinner.config import Config
 from device_spinner.device_spinner import DeviceSpinner
 import os
-import brainwasher
+import mixology
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -93,7 +93,7 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default=r"src\brainwasher\scripts\brainslosher_config.yaml",
+        default=r"src\brainslosher\scripts\brainslosher_config.yaml",
     )
     parser.add_argument(
         "--log-level", type=str, default="INFO", choices=["INFO", "DEBUG"]
@@ -116,7 +116,7 @@ def main():
     config_name = (
         args.config
         if not args.simulated
-        else r"src\brainwasher\scripts\sim_brainslosher_config.yaml"
+        else r"src\brainslosher\scripts\sim_brainslosher_config.yaml"
     )
     config = Config(config_name)  # TODO: Should have some sort of validation here
 
@@ -129,7 +129,7 @@ def main():
     device_specs = dict(config.cfg)
     factory = DeviceSpinner()
     device_trees = factory.create_devices_from_specs(device_specs["devices"])
-    brainslosher = device_trees["brainwasher"]
+    brainslosher = device_trees["brainslosher"]
 
     # set up formating for log server
     old_factory = logging.getLogRecordFactory()
@@ -137,7 +137,7 @@ def main():
     def record_factory(*args, **kwargs):
         record = old_factory(*args, **kwargs)
         record.project = "brainslosher"
-        record.version = brainwasher.__version__
+        record.version = mixology.__version__
         record.comp_id = os.getenv("aibs_comp_id", "unknown")
 
         # set message prefix for log server readability

@@ -1,4 +1,4 @@
-from brainwasher.devices.mixer import Mixer
+from mixology.devices.mixer import Mixer
 import subprocess
 import logging
 

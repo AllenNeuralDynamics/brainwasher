@@ -62,16 +62,16 @@ devices:
             outlet: 2
             ambient: 1
     selector:
-        class: brainwasher.devices.simulated_devices.selector.SimCloseableSelector
+        class: mixology.devices.simulated_devices.selector.SimCloseableSelector
         kwds:
             port_count: 10
             port_map: selector_port_map
     source_pump:
-        class: brainwasher.devices.simulated_devices.syringe_pump.SimSyringePump
+        class: mixology.devices.simulated_devices.syringe_pump.SimSyringePump
         kwds:
             syringe_volume_ul: 20000
     reaction_vessel:
-        class: brainwasher.devices.vessels.ReactionVessel
+        class: mixology.devices.vessels.ReactionVessel
         skip_kwds: [name]
         kwds:
             name: reaction_vessel
@@ -82,31 +82,31 @@ devices:
             - thf_waste_vessel
             - dcm_waste_vessel
     thf_waste_vessel:
-        class: brainwasher.devices.vessels.WasteVessel
+        class: mixology.devices.vessels.WasteVessel
         skip_kwds: [name]
         kwds:
             name: thf_waste_vessel
             max_volume_ul: 250000
             compatible_chemicals: !!set {thf, deionized_water, pbs}
     dcm_waste_vessel:
-        class: brainwasher.devices.vessels.WasteVessel
+        class: mixology.devices.vessels.WasteVessel
         skip_kwds: [name]
         kwds:
             name: dcm_waste_vessel
             max_volume_ul: 250000
             compatible_chemicals: !!set {dcm}
     mixer:
-        class: brainwasher.devices.mixer.SimulatedMixer
+        class: mixology.devices.mixer.SimulatedMixer
         kwds:
             max_rpm: 1200
     pressure_sensor:
-        class: brainwasher.devices.simulated_devices.pressure_sensor.SimPressureSensor
+        class: mixology.devices.simulated_devices.pressure_sensor.SimPressureSensor
     rv_source_valve:
-        class: brainwasher.devices.valves.valve.ThreeTwoSolenoidValve
+        class: mixology.devices.valves.valve.ThreeTwoSolenoidValve
         kwds:
             name: rv_source
     rv_exhaust_valve:
-        class: brainwasher.devices.valves.valve.ThreeTwoSolenoidValve
+        class: mixology.devices.valves.valve.ThreeTwoSolenoidValve
         kwds:
             name: rv_exhaust
     output_bypass_valves:
@@ -115,11 +115,11 @@ devices:
             - thf_output_bypass_valve
             - aqueous_output_bypass_valve
     thf_output_bypass_valve:
-        class: brainwasher.devices.valves.valve.NCSolenoidValve
+        class: mixology.devices.valves.valve.NCSolenoidValve
         kwds:
             name: output_bypass
     aqueous_output_bypass_valve:
-        class: brainwasher.devices.valves.valve.NCSolenoidValve
+        class: mixology.devices.valves.valve.NCSolenoidValve
         kwds:
             name: aqueous_output_bypass
     waste_drain_valves:
@@ -128,11 +128,11 @@ devices:
             - thf_waste_drain_valve
             - aqueous_waste_drain_valve
     thf_waste_drain_valve:
-        class: brainwasher.devices.valves.valve.NCSolenoidValve
+        class: mixology.devices.valves.valve.NCSolenoidValve
         kwds:
             name: thf_waste_drain
     aqueous_waste_drain_valve:
-        class: brainwasher.devices.valves.valve.NCSolenoidValve
+        class: mixology.devices.valves.valve.NCSolenoidValve
         kwds:
             name: aqueous_waste_drain
     selector_lds_map:
@@ -145,20 +145,20 @@ devices:
             ambient: selector_ambient_bds
 # Liquid Detection Sensors
     pump_bds:
-        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
+        class: mixology.devices.liquid_presence_detection.BubbleDetectionSensor
     thf_bds:
-        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
+        class: mixology.devices.liquid_presence_detection.BubbleDetectionSensor
     selector_deionized_water_bds:
-        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
+        class: mixology.devices.liquid_presence_detection.BubbleDetectionSensor
     selector_pbs_bds:
-        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
+        class: mixology.devices.liquid_presence_detection.BubbleDetectionSensor
     selector_dcm_bds:
-        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
+        class: mixology.devices.liquid_presence_detection.BubbleDetectionSensor
     selector_ambient_bds:
-        class: brainwasher.devices.liquid_presence_detection.BubbleDetectionSensor
+        class: mixology.devices.liquid_presence_detection.BubbleDetectionSensor
 # Full System:
     brainwasher:
-        class: brainwasher.devices.instruments.brainwasher.BrainWasher
+        class: brainwasher.brainwasher.BrainWasher
         kwds:
             selector: selector
             selector_lds_map: selector_lds_map

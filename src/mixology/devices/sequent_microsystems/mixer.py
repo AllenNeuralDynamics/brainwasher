@@ -1,6 +1,6 @@
 """PWM Mosfet based Mixer"""
 
-from brainwasher.devices.mixer import Mixer
+from mixology.devices.mixer import Mixer
 import lib8mosind
 
 
@@ -23,7 +23,7 @@ class OnOffMixer(Mixer):
         lib8mosind.set(self.board_address, self.channel, 0)
 
 
-class PWMMixer(Mixer):
+class SequentMixer(Mixer):
     """An open loop mixing device."""
 
     def __init__(

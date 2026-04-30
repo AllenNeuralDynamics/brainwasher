@@ -1,8 +1,8 @@
 """Valve abstraction on top of Sequent Microsystems 8-Mosfets board"""
 
-from brainwasher.devices.valves.valve import SolenoidValve as BaseSolenoidValve
-from brainwasher.devices.valves.valve import NCValve as BaseNCValve
-from brainwasher.devices.valves.valve import ThreeTwoValve as BaseThreeTwoValve
+from mixology.devices.valves.valve import SolenoidValve as BaseSolenoidValve
+from mixology.devices.valves.valve import NCValve as BaseNCValve
+from mixology.devices.valves.valve import ThreeTwoValve as BaseThreeTwoValve
 
 from time import sleep
 from typing import Union

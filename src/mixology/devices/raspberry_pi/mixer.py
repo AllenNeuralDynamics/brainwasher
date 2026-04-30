@@ -1,10 +1,10 @@
-"""Harp Valve Controller PWM-based Mixer"""
+"""Raspberry Pi Valve Controller PWM-based Mixer"""
 
-from brainwasher.devices.mixer import PWMMixer
+from mixology.devices.mixer import PWMMixer
 from rpi_hardware_pwm import HardwarePWM
 
 
-class PWMMixer(PWMMixer):
+class RaspberryPiPWMMixer(PWMMixer):
     """An open loop mixing device."""
 
     PI5_GPIO_PIN_TO_CHANNEL = {12: 0, 13: 1, 18: 2, 19: 3}
@@ -44,7 +44,7 @@ class PWMMixer(PWMMixer):
 
 
 if __name__ == "__main__":
-    mixer = PWMMixer(18, 20000, 333, 6000, 40, 100)
+    mixer = RaspberryPiPWMMixer(18, 20000, 333, 6000, 40, 100)
     mixer.set_mixing_speed(6000)
     mixer.start_mixing()
     # sleep(1)

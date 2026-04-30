@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, AfterValidator
 from typing import Optional, Annotated, Any
-from brainwasher.job import Job
+from mixology.job import Job
 from pydantic import ValidationError
 from pydantic import computed_field
 from functools import cached_property
