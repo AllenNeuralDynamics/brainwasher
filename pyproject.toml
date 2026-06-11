@@ -24,9 +24,6 @@ dependencies = [
    "smbus2>=0.5.0",
 ]
 
-[tool.uv.workspace]
-members = ["instruments/*"]
-
 [dependency-groups]
 dev = [   
     "pytest>=8.3.5",

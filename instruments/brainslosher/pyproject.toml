@@ -33,7 +33,7 @@ dev = [
 pythonpath = ["src", "tests"]
 
 [tool.uv.sources]
-mixology = { workspace = true }
+mixology = { path = "../../" }
 one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", branch = "main"}
 runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "fix-dynamic-version" }
 device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
