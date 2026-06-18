@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seqflow"
+version = "0.1.0"
+description = "Automated fluidic control for the BARSeq platform"
+license = {text = "MIT"}
+readme = "README.md"
+
+requires-python = ">=3.11"
+dependencies = [
+    "mixology",
+    "device-spinner",
+    "one-liner",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0.2",
+]
+
+[project.scripts]
+seqflow = "seqflow.scripts.seqflow_main:main"
+seqflow-client = "seqflow.scripts.seqflow_client_test:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "ruff>=0.9.9",
+    "mypy>=1.10.0",
+    "types-PyYAML>=6.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+
+[tool.uv.sources]
+mixology = { path = "../../" }
+device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
+one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", branch = "main"}
+

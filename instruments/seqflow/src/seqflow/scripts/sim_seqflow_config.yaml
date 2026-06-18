@@ -1,0 +1,26 @@
+router_server_kwargs:
+    rpc_port: 5555
+    broadcast_port: 5556
+devices:
+  config: 
+    class: seqflow.seqflow_models.SeqFlowConfig
+    kwds:
+      instrument_name: Simulated Brainslosher
+  pump:
+    class: mixology.devices.simulated_devices.syringe_pump.SimSyringePump
+    kwds:
+        name: "sim" 
+        syringe_volume_ul: 5000
+  selector:
+    class: mixology.devices.simulated_devices.selector.SimSelector
+    kwds:
+        name: "sim" 
+        positions: 10
+  # Full System:
+  seqflow:
+    class: seqflow.seqflow.SeqFlow
+    kwds:
+      config: config
+      pump: pump
+      selector: selector
+      
