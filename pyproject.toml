@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "brainwasher"
-version = "0.3.0"
+version = "0.2.0"
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
@@ -52,9 +52,9 @@ brainslosher_group = [
 pythonpath = ["src", "tests"]
 
 [tool.uv.sources]
-device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
-one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", branch = "main"}
-runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "brain-slosher-fix" }
+device-spinner = { git = "https://github.com/AllenNeuralDynamics/device-spinner.git", rev = "10f5a36ff2d1db0eca2d57cdc045532b73f825af"}
+one-liner = { git = "http://github.com/AllenNeuralDynamics/one-liner.git", tag = "v0.1.1.dev2"}
+runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "fix-dynamic-version" }
 pyharp = { git = "https://github.com/AllenNeuralDynamics/pyharp.git"  }
 vicivalve = { git = "https://gitlab.com/Poofjunior/vicivalve.git"}
 inpromptu = { git = "https://github.com/Poofjunior/inpromptu.git" }
