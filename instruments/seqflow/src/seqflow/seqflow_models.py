@@ -14,6 +14,7 @@ class SeqFlowConfig(
     validate_assignment=True,
 ):
     save_folder: Path = Field(default="../../seq_flow_jobs/")
+    selector_port_map: dict[str, int]
     instrument_name: Optional[str] = Field(
         default=None, description="Optional instrument name."
     )

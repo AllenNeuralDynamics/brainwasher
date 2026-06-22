@@ -5,17 +5,34 @@ devices:
   config: 
     class: seqflow.seqflow_models.SeqFlowConfig
     kwds:
-      instrument_name: Simulated Brainslosher
+      selector_port_map:
+        incorporation_buffer: 1
+        pbst: 2
+        iodoacetamide_blocker: 3
+        irm: 4
+        usm: 5
+        crm: 6
+        fish_wash: 7
+        strip: 8
+        hyb_oligos_mix: 9
+        dapi: 10
+        bc_primer_mix: 11
+        gene_primer_mix: 12
+        hyb_oligos_mix_2: 13
+        end: 14
+        hyb_oligos_mix_3: 15
+        hyb_oligos_mix_4: 16
+      instrument_name: Simulated SeqFlow
   pump:
-    class: mixology.devices.simulated_devices.syringe_pump.SimSyringePump
+    class: mixology.devices.simulated_devices.peristaltic_pump.SimPeristalticPump
     kwds:
-        name: "sim" 
-        syringe_volume_ul: 5000
+        name: "simPump"
   selector:
     class: mixology.devices.simulated_devices.selector.SimSelector
     kwds:
-        name: "sim" 
+        name: "simSelector"
         positions: 10
+        position_map: selector_port_map
   # Full System:
   seqflow:
     class: seqflow.seqflow.SeqFlow
