@@ -34,7 +34,7 @@ dev = [
 pythonpath = ["src", "tests"]
 
 [tool.uv.sources]
-mixology = { path = "../../" }
+mixology = { path = "../../", editable = true }
 device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
 one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", branch = "main"}
 
