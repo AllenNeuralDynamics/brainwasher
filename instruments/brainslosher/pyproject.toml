@@ -9,7 +9,7 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-   "mixology",
+   "mixology[brainslosher]",
    "device-spinner",
    "runze-control",
    "pydantic>=2.11.4",
@@ -18,7 +18,6 @@ dependencies = [
    "pydantic-settings>=2.12.0",
    "one-liner",
    "email-validator>=2.3.0",
-
 ]
 
 [project.scripts]
@@ -33,7 +32,7 @@ dev = [
 pythonpath = ["src", "tests"]
 
 [tool.uv.sources]
-mixology = { workspace = true }
+mixology = { path = "../../" }
 one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", branch = "main"}
 runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "fix-dynamic-version" }
 device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}

@@ -15,23 +15,25 @@ dependencies = [
    "pyyaml>=6.0.2",
    "pydantic-settings>=2.12.0",
    "pandas>=2.0.3",
-   "pyharp>=0.1.0",
-   "vicivalve>=0.0.13",
-   "rpi-hardware-pwm>=0.3.1",
-   "SM16inpind>=1.0.1",
-   "SM8mosind>=1.0.1",
-   "SM16univin>=1.0.3",
-   "smbus2>=0.5.0",
 ]
-
-[tool.uv.workspace]
-members = ["instruments/*"]
 
 [dependency-groups]
 dev = [   
     "pytest>=8.3.5",
     "ruff>=0.9.9"
     ]
+
+[project.optional-dependencies]
+brainwasher = [
+    "pyharp",
+    "vicivalve",
+    "rpi-hardware-pwm",
+    "SM16inpind",
+    "SM8mosind",
+    "SM16univin",
+    "smbus2"
+]
+brainslosher = ["pyharp"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "tests"]
