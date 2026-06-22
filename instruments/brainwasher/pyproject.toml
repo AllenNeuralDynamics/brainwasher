@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brainwasher"
+version = "0.3.0"
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mixology[brainwasher]",
+    "runze-control",
+    "inpromptu",
+    "igraph>=0.11.5",
+    "device-spinner"
+]
+
+[project.scripts]
+brainwasher = "brainwasher.scripts.main:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "ruff>=0.9.9"
+    ]
+
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+
+[tool.uv.sources]
+mixology = { path = "../../" }
+runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "fix-dynamic-version" }
+inpromptu = { git = "https://github.com/Poofjunior/inpromptu.git" }
+device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
