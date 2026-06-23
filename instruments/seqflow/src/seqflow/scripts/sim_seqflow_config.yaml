@@ -33,6 +33,13 @@ devices:
         name: "simSelector"
         positions: 10
         position_map: selector_port_map
+  slide_container:
+    class: mixology.devices.vessels.SlideContainer
+    skip_kwds: [name]
+    kwds:
+        name: slide_container
+        volume_per_slide_ul: 400.0
+        num_slides: 3
   # Full System:
   seqflow:
     class: seqflow.seqflow.SeqFlow
@@ -40,4 +47,5 @@ devices:
       config: config
       pump: pump
       selector: selector
+      rxn_vessel: slide_container
       
