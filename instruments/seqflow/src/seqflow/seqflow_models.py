@@ -21,7 +21,13 @@ class SeqFlowConfig(
 
 
 class SeqFlowJob(Job):
-    pass
+    # TODO update this list[Recipe] to accomodate seqFlow model
+    protocol: list[str] = Field(default_factory=list, description="A list of recipe names to be run in order.")
+    def get_duration_s(self, start_step: int = 0):
+        """Total job duration in seconds starting from the specified step."""
+        # TODO implement
+        return 0
+
     
 class SeqFlowJobStatus(BaseModel):
     """Model of messages used to convey state of seqflow job"""
