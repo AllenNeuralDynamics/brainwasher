@@ -47,5 +47,5 @@ devices:
       config: config
       pump: pump
       selector: selector
-      rxn_vessel: slide_container
+      slide_container: slide_container
       
