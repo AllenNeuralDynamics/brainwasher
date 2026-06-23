@@ -33,3 +33,21 @@ class ReactionVessel(Vessel):
 @dataclass(kw_only=True)
 class WasteVessel(Vessel):
     compatible_chemicals: set = field(default_factory=set)
+
+
+@dataclass(kw_only=True)
+class SlideContainer(Vessel):
+    """A custom reaction vessel representing a multi-slide flow cell."""
+    volume_per_slide_ul: float
+    num_slides: int
+
+    # Override
+    max_volume_ul: float = field(init=False)
+
+    def __post_init__(self):
+        """Automatically calculate total volume upon initialization."""
+        self.max_volume_ul = self.volume_per_slide_ul * self.num_slides
+
+    def get_slide_capacity(self) -> float:
+        """Helper method to retrieve the volume of a single slide."""
+        return self.volume_per_slide_ul
