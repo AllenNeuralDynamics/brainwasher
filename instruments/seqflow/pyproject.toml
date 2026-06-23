@@ -20,7 +20,7 @@ dependencies = [
 
 [project.scripts]
 seqflow = "seqflow.scripts.seqflow_main:main"
-seqflow-client = "seqflow.scripts.seqflow_client_test:main"
+seqflow-client = "dummy_client.seqflow_client_test:main"
 
 [dependency-groups]
 dev = [
