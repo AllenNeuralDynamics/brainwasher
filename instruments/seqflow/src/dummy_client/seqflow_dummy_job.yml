@@ -1,0 +1,4 @@
+name: "SeqFlow Dummy Job"
+motor_speed_rpm: 10.0
+starting_solution:
+  dapi: 1000.0
