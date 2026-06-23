@@ -31,12 +31,13 @@ class ZMQServer(RouterServer):
         
         self.log = logging.getLogger(self.__class__.__name__)
         self.config = config or {}
-        self.seqflow: SeqFlow = instances["seqflow"]
+        self.seqflow: SeqFlow = instances["seqflow"]  # create empyt Job
         
-        # Set up mockup named calls
-        if self.seqflow:
-            self.add_named_call("start", "seqflow", "start_run")
-            self.add_named_call("pause", "seqflow", "pause")
+        self.add_named_call("start", "seqflow", "start_run")
+        self.add_named_call("pause", "seqflow", "pause")
+        self.add_named_call("get_job", "seqflow", "get_job")
+        self.add_named_call("set_job", "seqflow", "set_job")
+        self.add_named_call("get_config", "seqflow", "get_config")
 
         self.add_stream("get_progress", 1, "seqflow", "get_progress")
 
@@ -85,8 +86,10 @@ def main():
     logging.setLogRecordFactory(record_factory)
 
     # Start server
-    router_kwargs = config.cfg.get("router_server_kwargs", {}) if hasattr(config, "cfg") else {}
-    server = ZMQServer(instances={"seqflow": seqflow_device}, **router_kwargs)
+    server = ZMQServer(
+        instances={"seqflow": seqflow_device},
+        **config.cfg.get("router_server_kwargs", {}),
+    )
     logger.info(f"SeqFlow ZMQ Server started!")
     server.run()
 
