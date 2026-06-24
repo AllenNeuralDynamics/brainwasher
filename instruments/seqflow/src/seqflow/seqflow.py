@@ -100,6 +100,7 @@ class SeqFlow(Instrument):
 
     def get_progress(self) -> dict:
         """Get current progress of job as a dict."""
+        # TODO get more details
         status = "idle"
         if self.job_worker and self.job_worker.is_alive():
             status = "paused" if self.pause_requested.is_set() else "running"
@@ -108,4 +109,47 @@ class SeqFlow(Instrument):
 
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
+        # TODO
         pass
+
+    def run_step(self, **kwargs):
+        """
+        The main physical execution function. Called repeatedly by _run_job_worker.
+        """
+        # TODO Add more device types and their corresponding actions here. 
+        # For now, we handle "pump" and "wait" as examples.
+        device = kwargs.get("device")
+
+        if device == "pump":
+            source = kwargs.get("source")
+            volume = kwargs.get("volume")
+            flow_rate = kwargs.get("flow_rate")
+
+            if source:
+                port_number = self.config.selector_port_map[str(source)]
+                self.log.debug(f"Moving selector to port {port_number} (Source: {source})")
+                self.selector.move_to_port(port_number)
+
+            if volume and flow_rate:
+                self.log.debug(f"Pumping {volume} mL at {flow_rate} mL/min")
+                self.pump.dispense(volume, flow_rate)
+        
+        # TODO: Seperate heatl_device and wait. Add sim_heater
+        elif device in ["heat_device", "wait"]:
+            wait_time_s = kwargs.get("time")
+            if wait_time_s:
+                self.log.debug(f"Waiting for {wait_time_s} seconds...")
+                
+                # Non-blocking wait loop to allow for pausing mid-wait
+                from time import perf_counter, sleep
+                start_time = perf_counter()
+                
+                while (perf_counter() - start_time) < wait_time_s:
+                    # Catch pause requests immediately
+                    if self.pause_requested.is_set():
+                        remaining_time = wait_time_s - (perf_counter() - start_time)
+                        self.log.info(f"Pause caught mid-wait. {remaining_time:.1f} seconds remaining.")
+                        self.resume_state_overrides = {"time": remaining_time}
+                        return 
+
+                    sleep(0.1)

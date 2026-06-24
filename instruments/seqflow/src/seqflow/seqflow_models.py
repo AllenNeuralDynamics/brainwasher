@@ -31,8 +31,7 @@ class SeqFlowStep(BaseModel):
     # --- STEP PARAMETERS ---
     # TODO clean up some fields, currently match with sequence.json file
     volume: Optional[float] = 0.0
-    source: Optional[str] = None
-    solution: Optional[str] = Field(default=None, alias="Solution name")
+    solution: Optional[str] = Field(default=None, description="Solution name")
     flow_rate: Optional[float] = None
     time: Optional[float] = None
     temperature: Optional[float] = None
