@@ -286,7 +286,7 @@ wheels = [
 [[package]]
 name = "mixology"
 version = "1.0.0"
-source = { directory = "../../" }
+source = { editable = "../../" }
 dependencies = [
     { name = "coloredlogs" },
     { name = "pandas" },
@@ -1014,7 +1014,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "device-spinner", git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git" },
-    { name = "mixology", directory = "../../" },
+    { name = "mixology", editable = "../../" },
     { name = "one-liner", git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git?branch=main" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pyyaml", specifier = ">=6.0.2" },

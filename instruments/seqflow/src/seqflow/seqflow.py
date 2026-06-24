@@ -1,9 +1,12 @@
+# seqflow.py
+
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
 from mixology.devices.simulated_devices.selector import SimSelector
 from seqflow.seqflow_models import (
     SeqFlowConfig,
     SeqFlowJob,
+    SeqFlowResumeState,
 )
 from mixology.devices.vessels import SlideContainer
 from functools import wraps
@@ -78,28 +81,30 @@ class SeqFlow(Instrument):
         return {"message": "Starting run!"}
 
     def get_job(self) -> dict | None:
-        """
-        Convienence method to get current job
-        """
-        pass
+        """Convenience method to get current job"""
+        if self._job:
+            return self._job.model_dump()
 
     def set_job(self, job: Union[dict, SeqFlowJob]) -> None:
-        """
-        Convienence method to set current job
-
-        :param job: dict or SeqFlowJob object to set as current job
-
-        """
-        pass
+        """Convenience method to set current job"""
+        # TODO: Add lock and set_job is not allowed while a job is running
+        if isinstance(job, dict):
+            self._job = SeqFlowJob(**job)
+        else:
+            self._job = job
 
     def pause(self) -> None:
         """Request that the system pause the currently running protocol and
         save the protocol path and current step to the config."""
-        pass
+        super().pause()
 
     def get_progress(self) -> dict:
         """Get current progress of job as a dict."""
-        return {"job_status": self.job_status.status, "message": self.job_status.message}
+        status = "idle"
+        if self.job_worker and self.job_worker.is_alive():
+            status = "paused" if self.pause_requested.is_set() else "running"
+        job_name = self._job.name if self._job else "None"
+        return {"job_status": status, "job_name": job_name}
 
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
