@@ -21,7 +21,7 @@ wheels = [
 
 [[package]]
 name = "brainwasher"
-version = "0.3.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "coloredlogs" },
@@ -64,7 +64,7 @@ dev = [
 requires-dist = [
     { name = "coloredlogs", specifier = ">=15.0.1" },
     { name = "datetime", specifier = ">=5.5" },
-    { name = "device-spinner", git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git" },
+    { name = "device-spinner", git = "https://github.com/AllenNeuralDynamics/device-spinner.git?rev=10f5a36ff2d1db0eca2d57cdc045532b73f825af" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "mock", specifier = ">=5.2.0" },
     { name = "pydantic", specifier = ">=2.11.4" },
@@ -72,13 +72,13 @@ requires-dist = [
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "ruff", specifier = ">=0.9.9" },
-    { name = "runze-control", git = "https://github.com/AllenNeuralDynamics/runze-control.git?branch=brain-slosher-fix" },
+    { name = "runze-control", git = "https://github.com/AllenNeuralDynamics/runze-control.git?branch=fix-dynamic-version" },
 ]
 
 [package.metadata.requires-dev]
 brainslosher-group = [
     { name = "email-validator", specifier = ">=2.3.0" },
-    { name = "one-liner", git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git?branch=main" },
+    { name = "one-liner", git = "http://github.com/AllenNeuralDynamics/one-liner.git?tag=v0.1.1.dev2" },
     { name = "ticlib" },
 ]
 brainwasher-group = [
@@ -203,7 +203,7 @@ wheels = [
 [[package]]
 name = "device-spinner"
 version = "0.0.0"
-source = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git#10f5a36ff2d1db0eca2d57cdc045532b73f825af" }
+source = { git = "https://github.com/AllenNeuralDynamics/device-spinner.git?rev=10f5a36ff2d1db0eca2d57cdc045532b73f825af#10f5a36ff2d1db0eca2d57cdc045532b73f825af" }
 dependencies = [
     { name = "ruamel-yaml" },
     { name = "toml" },
@@ -432,7 +432,7 @@ wheels = [
 [[package]]
 name = "one-liner"
 version = "0.1.1.dev2"
-source = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git?branch=main#22aa37370c3678726ebacb2f0a2e8ae263a94704" }
+source = { git = "http://github.com/AllenNeuralDynamics/one-liner.git?tag=v0.1.1.dev2#22aa37370c3678726ebacb2f0a2e8ae263a94704" }
 dependencies = [
     { name = "orjson" },
     { name = "pydantic" },
@@ -1023,8 +1023,8 @@ wheels = [
 
 [[package]]
 name = "runze-control"
-version = "0.0.3"
-source = { git = "https://github.com/AllenNeuralDynamics/runze-control.git?branch=brain-slosher-fix#9d66123c506b14645d263416ee3b4a106e1cf96d" }
+version = "0.1.2"
+source = { git = "https://github.com/AllenNeuralDynamics/runze-control.git?branch=fix-dynamic-version#d72a981dd71587c806962e5edf126614377a72e8" }
 dependencies = [
     { name = "pyserial" },
 ]
