@@ -4,7 +4,6 @@ from mixology.devices.simulated_devices.selector import SimSelector
 from seqflow.seqflow_models import (
     SeqFlowConfig,
     SeqFlowJob,
-    SeqFlowJobStatus,
 )
 from mixology.devices.vessels import SlideContainer
 from functools import wraps
@@ -41,7 +40,6 @@ class SeqFlow(Instrument):
 
         # current job to run
         self._job: Optional[SeqFlowJob] = None
-        self.job_status: SeqFlowJobStatus = SeqFlowJobStatus(status="idle")
 
     def _load_job(self, job_path: str | Path) -> SeqFlowJob:
         """
