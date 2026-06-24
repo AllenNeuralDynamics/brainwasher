@@ -43,31 +43,21 @@ class SeqFlow(Instrument):
         self._job: Optional[SeqFlowJob] = None
         self.job_status: SeqFlowJobStatus = SeqFlowJobStatus(status="idle")
 
+    def _load_job(self, job_path: str | Path) -> SeqFlowJob:
+        """
+        Override base class method to load a SeqFlowJob from a yaml file.
+        """
+        job_path = Path(job_path)
+        if not job_path.exists():
+            raise FileNotFoundError(
+                f"Job does not exist at location: {job_path.resolve()}"
+            )
+        with open(job_path) as yaml_stream:
+            self.log.debug(f"Loading job from: {job_path.absolute()}")
+            job_dict = yaml.safe_load(yaml_stream)
+            job = SeqFlowJob(**job_dict)
+            return job
     
-    def get_job(self) -> dict | None:
-        """
-        Convienence method to get current job
-        """
-        if self._job:
-            return self._job.model_dump()
-    
-    def set_job(self, job: Union[dict, SeqFlowJob]) -> None:
-        """
-        Convienence method to set current job
-
-        :param job: dict or SeqFlowJob object to set as current job
-
-        """
-        if self.job_status.status == "running":
-            self.log.warning("Cannot set job when instrument is running. Please pause.")
-            return
-
-        self._job = SeqFlowJob(**job) if type(job) == dict else job
-        status = "paused" if self._job.resume_state else "idle"
-        with self.job_status_lock:
-            self.log.info(f"Job set and setting to {status}")
-            self.job_status = SeqFlowJobStatus(status=status)
-
     def start_run(self, job: SeqFlowJob):
         """
         Reset SeqFlow and start run
@@ -89,11 +79,29 @@ class SeqFlow(Instrument):
         self.run(job_path)
         return {"message": "Starting run!"}
 
+    def get_job(self) -> dict | None:
+        """
+        Convienence method to get current job
+        """
+        pass
+
+    def set_job(self, job: Union[dict, SeqFlowJob]) -> None:
+        """
+        Convienence method to set current job
+
+        :param job: dict or SeqFlowJob object to set as current job
+
+        """
+        pass
+
+    def pause(self) -> None:
+        """Request that the system pause the currently running protocol and
+        save the protocol path and current step to the config."""
+        pass
 
     def get_progress(self) -> dict:
         """Get current progress of job as a dict."""
         return {"job_status": self.job_status.status, "message": self.job_status.message}
-
 
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
