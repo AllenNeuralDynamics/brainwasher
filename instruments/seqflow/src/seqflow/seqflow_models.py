@@ -30,16 +30,14 @@ class SeqFlowStep(BaseModel):
 
     # --- STEP PARAMETERS ---
     # TODO clean up some fields, currently match with sequence.json file
-    volume: Optional[float] = 0.0
-    solution: Optional[str] = Field(default=None, description="Solution name")
     flow_rate: Optional[float] = None
     time: Optional[float] = None
     temperature: Optional[float] = None
     device: str
-
+    solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn to fill into slides.")
 
 class SeqFlowResumeState(BaseModel):
-    """Rigorous resume state tracking for SeqFlow."""
+    """Resume state tracking for SeqFlow."""
     
     @staticmethod
     def values_in_seqflow_step(overrides: dict):
@@ -62,7 +60,7 @@ class SeqFlowResumeState(BaseModel):
             # Lazy way: try making a valid Step using dummy metadata
             SeqFlowStep(
                 **overrides, 
-                sequence_name="resume_validation", 
+                sequence_name="resume_validation",  # TODO
                 sequence_index=0, 
                 device="pump"
             )
@@ -100,9 +98,11 @@ class SeqFlowJob(Job):
         total_time_s = 0.0
 
         for step in self.protocol[start_step:]:
-            if step.device == "pump" and step.volume and step.flow_rate:
-                # Convert: (volume / flow_rate) gives minutes. Multiply by 60 for seconds.
-                total_time_s += (step.volume / step.flow_rate) * 60.0
+            if step.device == "pump" and step.flow_rate:
+                total_volume = sum(step.solution.values()) if step.solution else 0.0
+                if total_volume > 0:
+                    # Convert: (volume / flow_rate) gives minutes. Multiply by 60 for seconds.
+                    total_time_s += (total_volume / step.flow_rate) * 60.0
             elif step.device in ["heat_device", "wait"] and step.time:
                 # Time is already explicitly defined in seconds
                     total_time_s += step.time

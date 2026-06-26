@@ -43,6 +43,8 @@ class SeqFlow(Instrument):
 
         # current job to run
         self._job: Optional[SeqFlowJob] = None
+        # TODO: Add resume state tracking to SeqFlowJob. For now only remaining time is tracked in the instrument, but this should be saved to the job for resuming later.
+        self.resume_state_overrides = {}
 
     def _load_job(self, job_path: str | Path) -> SeqFlowJob:
         """
@@ -133,17 +135,17 @@ class SeqFlow(Instrument):
             if volume and flow_rate:
                 self.log.debug(f"Pumping {volume} mL at {flow_rate} mL/min")
                 self.pump.dispense(volume, flow_rate)
-        
+
         # TODO: Seperate heatl_device and wait. Add sim_heater
         elif device in ["heat_device", "wait"]:
             wait_time_s = kwargs.get("time")
             if wait_time_s:
                 self.log.debug(f"Waiting for {wait_time_s} seconds...")
-                
+    
                 # Non-blocking wait loop to allow for pausing mid-wait
                 from time import perf_counter, sleep
                 start_time = perf_counter()
-                
+
                 while (perf_counter() - start_time) < wait_time_s:
                     # Catch pause requests immediately
                     if self.pause_requested.is_set():
@@ -151,5 +153,4 @@ class SeqFlow(Instrument):
                         self.log.info(f"Pause caught mid-wait. {remaining_time:.1f} seconds remaining.")
                         self.resume_state_overrides = {"time": remaining_time}
                         return 
-
                     sleep(0.1)
