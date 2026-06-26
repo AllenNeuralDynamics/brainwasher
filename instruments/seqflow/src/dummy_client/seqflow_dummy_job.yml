@@ -1,4 +1,46 @@
-name: "SeqFlow Dummy Job"
-motor_speed_rpm: 10.0
-starting_solution:
-  dapi: 1000.0
+name: "SeqFlow Flattened Test Job"
+starting_solution: {}
+protocol:
+  # --- SEQUENCE 0: FLUSH ALL (Example) ---
+  - sequence_name: "Fluidics_sequence_flush_all"
+    sequence_index: 0
+    flow_rate: 2.0
+    solution:
+      pbst: 5.0
+    device: "pump"
+
+  # --- SEQUENCE 1: BCSEQ01 (From your JSON) ---
+  - sequence_name: "Fluidics_sequence_bcseq01"
+    sequence_index: 1
+    flow_rate: 1.5
+    solution:
+      incorporation_buffer: 1.5
+    device: "pump"
+    
+  - sequence_name: "Fluidics_sequence_bcseq01"
+    sequence_index: 1
+    time: 180.0
+    solution: 
+      incorporation_buffer_heat_wait: 0.0
+    device: "heat_device"
+    
+  - sequence_name: "Fluidics_sequence_bcseq01"
+    sequence_index: 1
+    flow_rate: 1.5
+    solution:
+      pbst: 3.0
+    device: "pump"
+
+  - sequence_name: "Fluidics_sequence_bcseq01"
+    sequence_index: 1
+    flow_rate: 1.5
+    solution:
+      iodoacetamide_blocker: 1.0
+    device: "pump"
+    
+  - sequence_name: "Fluidics_sequence_bcseq01"
+    sequence_index: 1
+    time: 180.0
+    solution:
+      iodoacetamide_blocker_heat_wait: 0.0
+    device: "heat_device"

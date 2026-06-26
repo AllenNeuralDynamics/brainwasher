@@ -23,6 +23,9 @@ def main():
     print("--- Starting Sequence ---")
     response = client.call("seqflow", "start_run", kwargs={"job": job_payload})
     print(f"Response: {response}\n")
+    
+    print("Waiting 10 seconds before pausing...")
+    time.sleep(10)
 
     print("--- Getting Status ---")
     response = client.call("seqflow", "pause")
