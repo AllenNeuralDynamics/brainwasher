@@ -151,7 +151,7 @@ class Instrument:
         self.log.info(f"Finished job: {job.name} from {job_path}")
 
     def save_resume_state(
-        job: Job, resume_step: int, starting_solution: dict, overrides: dict
+        self, job: Job, resume_step: int, starting_solution: dict, **overrides: dict
     ):
         """
         Save resume state of job
