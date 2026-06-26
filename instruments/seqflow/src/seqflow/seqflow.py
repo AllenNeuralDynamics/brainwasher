@@ -13,7 +13,7 @@ from functools import wraps
 from datetime import datetime
 from typing import Union, Optional
 from pathlib import Path
-from time import perf_counter
+import time
 import yaml
 
 
@@ -116,41 +116,69 @@ class SeqFlow(Instrument):
 
     def run_step(self, **kwargs):
         """
-        The main physical execution function. Called repeatedly by _run_job_worker.
+        Simulated execution using perf_counter for precise, pause-aware timing.
         """
-        # TODO Add more device types and their corresponding actions here. 
-        # For now, we handle "pump" and "wait" as examples.
         device = kwargs.get("device")
+        flow_rate = kwargs.get("flow_rate")
+        time_m = kwargs.get("time_m")
+        solution = kwargs.get("solution", {})
+        
+        duration_s = 0.0
 
-        if device == "pump":
-            source = kwargs.get("source")
-            volume = kwargs.get("volume")
-            flow_rate = kwargs.get("flow_rate")
+        # TODO Change to actual hardware call after adding drivers
+        # Calculate Time for Fluidics (Pump)
+        if device == "pump" and flow_rate and solution:
+            total_vol = sum(solution.values())
+            duration_s = (total_vol / flow_rate) * 60.0
+            
+            # --- Simulated Hardware Calls Go Here ---
+            self.log.info(f"Simulating Pump: {total_vol}mL at {flow_rate}mL/min. Est time: {duration_s:.1f}s")
+            
+        # Calculate Time for Idle/Heat
+        elif device in ["heat_device", "wait"] and time_m:
+            duration_s = time_m * 60.0
+            
+            # --- Simulated Hardware Calls Go Here ---
+            self.log.info(f"Simulating Wait/Heat: {time_m} minutes. Est time: {duration_s:.1f}s")
 
-            if source:
-                port_number = self.config.selector_port_map[str(source)]
-                self.log.debug(f"Moving selector to port {port_number} (Source: {source})")
-                self.selector.move_to_port(port_number)
-
-            if volume and flow_rate:
-                self.log.debug(f"Pumping {volume} mL at {flow_rate} mL/min")
-                self.pump.dispense(volume, flow_rate)
-
-        # TODO: Seperate heatl_device and wait. Add sim_heater
-        elif device in ["heat_device", "wait"]:
-            wait_time_s = kwargs.get("time")
-            if wait_time_s:
-                self.log.debug(f"Waiting for {wait_time_s} seconds...")
+        # Simulated Execution Loop (Blocks thread, checks for pause)
+        if duration_s > 0:
+            start_time = time.perf_counter()
     
-                # Non-blocking wait loop to allow for pausing mid-wait
-                from time import perf_counter, sleep
-                start_time = perf_counter()
+            while (time.perf_counter() - start_time) < duration_s:
+                
+                # Catch pause request instantly
+                if self.pause_requested.is_set():
+                    elapsed_s = time.perf_counter() - start_time
+                    remaining_m = (duration_s - elapsed_s) / 60.0
+                    
+                    self.log.warning(f"Paused mid-{device}. {remaining_m:.2f} minutes remaining.")
+                    
+                    # Override the remaining time so the resume step picks up the exact remainder
+                    self.resume_state_overrides = {"time_m": remaining_m}
+                    return 
+                    
+                # Short sleep to prevent CPU pegging during the while loop
+                time.sleep(0.05)
 
-                while (perf_counter() - start_time) < wait_time_s:
-                    # Catch pause requests immediately
-                    if self.pause_requested.is_set():
-                        remaining_time = wait_time_s - (perf_counter() - start_time)
-                        self.log.info(f"Pause caught mid-wait. {remaining_time:.1f} seconds remaining.")
-                        self.resume_state_overrides = {"time": remaining_time}
-                        return 
-                    sleep(0.1)
+    def _run_job_worker(self, job: SeqFlowJob, job_path: Path):
+        # Sync the newly loaded disk object back to our main memory!
+        self._job = job
+        
+        # Now hand it off to the base Instrument class
+        super()._run_job_worker(job, job_path)
+
+    def resume_run(self):
+        """
+        Resume job
+        """
+        job = self._job
+        if not job or not job.resume_state:
+            self.log.error("No job to resume")
+            return
+
+        if not job.source_protocol.path:
+            self.log.error("No source protocol path to save to.")
+            return
+
+        self.run(job.source_protocol.path)

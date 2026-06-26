@@ -29,12 +29,12 @@ class SeqFlowStep(BaseModel):
     sequence_index: int = Field(description="The execution order index of the parent sequence.")
 
     # --- STEP PARAMETERS ---
-    # TODO clean up some fields, currently match with sequence.json file
-    flow_rate: Optional[float] = None
-    time: Optional[float] = None
-    temperature: Optional[float] = None
+    # TODO clean up some fields, currently match with sequence.json file and add unit
+    flow_rate: Optional[float] = Field(default=None, description="Flow rate in mL/min for pump device.")
+    time_m: Optional[float] = Field(default=None, description="Time in minutes for the step.")
+    temperature: Optional[float] = Field(default=None, description="Temperature in Celsius for the step.")
     device: str
-    solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn to fill into slides.")
+    solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn (mL) to fill into slides.")
 
 class SeqFlowResumeState(BaseModel):
     """Resume state tracking for SeqFlow."""
@@ -102,10 +102,10 @@ class SeqFlowJob(Job):
                 total_volume = sum(step.solution.values()) if step.solution else 0.0
                 if total_volume > 0:
                     # Convert: (volume / flow_rate) gives minutes. Multiply by 60 for seconds.
+                    # TODO maybe need to multiply by number of slides. (Check pump)
                     total_time_s += (total_volume / step.flow_rate) * 60.0
-            elif step.device in ["heat_device", "wait"] and step.time:
-                # Time is already explicitly defined in seconds
-                    total_time_s += step.time
+            elif step.device in ["heat_device", "wait"] and step.time_m:
+                    total_time_s += step.time_m * 60.0  # Convert minutes to seconds
         return total_time_s
 
     def save_resume_state(
