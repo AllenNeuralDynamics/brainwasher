@@ -23,27 +23,27 @@ def main():
     print("--- Starting Sequence ---")
     response = client.call("seqflow", "start_run", kwargs={"job": job_payload})
     print(f"Response: {response}\n")
-    
-    print("Waiting 10 seconds before pausing...")
+
+    print("Waiting 30 seconds before pausing...")
     time.sleep(10)
 
-    print("--- Getting Status ---")
+    print("--- Pausing Sequence ---")
     response = client.call("seqflow", "pause")
     print(f"Response: {response}\n")
+    time.sleep(3)
 
-    print("--- Configuring Stream ---")
-    # Subscribing to the progress stream setup in ZMQServer
-    client.configure_stream("get_progress")
-    
-    # Read a few stream messages
+    print("--- Resuming Sequence ---")
+    response = client.call("seqflow", "resume_run")
+    print(f"Response: {response}\n")
+
+    print("--- Getting Stream after Resume ---")
+    # Read a few more stream messages to verify it is running again
     start_time = time.time()
-    while time.time() - start_time < 3:
+    while time.time() - start_time < 5:
         try:
-            # get_stream returns (timestamp, data)
             timestamp, stream_data = client.get_stream("get_progress")
-            print(f"Stream Update at {timestamp}: {stream_data}")
-        except Exception as e:
-            # No new message yet. Sleep briefly to prevent burning CPU.
+            print(f"Stream Update (Resumed) at {timestamp}: {stream_data}")
+        except Exception:
             time.sleep(0.1)
 
 if __name__ == "__main__":
