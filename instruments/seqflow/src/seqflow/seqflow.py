@@ -114,50 +114,51 @@ class SeqFlow(Instrument):
         # TODO
         pass
 
-    def run_step(self, **kwargs):
-        """
-        Simulated execution using perf_counter for precise, pause-aware timing.
-        """
-        device = kwargs.get("device")
-        flow_rate = kwargs.get("flow_rate")
-        time_m = kwargs.get("time_m")
-        solution = kwargs.get("solution", {})
-        
+    def run_step(
+            self, 
+            sequence_name: str,
+            sequence_index: int,
+            device: str,
+            solution: dict = None,
+            flow_rate_mlpm: float = None,
+            duration_m: float = None,
+            temp_c: float = None
+        ):
         duration_s = 0.0
 
         # TODO Change to actual hardware call after adding drivers
         # Calculate Time for Fluidics (Pump)
-        if device == "pump" and flow_rate and solution:
+        if device == "pump" and flow_rate_mlpm and solution:
             total_vol = sum(solution.values())
-            duration_s = (total_vol / flow_rate) * 60.0
-            
+            duration_s = (total_vol / flow_rate_mlpm) * 60.0
+
             # --- Simulated Hardware Calls Go Here ---
-            self.log.info(f"Simulating Pump: {total_vol}mL at {flow_rate}mL/min. Est time: {duration_s:.1f}s")
-            
+            self.log.info(f"Simulating Pump: {total_vol}mL at {flow_rate_mlpm}mL/min. Est time: {duration_s:.1f}s")
+
         # Calculate Time for Idle/Heat
-        elif device in ["heat_device", "wait"] and time_m:
-            duration_s = time_m * 60.0
-            
+        elif device in ["heat_device", "wait"] and duration_m:
+            duration_s = duration_m * 60.0
+
             # --- Simulated Hardware Calls Go Here ---
-            self.log.info(f"Simulating Wait/Heat: {time_m} minutes. Est time: {duration_s:.1f}s")
+            self.log.info(f"Simulating Wait/Heat: {duration_m} minutes. Est time: {duration_s:.1f}s")
 
         # Simulated Execution Loop (Blocks thread, checks for pause)
         if duration_s > 0:
             start_time = time.perf_counter()
     
             while (time.perf_counter() - start_time) < duration_s:
-                
+
                 # Catch pause request instantly
                 if self.pause_requested.is_set():
                     elapsed_s = time.perf_counter() - start_time
                     remaining_m = (duration_s - elapsed_s) / 60.0
-                    
+
                     self.log.warning(f"Paused mid-{device}. {remaining_m:.2f} minutes remaining.")
-                    
+
                     # Override the remaining time so the resume step picks up the exact remainder
-                    self.resume_state_overrides = {"time_m": remaining_m}
+                    self.resume_state_overrides = {"duration_m": remaining_m}
                     return 
-                    
+
                 # Short sleep to prevent CPU pegging during the while loop
                 time.sleep(0.05)
 

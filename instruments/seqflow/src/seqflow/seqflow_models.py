@@ -29,7 +29,7 @@ class SeqFlowStep(BaseModel):
     sequence_index: int = Field(description="The execution order index of the parent sequence.")
 
     # --- STEP PARAMETERS ---
-    # TODO clean up some fields, currently match with sequence.json file and add unit
+    # TODO clean up some fields, currently match with sequence.json file
     flow_rate_mlpm: Optional[float] = Field(default=None, description="Flow rate in mL/min for pump device.")
     duration_m: Optional[float] = Field(default=None, description="Time in minutes for each step.")
     temp_c: Optional[float] = Field(default=None, description="Temperature in Celsius for the heat wait step.")
