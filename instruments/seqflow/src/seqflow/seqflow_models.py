@@ -30,10 +30,10 @@ class SeqFlowStep(BaseModel):
 
     # --- STEP PARAMETERS ---
     # TODO clean up some fields, currently match with sequence.json file and add unit
-    flow_rate: Optional[float] = Field(default=None, description="Flow rate in mL/min for pump device.")
-    time_m: Optional[float] = Field(default=None, description="Time in minutes for the step.")
-    temperature: Optional[float] = Field(default=None, description="Temperature in Celsius for the step.")
-    device: str
+    flow_rate_mlpm: Optional[float] = Field(default=None, description="Flow rate in mL/min for pump device.")
+    duration_m: Optional[float] = Field(default=None, description="Time in minutes for each step.")
+    temp_c: Optional[float] = Field(default=None, description="Temperature in Celsius for the heat wait step.")
+    device: str = Field(description="The device to be used for this step (e.g., pump, heat_device, wait, stopper).")
     solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn (mL) to fill into slides.")
 
 class SeqFlowResumeState(BaseModel):
@@ -98,14 +98,14 @@ class SeqFlowJob(Job):
         total_time_s = 0.0
 
         for step in self.protocol[start_step:]:
-            if step.device == "pump" and step.flow_rate:
+            if step.device == "pump" and step.flow_rate_mlpm:
                 total_volume = sum(step.solution.values()) if step.solution else 0.0
                 if total_volume > 0:
                     # Convert: (volume / flow_rate) gives minutes. Multiply by 60 for seconds.
                     # TODO maybe need to multiply by number of slides. (Check pump)
-                    total_time_s += (total_volume / step.flow_rate) * 60.0
-            elif step.device in ["heat_device", "wait"] and step.time_m:
-                    total_time_s += step.time_m * 60.0  # Convert minutes to seconds
+                    total_time_s += (total_volume / step.flow_rate_mlpm) * 60.0
+            elif step.device in ["heat_device", "wait"] and step.duration_m:
+                    total_time_s += step.duration_m * 60.0  # Convert minutes to seconds
         return total_time_s
 
     def save_resume_state(
