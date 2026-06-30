@@ -90,7 +90,7 @@ def main():
         instances={"seqflow": seqflow_device},
         **config.cfg.get("router_server_kwargs", {}),
     )
-    logger.info(f"SeqFlow ZMQ Server started!")
+    logger.info("SeqFlow ZMQ Server started!")
     server.run()
 
     while not server.context.closed:

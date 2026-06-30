@@ -4,12 +4,11 @@
 from pydantic import (
     BaseModel,
     Field,
-    field_validator,
     ValidationError,
     AfterValidator,
 )
 from mixology.job import Job
-from typing import Optional, Annotated, Any, Literal
+from typing import Optional, Annotated, Any
 from pathlib import Path
 
 class SeqFlowConfig(

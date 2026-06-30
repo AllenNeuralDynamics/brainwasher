@@ -6,10 +6,8 @@ from mixology.devices.simulated_devices.selector import SimSelector
 from seqflow.seqflow_models import (
     SeqFlowConfig,
     SeqFlowJob,
-    SeqFlowResumeState,
 )
 from mixology.devices.vessels import SlideContainer
-from functools import wraps
 from datetime import datetime
 from typing import Union, Optional
 from pathlib import Path
