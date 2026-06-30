@@ -9,7 +9,7 @@ from seqflow.seqflow_models import (
 )
 from mixology.devices.vessels import SlideContainer
 from datetime import datetime
-from typing import Union, Optional
+from typing import Union, Optional, Any
 from pathlib import Path
 import time
 import yaml
@@ -42,7 +42,7 @@ class SeqFlow(Instrument):
         # current job to run
         self._job: Optional[SeqFlowJob] = None
         # TODO: Add resume state tracking to SeqFlowJob. For now only remaining time is tracked in the instrument, but this should be saved to the job for resuming later.
-        self.resume_state_overrides = {}
+        self.resume_state_overrides: dict[str, Any] = {}
 
     def _load_job(self, job_path: str | Path) -> SeqFlowJob:
         """
@@ -84,6 +84,8 @@ class SeqFlow(Instrument):
         """Convenience method to get current job"""
         if self._job:
             return self._job.model_dump()
+    
+        return None
 
     def set_job(self, job: Union[dict, SeqFlowJob]) -> None:
         """Convenience method to set current job"""
@@ -117,10 +119,10 @@ class SeqFlow(Instrument):
             sequence_name: str,
             sequence_index: int,
             device: str,
-            solution: dict = None,
-            flow_rate_mlpm: float = None,
-            duration_m: float = None,
-            temp_c: float = None
+            solution: Optional[dict] = None,
+            flow_rate_mlpm: Optional[float] = None,
+            duration_m: Optional[float] = None,
+            temp_c: Optional[float] = None
         ):
         duration_s = 0.0
 

@@ -11,14 +11,14 @@ from mixology.job import Job
 from typing import Optional, Annotated, Any
 from pathlib import Path
 
-class SeqFlowConfig(
-    BaseModel,
-    validate_assignment=True,
-):
-    save_folder: Path = Field(default="../../seq_flow_jobs/")
+class SeqFlowConfig(BaseModel, validate_assignment=True):
+    # Use default_factory to satisfy mypy's static type checker
+    save_folder: Path = Field(default_factory=lambda: Path("../../seq_flow_jobs/"))
+    
     selector_port_map: dict[str, int]
     instrument_name: Optional[str] = Field(
-        default=None, description="Optional instrument name."
+        default=None, 
+        description="Optional instrument name."
     )
 
 class SeqFlowStep(BaseModel):

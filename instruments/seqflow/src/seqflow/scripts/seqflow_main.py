@@ -31,6 +31,8 @@ class ZMQServer(RouterServer):
         
         self.log = logging.getLogger(self.__class__.__name__)
         self.config = config or {}
+        if instances is None:
+            raise ValueError("instances dictionary must be provided to ZMQServer")
         self.seqflow: SeqFlow = instances["seqflow"]  # create empyt Job
         
         self.add_named_call("start", "seqflow", "start_run")
