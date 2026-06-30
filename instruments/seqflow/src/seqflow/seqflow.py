@@ -129,38 +129,39 @@ class SeqFlow(Instrument):
         # TODO Change to actual hardware call after adding drivers
         # Calculate Time for Fluidics (Pump)
         if device == "pump" and flow_rate_mlpm and solution:
-            total_vol = sum(solution.values())
-            duration_s = (total_vol / flow_rate_mlpm) * 60.0
-
-            # --- Simulated Hardware Calls Go Here ---
-            self.log.info(f"Simulating Pump: {total_vol}mL at {flow_rate_mlpm}mL/min. Est time: {duration_s:.1f}s")
+            if duration_m is not None:
+                # Resume state
+                duration_s = duration_m * 60.0
+                self.log.info(f"Resuming pump step for remaining {duration_m:.2f} minutes.")
+            else:
+                total_vol = sum(solution.values())
+                duration_m = total_vol / flow_rate_mlpm
+                duration_s = duration_m * 60.0
+                # --- Simulated Hardware Calls Go Here ---
+                self.log.info(f"Simulating Pump: {total_vol}mL at {flow_rate_mlpm}mL/min. Est time: {duration_m:.1f} minutes")
+                # Purge solution before adding new solution
+                self.slide_container.purge_solution()
+                self.slide_container.add_solution(**solution)
 
         # Calculate Time for Idle/Heat
         elif device in ["heat_device", "wait"] and duration_m:
             duration_s = duration_m * 60.0
-
             # --- Simulated Hardware Calls Go Here ---
             self.log.info(f"Simulating Wait/Heat: {duration_m} minutes. Est time: {duration_s:.1f}s")
+            self.slide_container.purge_solution()
 
         # Simulated Execution Loop (Blocks thread, checks for pause)
         if duration_s > 0:
             start_time = time.perf_counter()
-    
             while (time.perf_counter() - start_time) < duration_s:
-
-                # Catch pause request instantly
                 if self.pause_requested.is_set():
+                    self.log.warning(f"Paused mid-{device} {solution}.")
                     elapsed_s = time.perf_counter() - start_time
-                    remaining_m = (duration_s - elapsed_s) / 60.0
-
-                    self.log.warning(f"Paused mid-{device}. {remaining_m:.2f} minutes remaining.")
-
+                    remaining_s = duration_s - elapsed_s
+                    remaining_m = round(remaining_s / 60.0, 3)
                     # Override the remaining time so the resume step picks up the exact remainder
-                    self.resume_state_overrides = {"duration_m": remaining_m}
-                    return 
-
-                # Short sleep to prevent CPU pegging during the while loop
-                time.sleep(0.05)
+                    self.resume_state_overrides.update(duration_m=remaining_m)
+                    return
 
     def _run_job_worker(self, job: SeqFlowJob, job_path: Path):
         # Sync the newly loaded disk object back to our main memory!

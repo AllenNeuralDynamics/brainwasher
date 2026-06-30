@@ -23,19 +23,27 @@ def main():
     print("--- Starting Sequence ---")
     response = client.call("seqflow", "start_run", kwargs={"job": job_payload})
     print(f"Response: {response}\n")
-
-    print("Waiting 30 seconds before pausing...")
-    time.sleep(10)
+    time.sleep(5)
 
     print("--- Pausing Sequence ---")
     response = client.call("seqflow", "pause")
     print(f"Response: {response}\n")
-    time.sleep(3)
+    time.sleep(5)
 
     print("--- Resuming Sequence ---")
     response = client.call("seqflow", "resume_run")
     print(f"Response: {response}\n")
+    time.sleep(5)
 
+    print("--- Pausing Sequence ---")
+    response = client.call("seqflow", "pause")
+    print(f"Response: {response}\n")
+    time.sleep(5)
+
+    print("--- Resuming Sequence ---")
+    response = client.call("seqflow", "resume_run")
+    print(f"Response: {response}\n")
+    
     print("--- Getting Stream after Resume ---")
     # Read a few more stream messages to verify it is running again
     start_time = time.time()
