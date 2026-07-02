@@ -115,40 +115,29 @@ class SeqFlow(Instrument):
         pass
 
     def run_step(
-            self, 
-            sequence_name: str,
-            sequence_index: int,
+            self,
             device: str,
             solution: Optional[dict] = None,
             flow_rate_mlpm: Optional[float] = None,
-            duration_m: Optional[float] = None,
+            duration_s: Optional[float] = None,
             temp_c: Optional[float] = None
         ):
-        duration_s = 0.0
+        if device in ["heat_device", "wait"]:
+            self.log.info(f"Simulating Wait/Heat: {duration_s} seconds. Est time: {duration_s:.1f}s")
+            self.slide_container.purge_solution()
 
-        # TODO Change to actual hardware call after adding drivers
-        # Calculate Time for Fluidics (Pump)
         if device == "pump" and flow_rate_mlpm and solution:
-            if duration_m is not None:
-                # Resume state
-                duration_s = duration_m * 60.0
-                self.log.info(f"Resuming pump step for remaining {duration_m:.2f} minutes.")
+            is_resume = duration_s is not None
+            if is_resume:
+                self.log.info(f"Resuming pump step for remaining {duration_s:.2f} seconds.")
             else:
                 total_vol = sum(solution.values())
-                duration_m = total_vol / flow_rate_mlpm
-                duration_s = duration_m * 60.0
+                duration_s = total_vol / flow_rate_mlpm * 60.0
                 # --- Simulated Hardware Calls Go Here ---
-                self.log.info(f"Simulating Pump: {total_vol}mL at {flow_rate_mlpm}mL/min. Est time: {duration_m:.1f} minutes")
+                self.log.info(f"Simulating Pump: {total_vol}mL at {flow_rate_mlpm}mL/min. Est time: {duration_s:.1f} seconds")
                 # Purge solution before adding new solution
                 self.slide_container.purge_solution()
                 self.slide_container.add_solution(**solution)
-
-        # Calculate Time for Idle/Heat
-        elif device in ["heat_device", "wait"] and duration_m:
-            duration_s = duration_m * 60.0
-            # --- Simulated Hardware Calls Go Here ---
-            self.log.info(f"Simulating Wait/Heat: {duration_m} minutes. Est time: {duration_s:.1f}s")
-            self.slide_container.purge_solution()
 
         # Simulated Execution Loop (Blocks thread, checks for pause)
         if duration_s > 0:
@@ -158,9 +147,8 @@ class SeqFlow(Instrument):
                     self.log.warning(f"Paused mid-{device} {solution}.")
                     elapsed_s = time.perf_counter() - start_time
                     remaining_s = duration_s - elapsed_s
-                    remaining_m = round(remaining_s / 60.0, 3)
                     # Override the remaining time so the resume step picks up the exact remainder
-                    self.resume_state_overrides.update(duration_m=remaining_m)
+                    self.resume_state_overrides.update(duration_s=remaining_s)
                     return
 
     def _run_job_worker(self, job: SeqFlowJob, job_path: Path):

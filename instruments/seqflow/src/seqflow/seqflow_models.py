@@ -23,14 +23,10 @@ class SeqFlowConfig(BaseModel, validate_assignment=True):
 
 class SeqFlowStep(BaseModel):
     """Model representing a single action within a sequence."""
-    # --- METADATA TRACKING ---
-    sequence_name: str = Field(description="The name of the sequence this step belongs to.")
-    sequence_index: int = Field(description="The execution order index of the parent sequence.")
-
     # --- STEP PARAMETERS ---
     # TODO clean up some fields, currently match with sequence.json file
     flow_rate_mlpm: Optional[float] = Field(default=None, description="Flow rate in mL/min for pump device.")
-    duration_m: Optional[float] = Field(default=None, description="Time in minutes for each step.")
+    duration_s: Optional[float] = Field(default=None, description="Time in seconds for each step.")
     temp_c: Optional[float] = Field(default=None, description="Temperature in Celsius for the heat wait step.")
     device: str = Field(description="The device to be used for this step (e.g., pump, heat_device, wait, stopper).")
     solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn (mL) to fill into slides.")
@@ -59,8 +55,6 @@ class SeqFlowResumeState(BaseModel):
             # Lazy way: try making a valid Step using dummy metadata
             SeqFlowStep(
                 **overrides, 
-                sequence_name="resume_validation",  # TODO
-                sequence_index=0, 
                 device="pump"
             )
         except ValidationError as e:
@@ -103,8 +97,8 @@ class SeqFlowJob(Job):
                     # Convert: (volume / flow_rate) gives minutes. Multiply by 60 for seconds.
                     # TODO maybe need to multiply by number of slides. (Check pump)
                     total_time_s += (total_volume / step.flow_rate_mlpm) * 60.0
-            elif step.device in ["heat_device", "wait"] and step.duration_m:
-                    total_time_s += step.duration_m * 60.0  # Convert minutes to seconds
+            elif step.device in ["heat_device", "wait"] and step.duration_s:
+                    total_time_s += step.duration_s
         return total_time_s
 
     def save_resume_state(

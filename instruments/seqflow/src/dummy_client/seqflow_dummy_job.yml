@@ -1,37 +1,27 @@
 name: "SeqFlow Flattened Test Job"
 starting_solution: {}
 protocol:
-  - sequence_name: "Fluidics_sequence_flush_all"
-    sequence_index: 0
-    flow_rate_mlpm: 1.0
+  - flow_rate_mlpm: 1.0
     solution:
       pbst: 0.1
     device: "pump"
 
-  - sequence_name: "Fluidics_sequence_bcseq01"
-    sequence_index: 1
-    flow_rate_mlpm: 1.0
+  - flow_rate_mlpm: 1.0
     solution:
       incorporation_buffer: 0.1
     device: "pump"
     
-  - sequence_name: "Fluidics_sequence_bcseq01"
-    sequence_index: 1
-    duration_m: 0.1
+  - duration_s: 15
     solution:
       incorporation_buffer_heat_wait: 0.0
     device: "heat_device"
 
-  - sequence_name: "Fluidics_sequence_bcseq01"
-    sequence_index: 1
-    flow_rate_mlpm: 1.0
+  - flow_rate_mlpm: 1.0
     solution:
       iodoacetamide_blocker: 0.1
     device: "pump"
     
-  - sequence_name: "Fluidics_sequence_bcseq01"
-    sequence_index: 1
-    duration_m: 0.1
+  - duration_s: 15
     solution:
       iodoacetamide_blocker_heat_wait: 0.0
     device: "heat_device"
