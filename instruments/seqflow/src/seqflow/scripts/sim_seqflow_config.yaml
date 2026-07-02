@@ -33,7 +33,7 @@ devices:
         name: "simSelector"
         positions: 10
         position_map: selector_port_map
-  slide_container:
+  rxn_vessel:
     class: mixology.devices.vessels.SlideContainer
     skip_kwds: [name]
     kwds:
@@ -46,5 +46,5 @@ devices:
       config: config
       pump: pump
       selector: selector
-      slide_container: slide_container
+      rxn_vessel: rxn_vessel
       

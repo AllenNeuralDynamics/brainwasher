@@ -27,17 +27,13 @@ class SeqFlow(Instrument):
         config: SeqFlowConfig,
         pump: SimPeristalticPump,
         selector: SimSelector,
-        slide_container: SlideContainer,
+        rxn_vessel: SlideContainer,
     ):
         super().__init__()
         self.config = config
         self.pump = pump
         self.selector = selector
-
-        # Just two different nametags pointing to the exact same physical container in memory
-        # so the base Instrument class stays happy
-        self.slide_container = slide_container
-        self.rxn_vessel = self.slide_container
+        self.rxn_vessel = rxn_vessel
 
         # current job to run
         self._job: Optional[SeqFlowJob] = None
@@ -124,7 +120,7 @@ class SeqFlow(Instrument):
         ):
         if device in ["heat_device", "wait"]:
             self.log.info(f"Simulating Wait/Heat: {duration_s} seconds. Est time: {duration_s:.1f}s")
-            self.slide_container.purge_solution()
+            self.rxn_vessel.purge_solution()
 
         if device == "pump" and flow_rate_mlpm and solution:
             is_resume = duration_s is not None
@@ -136,8 +132,8 @@ class SeqFlow(Instrument):
                 # --- Simulated Hardware Calls Go Here ---
                 self.log.info(f"Simulating Pump: {total_vol}mL at {flow_rate_mlpm}mL/min. Est time: {duration_s:.1f} seconds")
                 # Purge solution before adding new solution
-                self.slide_container.purge_solution()
-                self.slide_container.add_solution(**solution)
+                self.rxn_vessel.purge_solution()
+                self.rxn_vessel.add_solution(**solution)
 
         # Simulated Execution Loop (Blocks thread, checks for pause)
         if duration_s > 0:
