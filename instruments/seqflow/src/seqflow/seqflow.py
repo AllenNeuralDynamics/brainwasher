@@ -18,7 +18,7 @@ import yaml
 class SeqFlow(Instrument):
     """
 
-    Class for controlling 0365 - AIND Hydrogel Imaging Prep Automation
+    Class for controlling BARseq SeqFlow instrument.
 
     """
 
