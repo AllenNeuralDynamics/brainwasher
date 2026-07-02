@@ -40,20 +40,8 @@ class SeqFlow(Instrument):
         # TODO: Add resume state tracking to SeqFlowJob. For now only remaining time is tracked in the instrument, but this should be saved to the job for resuming later.
         self.resume_state_overrides: dict[str, Any] = {}
 
-    def _load_job(self, job_path: str | Path) -> SeqFlowJob:
-        """
-        Override base class method to load a SeqFlowJob from a yaml file.
-        """
-        job_path = Path(job_path)
-        if not job_path.exists():
-            raise FileNotFoundError(
-                f"Job does not exist at location: {job_path.resolve()}"
-            )
-        with open(job_path) as yaml_stream:
-            self.log.debug(f"Loading job from: {job_path.absolute()}")
-            job_dict = yaml.safe_load(yaml_stream)
-            job = SeqFlowJob(**job_dict)
-            return job
+    def _load_job(self, job_path: str) -> SeqFlowJob:
+        return super()._load_job(job_path, job_class=SeqFlowJob)
     
     def start_run(self, job: SeqFlowJob):
         """
