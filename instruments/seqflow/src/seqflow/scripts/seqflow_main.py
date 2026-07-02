@@ -6,7 +6,7 @@ import argparse
 from typing import Optional
 
 from one_liner.server import RouterServer  # type: ignore
-from device_spinner.config import Config  # type: ignore
+from device_spinner.file_backed_dict import FileBackedDict  # type: ignore
 from device_spinner.device_spinner import DeviceSpinner  # type: ignore
 from seqflow.seqflow import SeqFlow  # type: ignore
 
@@ -60,7 +60,7 @@ def main():
             handler.setLevel(args.log_level)
 
     config_name = args.config if not args.simulated else r"src\seqflow\scripts\sim_seqflow_config.yaml"
-    config = Config(config_name)
+    config = FileBackedDict(config_name)
 
     # Set logging config before instantiating devices to not clear loggers
     if hasattr(config, "cfg") and "logging" in config.cfg:
@@ -69,7 +69,7 @@ def main():
         loggic_setup()
 
     # Create the instrument (Mockup)
-    device_specs = dict(config.cfg)
+    device_specs = config
     factory = DeviceSpinner()
     device_trees = factory.create_devices_from_specs(device_specs["devices"])
     seqflow_device = device_trees["seqflow"]
@@ -90,7 +90,7 @@ def main():
     # Start server
     server = ZMQServer(
         instances={"seqflow": seqflow_device},
-        **config.cfg.get("router_server_kwargs", {}),
+        **config.get("router_server_kwargs", {}),
     )
     logger.info("SeqFlow ZMQ Server started!")
     server.run()
