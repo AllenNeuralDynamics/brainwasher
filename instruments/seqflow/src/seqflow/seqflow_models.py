@@ -8,8 +8,9 @@ from pydantic import (
     AfterValidator,
 )
 from mixology.job import Job
-from typing import Optional, Annotated, Any
+from typing import Optional, Annotated, Any, Literal
 from pathlib import Path
+
 
 class SeqFlowConfig(BaseModel, validate_assignment=True):
     # Use default_factory to satisfy mypy's static type checker
@@ -30,6 +31,17 @@ class SeqFlowStep(BaseModel):
     temp_c: Optional[float] = Field(default=None, description="Temperature in Celsius for the heat wait step.")
     device: str = Field(description="The device to be used for this step (e.g., pump, heat_device, wait, stopper).")
     solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn (mL) to fill into slides.")
+
+
+class SeqFlowJobStatus(BaseModel):
+    """Model of messages used to convey state of seqflow job"""
+    status: Literal["failed", "finished", "running", "paused", "idle"] = Field(
+        ..., description="Indicated if status of job."
+    )
+    message: Optional[str] = Field(
+        default=None, description="Optional message of additional info."
+    )
+
 
 class SeqFlowResumeState(BaseModel):
     """Resume state tracking for SeqFlow."""

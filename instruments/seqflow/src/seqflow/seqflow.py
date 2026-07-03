@@ -6,7 +6,9 @@ from mixology.devices.simulated_devices.selector import SimSelector
 from seqflow.seqflow_models import (
     SeqFlowConfig,
     SeqFlowJob,
+    SeqFlowJobStatus,
 )
+from threading import Lock
 from mixology.devices.vessels import SlideContainer
 from datetime import datetime
 from typing import Union, Optional, Any
@@ -35,6 +37,10 @@ class SeqFlow(Instrument):
         self.selector = selector
         self.rxn_vessel = rxn_vessel
 
+        # attribute to track events that occur in job_worker
+        self.job_status_lock = Lock()
+        self.job_status: SeqFlowJobStatus = SeqFlowJobStatus(status="idle")
+
         # current job to run
         self._job: Optional[SeqFlowJob] = None
         # TODO: Add resume state tracking to SeqFlowJob. For now only remaining time is tracked in the instrument, but this should be saved to the job for resuming later.
@@ -43,6 +49,30 @@ class SeqFlow(Instrument):
     def _load_job(self, job_path: str) -> SeqFlowJob:
         return super()._load_job(job_path, job_class=SeqFlowJob)
     
+    def restart_run(self, job: SeqFlowJob):
+        """
+        Reset SeqFlow and start run
+
+        :param job: job to run
+
+        """
+        # reset SeqFlow
+        self.clear_job()
+        self.start_run(job)
+    
+    def clear_job(self) -> None:
+        """
+        Clear job and update status
+        """
+        if self.job_status.status == "running":
+            self.log.warning(
+                "Cannot reset state when instrument is running. Please pause."
+            )
+            return
+        self._job = None
+        with self.job_status_lock:
+            self.job_status = SeqFlowJobStatus(status="idle")
+
     def start_run(self, job: SeqFlowJob):
         """
         Reset SeqFlow and start run
@@ -73,11 +103,29 @@ class SeqFlow(Instrument):
 
     def set_job(self, job: Union[dict, SeqFlowJob]) -> None:
         """Convenience method to set current job"""
-        # TODO: Add lock and set_job is not allowed while a job is running
-        if isinstance(job, dict):
-            self._job = SeqFlowJob(**job)
-        else:
-            self._job = job
+        if self.job_status.status == "running":
+            self.log.warning("Cannot set job when instrument is running. Please pause.")
+            return
+
+        self._job = SeqFlowJob(**job) if type(job) == dict else job
+        status = "paused" if self._job.resume_state else "idle"
+        with self.job_status_lock:
+            self.log.info(f"Job set and setting to {status}")
+            self.job_status = SeqFlowJobStatus(status=status)
+
+    def clear_status(self) -> None:
+        """clear status of failed if possible."""
+
+        if self.job_status.status == "running":
+            self.log.warning("Cannot clear state while running.")
+            return
+
+        status = "paused" if self._job and self._job.resume_state else "idle"
+        with self.job_status_lock:
+            self.log.info(
+                f"Clearing {self.job_status.status} job status and setting to {status}"
+            )
+            self.job_status = SeqFlowJobStatus(status=status)
 
     def pause(self) -> None:
         """Request that the system pause the currently running protocol and
@@ -87,11 +135,18 @@ class SeqFlow(Instrument):
     def get_progress(self) -> dict:
         """Get current progress of job as a dict."""
         # TODO get more details
-        status = "idle"
-        if self.job_worker and self.job_worker.is_alive():
-            status = "paused" if self.pause_requested.is_set() else "running"
-        job_name = self._job.name if self._job else "None"
-        return {"job_status": status, "job_name": job_name}
+        if not self._job:
+            return {"status": "idle"}
+        current_status = self.get_job_status()
+        return current_status.model_dump()
+
+    def get_job_status(self) -> SeqFlowJobStatus:
+        """
+        Getter function that returns the job_status attribute
+        """
+
+        with self.job_status_lock:
+            return self.job_status
 
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
@@ -139,8 +194,30 @@ class SeqFlow(Instrument):
         # Sync the newly loaded disk object back to our main memory!
         self._job = job
         
-        # Now hand it off to the base Instrument class
-        super()._run_job_worker(job, job_path)
+        try:
+            with self.job_status_lock:
+                self.job_status = SeqFlowJobStatus(status="running")
+            # Now hand it off to the base Instrument class
+            super()._run_job_worker(job, job_path)
+        
+            # clear job if finished
+            if not job.resume_state:
+                self._job = None
+                self.log.info("Job finished.")
+                message = SeqFlowJobStatus(status="finished")
+
+            else:
+                self.log.info("Job paused.")
+                message = SeqFlowJobStatus(status="paused")
+
+        except Exception as e:
+            self.log.error(f"Error running job: {str(e)}.")
+            message = SeqFlowJobStatus(status="failed", message=str(e))
+            raise e
+
+        finally:
+            with self.job_status_lock:
+                self.job_status = message
 
     def resume_run(self):
         """
