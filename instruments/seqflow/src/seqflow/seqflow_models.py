@@ -11,6 +11,8 @@ from mixology.job import Job
 from typing import Optional, Annotated, Any, Literal
 from pathlib import Path
 
+DeviceType = Literal["pump", "heat_device", "wait", "stopper"]
+
 
 class SeqFlowConfig(BaseModel, validate_assignment=True):
     # Use default_factory to satisfy mypy's static type checker
@@ -29,9 +31,10 @@ class SeqFlowStep(BaseModel):
     flow_rate_mlpm: Optional[float] = Field(default=None, description="Flow rate in mL/min for pump device.")
     duration_s: Optional[float] = Field(default=None, description="Time in seconds for each step.")
     temp_c: Optional[float] = Field(default=None, description="Temperature in Celsius for the heat wait step.")
-    device: str = Field(description="The device to be used for this step (e.g., pump, heat_device, wait, stopper).")
+    device: DeviceType = Field(description="The device to be used for this step (e.g., pump, heat_device, wait, stopper).")
     solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn (mL) to fill into slides.")
 
+    # TODO: Add validation
 
 class SeqFlowJobStatus(BaseModel):
     """Model of messages used to convey state of seqflow job"""

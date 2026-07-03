@@ -7,6 +7,7 @@ from seqflow.seqflow_models import (
     SeqFlowConfig,
     SeqFlowJob,
     SeqFlowJobStatus,
+    DeviceType,
 )
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
@@ -155,7 +156,7 @@ class SeqFlow(Instrument):
 
     def run_step(
             self,
-            device: str,
+            device: DeviceType,
             solution: Optional[dict] = None,
             flow_rate_mlpm: Optional[float] = None,
             duration_s: Optional[float] = None,
