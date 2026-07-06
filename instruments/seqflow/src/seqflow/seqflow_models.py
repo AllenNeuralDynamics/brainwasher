@@ -9,7 +9,6 @@ from pydantic import (
 )
 from mixology.job import Job
 from typing import Optional, Annotated, Any, Literal
-from pathlib import Path
 
 DeviceType = Literal["pump", "heat_device", "wait", "stopper"]
 
