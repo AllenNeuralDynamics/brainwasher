@@ -150,6 +150,7 @@ class Instrument:
             yaml.dump(job.model_dump(exclude_none=True), job_file)
         self.log.info(f"Finished job: {job.name} from {job_path}")
 
+    @staticmethod
     def save_resume_state(
         self, job: Job, resume_step: int, starting_solution: dict, **overrides: dict
     ):
