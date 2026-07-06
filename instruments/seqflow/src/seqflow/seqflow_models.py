@@ -19,7 +19,7 @@ class SeqFlowStep(BaseModel):
     # --- STEP PARAMETERS ---
     duration_s: Optional[float] = Field(default=None, description="Time in seconds for each step.")
     temp_c: Optional[float] = Field(default=None, description="Temperature in Celsius for the heat wait step.")
-    solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn (mL) to fill into slides.")
+    solution: dict[str, float] = Field(default_factory=dict, description="solution name and volume (mL) to fill into slides.")
     flow_rate_mlpm: Optional[float] = Field(default=None, description="Step-specific flow rate override in mL/min.")
 
     # TODO Validation! 

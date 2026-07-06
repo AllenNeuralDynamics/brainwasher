@@ -38,7 +38,7 @@ class WasteVessel(Vessel):
 @dataclass(kw_only=True)
 class SlideContainer(Vessel):
     """A custom reaction vessel representing a multi-slide flow cell."""
-    num_slides: int  # TODO: This can be used to calcuate the duration_s of step
+    num_slides: int  # TODO: This can be used to calculate the duration_s of step
     max_volume_ul: float = field(init=False)
 
     def __post_init__(self):

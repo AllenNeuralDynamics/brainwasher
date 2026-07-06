@@ -46,7 +46,7 @@ class ZMQServer(RouterServer):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default=r"src\seqflow\scripts\sim_seqflow_config.yaml")
+    parser.add_argument("--config", type=str, default="src/seqflow/scripts/sim_seqflow_config.yaml")
     parser.add_argument("--log-level", type=str, default="INFO", choices=["INFO", "DEBUG"])
     parser.add_argument("--simulated", default=False, action="store_true",
                         help="Simulate hardware device connections.")
@@ -59,7 +59,7 @@ def main():
         if handler.get_name() == 'console':
             handler.setLevel(args.log_level)
 
-    config_name = args.config if not args.simulated else r"src\seqflow\scripts\sim_seqflow_config.yaml"
+    config_name = args.config if not args.simulated else "src/seqflow/scripts/sim_seqflow_config.yaml"
     config = FileBackedDict(config_name)
 
     # Set logging config before instantiating devices to not clear loggers
