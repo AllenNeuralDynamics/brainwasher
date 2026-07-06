@@ -3,7 +3,7 @@ router_server_kwargs:
     broadcast_port: 5556
 devices:
   config: 
-    class: seqflow.seqflow_models.SeqFlowConfig
+    class: seqflow.seqflow_config.SeqFlowConfig
     kwds:
       selector_port_map:
         incorporation_buffer: 1

@@ -3,11 +3,8 @@
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
 from mixology.devices.simulated_devices.selector import SimSelector
-from seqflow.seqflow_models import (
-    SeqFlowConfig,
-    SeqFlowJob,
-    SeqFlowJobStatus,
-)
+from seqflow.seqflow_models import SeqFlowJob,SeqFlowJobStatus
+from seqflow.seqflow_config import SeqFlowConfig
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
 from datetime import datetime
@@ -150,6 +147,9 @@ class SeqFlow(Instrument):
 
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
+        # TODO: Add logic 
+        # Example) If total volumn > 0, then solution should be in the selector_port_map (For heat or wait status)
+        # If 
         pass
 
     def run_step(
@@ -172,7 +172,7 @@ class SeqFlow(Instrument):
                 self.log.info(f"Resuming pump step for remaining {duration_s:.2f} seconds.")
             else:
                 duration_s = self.pump.get_dispense_duration_s(total_vol)
-                self.pump.dispense(total_vol)
+                self.pump.dispense(total_vol)  # TODO
                 # Purge solution before adding new solution
                 self.rxn_vessel.purge_solution()
                 if solution is not None:
