@@ -3,6 +3,7 @@
 import logging
 from time import sleep
 
+
 class SimPeristalticPump:
     def __init__(self, name: str = "", flow_rate_mlpm: float = 1.5):
         logger_name = self.__class__.__name__ + (f".{name}" if name else "")
@@ -13,8 +14,8 @@ class SimPeristalticPump:
         """
         Updates the hardware flow rate
         """
-        if flow_rate_mlpm <= 0:
-            raise ValueError("Flow rate must be greater than 0 mL/min.")
+        if flow_rate_mlpm < 0:
+            raise ValueError("Flow rate must be greater or equal to zero.")
 
         if self.flow_rate_mlpm != flow_rate_mlpm:
             self.flow_rate_mlpm = flow_rate_mlpm
@@ -28,6 +29,8 @@ class SimPeristalticPump:
 
     def dispense_by_time(self, duration_s: float):
         """Simulates dispensing for a specific duration."""
+        if duration_s <= 0.0 or self.flow_rate_mlpm <= 0.0:
+            return
         self.log.info(f"[{self.log.name}] Dispensing for {duration_s:.2f} seconds at {self.flow_rate_mlpm} mL/min...")
 
     def get_dispense_duration_s(self, volume_ml: float) -> float:
