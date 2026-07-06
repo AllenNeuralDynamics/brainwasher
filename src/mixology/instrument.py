@@ -152,7 +152,7 @@ class Instrument:
 
     @staticmethod
     def save_resume_state(
-        self, job: Job, resume_step: int, starting_solution: dict, **overrides: dict
+        job: Job, resume_step: int, starting_solution: dict, **overrides: dict
     ):
         """
         Save resume state of job
