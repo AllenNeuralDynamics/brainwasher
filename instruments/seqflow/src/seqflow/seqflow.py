@@ -11,7 +11,7 @@ from seqflow.seqflow_models import (
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
 from datetime import datetime
-from typing import Union, Optional, Any
+from typing import Union, Optional, Any, Literal
 from pathlib import Path
 import time
 import yaml
@@ -108,7 +108,7 @@ class SeqFlow(Instrument):
             return
 
         self._job = SeqFlowJob(**job) if isinstance(job, dict) else job
-        status = "paused" if self._job.resume_state else "idle"
+        status: Literal["paused", "idle"] = "paused" if self._job.resume_state else "idle"
         with self.job_status_lock:
             self.log.info(f"Job set and setting to {status}")
             self.job_status = SeqFlowJobStatus(status=status)
@@ -120,7 +120,7 @@ class SeqFlow(Instrument):
             self.log.warning("Cannot clear state while running.")
             return
 
-        status = "paused" if self._job and self._job.resume_state else "idle"
+        status: Literal["paused", "idle"] = "paused" if self._job and self._job.resume_state else "idle"
         with self.job_status_lock:
             self.log.info(
                 f"Clearing {self.job_status.status} job status and setting to {status}"
@@ -158,6 +158,9 @@ class SeqFlow(Instrument):
             duration_s: Optional[float] = None,
             temp_c: Optional[float] = None
         ):
+        if self._job is None:
+            raise ValueError("No job loaded. Please load a job before running a step.")
+
         self.pump.set_flow_rate(self._job.flow_rate_mlpm)
 
         # Calculate volume to determine the implicit step type
@@ -172,11 +175,12 @@ class SeqFlow(Instrument):
                 self.pump.dispense(total_vol)
                 # Purge solution before adding new solution
                 self.rxn_vessel.purge_solution()
-                self.rxn_vessel.add_solution(**solution)
+                if solution is not None:
+                    self.rxn_vessel.add_solution(**solution)
         else:  # Wait or Heat step
             self.rxn_vessel.purge_solution()
 
-        if duration_s > 0:
+        if duration_s is not None and duration_s > 0:
             start_time = time.perf_counter()
             while (time.perf_counter() - start_time) < duration_s:
                 if self.pause_requested.is_set():
