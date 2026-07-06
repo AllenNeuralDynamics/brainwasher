@@ -1,27 +1,20 @@
-name: "SeqFlow Flattened Test Job"
+name: "SeqFlow Test Job"
+flow_rate_mlpm: 1.5
 starting_solution: {}
 protocol:
-  - flow_rate_mlpm: 1.0
-    solution:
+  - solution:
       pbst: 0.1
-    device: "pump"
 
-  - flow_rate_mlpm: 1.0
-    solution:
+  - solution:
       incorporation_buffer: 0.1
-    device: "pump"
     
   - duration_s: 15
     solution:
       incorporation_buffer_heat_wait: 0.0
-    device: "heat_device"
 
-  - flow_rate_mlpm: 1.0
-    solution:
+  - solution:
       iodoacetamide_blocker: 0.1
-    device: "pump"
     
   - duration_s: 15
     solution:
       iodoacetamide_blocker_heat_wait: 0.0
-    device: "heat_device"

@@ -27,6 +27,7 @@ devices:
     class: mixology.devices.simulated_devices.peristaltic_pump.SimPeristalticPump
     kwds:
         name: "simPump"
+        flow_rate_mlpm: 1.5
   selector:
     class: mixology.devices.simulated_devices.selector.SimSelector
     kwds:
@@ -47,4 +48,3 @@ devices:
       pump: pump
       selector: selector
       rxn_vessel: rxn_vessel
-      

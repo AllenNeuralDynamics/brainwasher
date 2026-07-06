@@ -151,43 +151,40 @@ class SeqFlow(Instrument):
 
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
-        # TODO
         pass
 
     def run_step(
             self,
-            device: DeviceType,
             solution: Optional[dict] = None,
-            flow_rate_mlpm: Optional[float] = None,
             duration_s: Optional[float] = None,
             temp_c: Optional[float] = None
         ):
-        if device in ["heat_device", "wait"]:
-            self.log.info(f"Simulating Wait/Heat: {duration_s} seconds. Est time: {duration_s:.1f}s")
-            self.rxn_vessel.purge_solution()
+        self.pump.set_flow_rate(self._job.flow_rate_mlpm)
 
-        if device == "pump" and flow_rate_mlpm and solution:
+        # Calculate volume to determine the implicit step type
+        total_vol = sum(solution.values()) if solution else 0.0
+
+        if total_vol > 0:  # If we have volume, it's a pump step
             is_resume = duration_s is not None
             if is_resume:
                 self.log.info(f"Resuming pump step for remaining {duration_s:.2f} seconds.")
             else:
-                total_vol = sum(solution.values())
-                duration_s = total_vol / flow_rate_mlpm * 60.0
-                # --- Simulated Hardware Calls Go Here ---
-                self.log.info(f"Simulating Pump: {total_vol}mL at {flow_rate_mlpm}mL/min. Est time: {duration_s:.1f} seconds")
+                duration_s = self.pump.get_dispense_duration_s(total_vol)
+                self.pump.dispense(total_vol)
                 # Purge solution before adding new solution
                 self.rxn_vessel.purge_solution()
                 self.rxn_vessel.add_solution(**solution)
+        else:  # Wait or Heat step
+            self.rxn_vessel.purge_solution()
 
-        # Simulated Execution Loop (Blocks thread, checks for pause)
         if duration_s > 0:
             start_time = time.perf_counter()
             while (time.perf_counter() - start_time) < duration_s:
                 if self.pause_requested.is_set():
-                    self.log.warning(f"Paused mid-{device} {solution}.")
+                    sol_info = f" {solution}" if solution else ""
+                    self.log.warning(f"Paused mid-{sol_info}.")
                     elapsed_s = time.perf_counter() - start_time
                     remaining_s = duration_s - elapsed_s
-                    # Override the remaining time so the resume step picks up the exact remainder
                     self.resume_state_overrides.update(duration_s=remaining_s)
                     return
 

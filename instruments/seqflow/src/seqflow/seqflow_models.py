@@ -27,11 +27,8 @@ class SeqFlowConfig(BaseModel, validate_assignment=True):
 class SeqFlowStep(BaseModel):
     """Model representing a single action within a sequence."""
     # --- STEP PARAMETERS ---
-    # TODO clean up some fields, currently match with sequence.json file
-    flow_rate_mlpm: Optional[float] = Field(default=None, description="Flow rate in mL/min for pump device.")
     duration_s: Optional[float] = Field(default=None, description="Time in seconds for each step.")
     temp_c: Optional[float] = Field(default=None, description="Temperature in Celsius for the heat wait step.")
-    device: DeviceType = Field(description="The device to be used for this step (e.g., pump, heat_device, wait, stopper).")
     solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn (mL) to fill into slides.")
 
     # TODO: Add validation
@@ -69,8 +66,7 @@ class SeqFlowResumeState(BaseModel):
         try:  
             # Lazy way: try making a valid Step using dummy metadata
             SeqFlowStep(
-                **overrides, 
-                device="pump"
+                **overrides,
             )
         except ValidationError as e:
             extra_msg = "Error validating ResumeState overrides against SeqFlowStep values."
@@ -96,6 +92,10 @@ class SeqFlowJob(Job):
         description="A list of steps to be run in order."
     )
     resume_state: Optional[SeqFlowResumeState] = None
+    flow_rate_mlpm: float = Field(
+        default=1.5, 
+        description="Flow rate in mL/min. Injected by the instrument prior to running."
+    )
 
     def get_duration_s(self, start_step: int = 0) -> float:
         """
@@ -106,14 +106,12 @@ class SeqFlowJob(Job):
         total_time_s = 0.0
 
         for step in self.protocol[start_step:]:
-            if step.device == "pump" and step.flow_rate_mlpm:
-                total_volume = sum(step.solution.values()) if step.solution else 0.0
-                if total_volume > 0:
-                    # Convert: (volume / flow_rate) gives minutes. Multiply by 60 for seconds.
-                    # TODO maybe need to multiply by number of slides. (Check pump)
-                    total_time_s += (total_volume / step.flow_rate_mlpm) * 60.0
-            elif step.device in ["heat_device", "wait"] and step.duration_s:
-                    total_time_s += step.duration_s
+            total_volume = sum(step.solution.values()) if step.solution else 0.0
+            # Implicit Pump Step
+            if total_volume > 0:
+                total_time_s += (total_volume / self.flow_rate_mlpm) * 60.0
+            elif step.duration_s:
+                total_time_s += step.duration_s
         return total_time_s
 
     def save_resume_state(
