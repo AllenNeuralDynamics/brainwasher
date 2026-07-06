@@ -161,23 +161,24 @@ class SeqFlow(Instrument):
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
 
-        self.pump.set_flow_rate(self._job.flow_rate_mlpm)
-
         # Calculate volume to determine the implicit step type
         total_vol = sum(solution.values()) if solution else 0.0
-
-        if total_vol > 0:  # If we have volume, it's a pump step
-            is_resume = duration_s is not None
-            if is_resume:
-                self.log.info(f"Resuming pump step for remaining {duration_s:.2f} seconds.")
-            else:
+        if total_vol > 0:
+            self.pump.set_flow_rate(self._job.flow_rate_mlpm)
+            if duration_s is None:
                 duration_s = self.pump.get_dispense_duration_s(total_vol)
-                self.pump.dispense(total_vol)  # TODO
-                # Purge solution before adding new solution
+                # Setup the vessel ONLY on a fresh start
                 self.rxn_vessel.purge_solution()
                 if solution is not None:
                     self.rxn_vessel.add_solution(**solution)
+                self.log.info(f"Starting pump step for {duration_s:.2f} seconds.")
+            else:
+                # Resumed step: duration_s was provided in the arguments
+                self.log.info(f"Resuming pump step for remaining {duration_s:.2f} seconds.")
+            self.pump.dispense_by_time(duration_s)
+
         else:  # Wait or Heat step
+            self.log.info(f"Starting wait/heat step for {duration_s:.2f} seconds.")
             self.rxn_vessel.purge_solution()
 
         if duration_s is not None and duration_s > 0:
@@ -219,6 +220,7 @@ class SeqFlow(Instrument):
         finally:
             with self.job_status_lock:
                 self.job_status = message
+            self.pump.stop()
 
     def resume_run(self):
         """

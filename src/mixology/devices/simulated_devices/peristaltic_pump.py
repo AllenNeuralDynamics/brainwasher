@@ -26,8 +26,16 @@ class SimPeristalticPump:
         sleep(0.1) 
         self.log.debug(f"[{self.log.name}] Dispense complete.")
 
+    def dispense_by_time(self, duration_s: float):
+        """Simulates dispensing for a specific duration."""
+        self.log.info(f"[{self.log.name}] Dispensing for {duration_s:.2f} seconds at {self.flow_rate_mlpm} mL/min...")
+
     def get_dispense_duration_s(self, volume_ml: float) -> float:
         """Calculates how long a dispense will take at the current flow rate."""
         if self.flow_rate_mlpm <= 0:
             return 0.0
         return (volume_ml / self.flow_rate_mlpm) * 60.0
+    
+    def stop(self):
+        """Simulates stopping the pump."""
+        self.log.info(f"[{self.log.name}] Pump stopped.")

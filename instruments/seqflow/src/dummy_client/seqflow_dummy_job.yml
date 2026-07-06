@@ -3,7 +3,7 @@ flow_rate_mlpm: 1.5
 starting_solution: {}
 protocol:
   - solution:
-      pbst: 0.1
+      pbst: 0.2
 
   - solution:
       incorporation_buffer: 0.1
