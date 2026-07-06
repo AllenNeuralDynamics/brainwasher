@@ -10,6 +10,7 @@ from pydantic import (
 from mixology.job import Job
 from typing import Optional, Annotated, Any, Literal
 
+
 DeviceType = Literal["pump", "heat_device", "wait", "stopper"]
 
 
@@ -19,8 +20,8 @@ class SeqFlowStep(BaseModel):
     duration_s: Optional[float] = Field(default=None, description="Time in seconds for each step.")
     temp_c: Optional[float] = Field(default=None, description="Temperature in Celsius for the heat wait step.")
     solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn (mL) to fill into slides.")
+    flow_rate_mlpm: Optional[float] = Field(default=None, description="Step-specific flow rate override in mL/min.")
 
-    # TODO: Add validation
 
 class SeqFlowJobStatus(BaseModel):
     """Model of messages used to convey state of seqflow job"""
@@ -81,7 +82,7 @@ class SeqFlowJob(Job):
         description="A list of steps to be run in order."
     )
     resume_state: Optional[SeqFlowResumeState] = None
-    flow_rate_mlpm: float = Field(
+    default_flow_rate_mlpm: float = Field(
         default=1.5, 
         description="Flow rate in mL/min. Injected by the instrument prior to running."
     )
@@ -98,7 +99,9 @@ class SeqFlowJob(Job):
             total_volume = sum(step.solution.values()) if step.solution else 0.0
             # Implicit Pump Step
             if total_volume > 0:
-                total_time_s += (total_volume / self.flow_rate_mlpm) * 60.0
+                # Use step override if it exists, otherwise fall back to job default
+                flow_rate = step.flow_rate_mlpm or self.default_flow_rate_mlpm
+                total_time_s += (total_volume / flow_rate) * 60.0
             elif step.duration_s:
                 total_time_s += step.duration_s
         return total_time_s

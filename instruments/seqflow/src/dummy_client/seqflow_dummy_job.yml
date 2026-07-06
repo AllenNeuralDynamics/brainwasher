@@ -1,9 +1,10 @@
 name: "SeqFlow Test Job"
-flow_rate_mlpm: 1.5
+default_flow_rate_mlpm: 1.5
 starting_solution: {}
 protocol:
   - solution:
-      pbst: 0.2
+      pbst: 1.0
+    flow_rate_mlpm: 2.0
 
   - solution:
       incorporation_buffer: 0.1

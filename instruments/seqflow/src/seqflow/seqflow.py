@@ -156,7 +156,8 @@ class SeqFlow(Instrument):
             self,
             solution: Optional[dict] = None,
             duration_s: Optional[float] = None,
-            temp_c: Optional[float] = None
+            temp_c: Optional[float] = None,
+            flow_rate_mlpm: Optional[float] = None, # If exists, override the job default flow rate for this step
         ):
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
@@ -164,7 +165,8 @@ class SeqFlow(Instrument):
         # Calculate volume to determine the implicit step type
         total_vol = sum(solution.values()) if solution else 0.0
         if total_vol > 0:
-            self.pump.set_flow_rate(self._job.flow_rate_mlpm)
+            flow_rate = flow_rate_mlpm or self._job.default_flow_rate_mlpm  # Fall back
+            self.pump.set_flow_rate(flow_rate)
             if duration_s is None:
                 duration_s = self.pump.get_dispense_duration_s(total_vol)
                 # Setup the vessel ONLY on a fresh start
