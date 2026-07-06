@@ -7,7 +7,6 @@ from seqflow.seqflow_models import (
     SeqFlowConfig,
     SeqFlowJob,
     SeqFlowJobStatus,
-    DeviceType,
 )
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
@@ -108,7 +107,7 @@ class SeqFlow(Instrument):
             self.log.warning("Cannot set job when instrument is running. Please pause.")
             return
 
-        self._job = SeqFlowJob(**job) if type(job) == dict else job
+        self._job = SeqFlowJob(**job) if isinstance(job, dict) else job
         status = "paused" if self._job.resume_state else "idle"
         with self.job_status_lock:
             self.log.info(f"Job set and setting to {status}")
