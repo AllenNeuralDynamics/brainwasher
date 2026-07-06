@@ -157,31 +157,18 @@ class SeqFlow(Instrument):
             solution: Optional[dict] = None,
             duration_s: Optional[float] = None,
             temp_c: Optional[float] = None,
-            flow_rate_mlpm: Optional[float] = None, # If exists, override the job default flow rate for this step
+            flow_rate_mlpm: float = 0.0,
         ):
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
 
-        # Calculate volume to determine the implicit step type
         total_vol = sum(solution.values()) if solution else 0.0
-        if total_vol > 0:
-            flow_rate = flow_rate_mlpm or self._job.default_flow_rate_mlpm  # Fall back
-            self.pump.set_flow_rate(flow_rate)
-            if duration_s is None:
-                duration_s = self.pump.get_dispense_duration_s(total_vol)
-                # Setup the vessel ONLY on a fresh start
-                self.rxn_vessel.purge_solution()
-                if solution is not None:
-                    self.rxn_vessel.add_solution(**solution)
-                self.log.info(f"Starting pump step for {duration_s:.2f} seconds.")
-            else:
-                # Resumed step: duration_s was provided in the arguments
-                self.log.info(f"Resuming pump step for remaining {duration_s:.2f} seconds.")
-            self.pump.dispense_by_time(duration_s)
-
-        else:  # Wait or Heat step
-            self.log.info(f"Starting wait/heat step for {duration_s:.2f} seconds.")
-            self.rxn_vessel.purge_solution()
+        self.pump.set_flow_rate(flow_rate_mlpm)
+        if duration_s is None:
+            duration_s = self.pump.get_dispense_duration_s(total_vol)
+        self.rxn_vessel.purge_solution()
+        self.rxn_vessel.add_solution(**solution)
+        self.pump.dispense_by_time(duration_s)
 
         if duration_s is not None and duration_s > 0:
             start_time = time.perf_counter()

@@ -22,6 +22,7 @@ class SeqFlowStep(BaseModel):
     solution: dict[str, float] = Field(default_factory=dict, description="solution name and volumn (mL) to fill into slides.")
     flow_rate_mlpm: Optional[float] = Field(default=None, description="Step-specific flow rate override in mL/min.")
 
+    # TODO Validation! 
 
 class SeqFlowJobStatus(BaseModel):
     """Model of messages used to convey state of seqflow job"""
@@ -82,10 +83,6 @@ class SeqFlowJob(Job):
         description="A list of steps to be run in order."
     )
     resume_state: Optional[SeqFlowResumeState] = None
-    default_flow_rate_mlpm: float = Field(
-        default=1.5, 
-        description="Flow rate in mL/min. Injected by the instrument prior to running."
-    )
 
     def get_duration_s(self, start_step: int = 0) -> float:
         """
@@ -98,10 +95,9 @@ class SeqFlowJob(Job):
         for step in self.protocol[start_step:]:
             total_volume = sum(step.solution.values()) if step.solution else 0.0
             # Implicit Pump Step
-            if total_volume > 0:
+            if total_volume > 0 and step.flow_rate_mlpm is not None:
                 # Use step override if it exists, otherwise fall back to job default
-                flow_rate = step.flow_rate_mlpm or self.default_flow_rate_mlpm
-                total_time_s += (total_volume / flow_rate) * 60.0
+                total_time_s += (total_volume / step.flow_rate_mlpm) * 60.0
             elif step.duration_s:
                 total_time_s += step.duration_s
         return total_time_s
