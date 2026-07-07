@@ -16,12 +16,6 @@ try:
 except ImportError:
     seqflow = None  # type: ignore
 
-def loggic_setup():
-    # Setup logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
 
 class ZMQServer(RouterServer):
 
@@ -44,14 +38,6 @@ class ZMQServer(RouterServer):
 
         self.add_stream("get_progress", 1, "seqflow", "get_progress")
 
-def make_pure_dict(obj):
-    """Recursively converts dict-like objects into standard Python dictionaries."""
-    if hasattr(obj, 'items'):  # Catches standard dicts and FileBackedDicts
-        return {k: make_pure_dict(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [make_pure_dict(i) for i in obj]
-    return obj
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="src/seqflow/scripts/sim_seqflow_config.yaml")
@@ -71,8 +57,7 @@ def main():
     config = FileBackedDict(config_name)
 
     # Convert to dictionaries for JSON serialization
-    logging_dict = make_pure_dict(config["logging"])
-    logging.config.dictConfig(logging_dict)
+    logging.config.dictConfig(config["logging"].to_dict())
 
     # Create the instrument (Mockup)
     device_specs = config
