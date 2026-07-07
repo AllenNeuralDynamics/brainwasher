@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import logging
@@ -43,6 +44,13 @@ class ZMQServer(RouterServer):
 
         self.add_stream("get_progress", 1, "seqflow", "get_progress")
 
+def make_pure_dict(obj):
+    """Recursively converts dict-like objects into standard Python dictionaries."""
+    if hasattr(obj, 'items'):  # Catches standard dicts and FileBackedDicts
+        return {k: make_pure_dict(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [make_pure_dict(i) for i in obj]
+    return obj
 
 def main():
     parser = argparse.ArgumentParser()
@@ -62,11 +70,9 @@ def main():
     config_name = args.config if not args.simulated else "src/seqflow/scripts/sim_seqflow_config.yaml"
     config = FileBackedDict(config_name)
 
-    # Set logging config before instantiating devices to not clear loggers
-    if hasattr(config, "cfg") and "logging" in config.cfg:
-        logging.config.dictConfig(dict(config.cfg["logging"]))  # TODO Add logging into yaml config
-    else:
-        loggic_setup()
+    # Convert to dictionaries for JSON serialization
+    logging_dict = make_pure_dict(config["logging"])
+    logging.config.dictConfig(logging_dict)
 
     # Create the instrument (Mockup)
     device_specs = config
@@ -83,7 +89,15 @@ def main():
         record.version = getattr(seqflow, "__version__", "unknown") if seqflow else "unknown"
         record.comp_id = os.getenv("aibs_comp_id", "unknown")
         
-        record.msg = f"SeqFlow: {record.msg}"
+        prefix = (
+            f"{seqflow_device.config.instrument_name}: "
+            if seqflow_device.config.instrument_name
+            else ""
+        )
+
+        record.msg = f"SeqFlow: {prefix}{record.msg}"
+
+
         return record
     logging.setLogRecordFactory(record_factory)
 
