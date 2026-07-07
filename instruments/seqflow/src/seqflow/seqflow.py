@@ -167,7 +167,7 @@ class SeqFlow(Instrument):
         if duration_s is None:
             duration_s = self.pump.get_dispense_duration_s(total_vol)
         self.rxn_vessel.purge_solution()
-        self.rxn_vessel.add_solution(**solution)
+        self.rxn_vessel.add_solution(**(solution or {}))
         self.pump.dispense_by_time(duration_s)
 
         if duration_s is not None and duration_s > 0:

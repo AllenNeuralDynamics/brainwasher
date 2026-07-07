@@ -64,7 +64,7 @@ def main():
     def record_factory(*args, **kwargs):
         record = old_factory(*args, **kwargs)
         record.project = "seqflow"
-        record.version = getattr(SeqFlow, "__version__", "unknown") if SeqFlow else "unknown"
+        record.version = getattr(SeqFlow, "__version__", "unknown") if SeqFlow is not None else "unknown"
         record.comp_id = os.getenv("aibs_comp_id", "unknown")
         prefix = ""
         if seqflow_device and hasattr(seqflow_device, "config") and seqflow_device.config.instrument_name:
