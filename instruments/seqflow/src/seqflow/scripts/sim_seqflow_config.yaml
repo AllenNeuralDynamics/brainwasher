@@ -52,6 +52,28 @@ logging:
             - console
             - file
             - web_handler
+router_server_api:
+  named_calls:
+    start:
+      obj_name: "seqflow"
+      attr_name: "start_run"
+    pause:
+      obj_name: "seqflow"
+      attr_name: "pause"
+    get_job:
+      obj_name: "seqflow"
+      attr_name: "get_job"
+    set_job:
+      obj_name: "seqflow"
+      attr_name: "set_job"
+    get_config:
+      obj_name: "seqflow"
+      attr_name: "get_config"
+  periodic_streams:
+    get_progress:
+      frequency_hz: 1
+      obj_name: "seqflow"
+      attr_name: "get_progress"
 router_server_kwargs:
     rpc_port: 5555
     broadcast_port: 5556
