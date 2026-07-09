@@ -34,6 +34,9 @@ class SeqFlow(Instrument):
         self.selector = selector
         self.rxn_vessel = rxn_vessel
 
+        # start pump
+        self.pump.start()
+
         # attribute to track events that occur in job_worker
         self.job_status_lock = Lock()
         self.job_status: SeqFlowJobStatus = SeqFlowJobStatus(status="idle")

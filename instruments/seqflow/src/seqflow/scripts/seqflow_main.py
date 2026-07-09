@@ -51,12 +51,6 @@ def main():
     devices = factory.create_devices_from_specs(config.get("devices", {}))
     logger.info("Device tree successfully loaded.")
 
-    # Start devices (if they have a start method)
-    for device_name, device in devices.items():
-        if hasattr(device, "start"):
-            logger.debug(f"Starting device: {device_name}")
-            device.start()
-
     # Set up formatting for log server (Specific to seqflow)
     seqflow_device = devices.get("seqflow")
     old_factory = logging.getLogRecordFactory()
