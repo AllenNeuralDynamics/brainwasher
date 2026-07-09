@@ -7,9 +7,9 @@ name = "brainwasher"
 version = "0.3.0"
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
-    "mixology",
+    "mixology[brainwasher]",
     "runze-control",
     "inpromptu",
     "igraph>=0.11.5",
@@ -30,7 +30,7 @@ dev = [
 pythonpath = ["src", "tests"]
 
 [tool.uv.sources]
-mixology = { workspace = true }
+mixology = { path = "../../" }
 runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", branch = "fix-dynamic-version" }
 inpromptu = { git = "https://github.com/Poofjunior/inpromptu.git" }
 device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
