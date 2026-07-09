@@ -57,7 +57,7 @@ def main():
     def record_factory(*args, **kwargs):
         record = old_factory(*args, **kwargs)
         record.project = "seqflow"
-        record.version = getattr(SeqFlow, "__version__", "unknown") if SeqFlow is not None else "unknown"
+        record.version = getattr(SeqFlow, "__version__", "unknown")
         record.comp_id = os.getenv("aibs_comp_id", "unknown")
         prefix = f"{seqflow_device.config.instrument_name}: "
         record.msg = f"SeqFlow: {prefix}{record.msg}"
