@@ -35,7 +35,7 @@ class Instrument:
         )
         self.job_worker.start()
 
-    def _load_job(self, job_path: str ) -> Job:
+    def _load_job(self, job_path: str, job_class: type = Job) -> Job:
         job_path = Path(job_path)
         if not job_path.exists():
             raise FileNotFoundError(
@@ -45,7 +45,7 @@ class Instrument:
             self.log.debug(f"Loading job from: {job_path.absolute()}")
             job_dict = yaml.safe_load(yaml_stream)
             logging.debug("Validating job from file.")
-            job = Job(**job_dict)  # validate
+            job = job_class(**job_dict)  # validate
             logging.debug("Job is a valid job.")
             return job
 
@@ -150,8 +150,9 @@ class Instrument:
             yaml.dump(job.model_dump(exclude_none=True), job_file)
         self.log.info(f"Finished job: {job.name} from {job_path}")
 
+    @staticmethod
     def save_resume_state(
-        job: Job, resume_step: int, starting_solution: dict, overrides: dict
+        job: Job, resume_step: int, starting_solution: dict, **overrides: dict
     ):
         """
         Save resume state of job
