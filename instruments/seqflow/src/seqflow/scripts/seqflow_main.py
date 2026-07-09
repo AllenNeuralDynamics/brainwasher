@@ -59,9 +59,7 @@ def main():
         record.project = "seqflow"
         record.version = getattr(SeqFlow, "__version__", "unknown") if SeqFlow is not None else "unknown"
         record.comp_id = os.getenv("aibs_comp_id", "unknown")
-        prefix = ""
-        if hasattr(seqflow_device, "config") and seqflow_device.config.instrument_name:
-            prefix = f"{seqflow_device.config.instrument_name}: "
+        prefix = f"{seqflow_device.config.instrument_name}: "
         record.msg = f"SeqFlow: {prefix}{record.msg}"
         return record
     logging.setLogRecordFactory(record_factory)
