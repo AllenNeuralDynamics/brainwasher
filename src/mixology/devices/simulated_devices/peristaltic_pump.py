@@ -42,3 +42,7 @@ class SimPeristalticPump:
     def stop(self):
         """Simulates stopping the pump."""
         self.log.info(f"[{self.log.name}] Pump stopped.")
+
+    def start(self):
+        """Simulates starting the pump."""
+        self.log.info(f"[{self.log.name}] Pump started.")
