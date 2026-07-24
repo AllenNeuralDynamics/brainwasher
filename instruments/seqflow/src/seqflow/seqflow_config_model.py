@@ -1,7 +1,7 @@
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
-from device_spinner.models import DeviceTrees
+from device_spinner.models import DeviceTrees  # type: ignore
 
 
 class NamedCallConfig(BaseModel):
@@ -22,8 +22,8 @@ class RouterServerAPIConfig(BaseModel):
 
 
 class RouterServerConfig(BaseModel):
-    rpc_port: int
-    broadcast_port: int
+    rpc_port: int = 5557
+    broadcast_port: int = 5558
 
 
 class SeqFlowConfig(BaseModel, validate_assignment=True):
@@ -37,7 +37,7 @@ class SeqFlowConfig(BaseModel, validate_assignment=True):
 
 class SeqFlowSystemConfig(BaseModel, validate_assignment=True):
     devices: DeviceTrees = Field(default_factory=dict)
-    router_server_kwargs: RouterServerConfig = Field(default_factory=dict)
+    router_server_kwargs: RouterServerConfig = Field(default_factory=RouterServerConfig)
     router_server_api: RouterServerAPIConfig = Field(default_factory=RouterServerAPIConfig)
     logging: Dict[str, Any] = Field(default_factory=dict, description="Logging configuration dictionary.")  # TODO: Add pydantic model
     
