@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seqflow"
-version = "0.2.0"
+version = "0.3.0"
 description = "Automated fluidic control for the BARseq platform"
 license = {text = "MIT"}
 readme = "README.md"
