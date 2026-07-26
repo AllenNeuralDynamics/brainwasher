@@ -90,8 +90,13 @@ def main():
     logger.info("SeqFlow ZMQ Server started!")
     server.run()
 
-    while not server.context.closed:
-        time.sleep(1)
+    try:
+        while not server.context.closed:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        logger.info("Shutting down seqflow server..")
+    finally:
+        pass
 
 if __name__ == "__main__":
     main()
