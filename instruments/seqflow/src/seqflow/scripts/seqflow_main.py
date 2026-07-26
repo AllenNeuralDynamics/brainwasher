@@ -20,8 +20,7 @@ class ZMQServer(RouterServer):
         
         super().__init__(rpc_port=rpc_port, broadcast_port=broadcast_port,
                          instances=instances, config=config)
-        
-        print("rpc_port:", rpc_port, "broadcast_port:", broadcast_port)
+
         self.log = logging.getLogger(self.__class__.__name__)
         self.config = config or {}
         
@@ -42,12 +41,17 @@ def main():
     )
     parser.add_argument("--simulated", default=False, action="store_true",
                         help="Simulate hardware device connections.")
+    parser.add_argument("--config-dir", type=str, default=None,
+                        help="Absolute or relative path to the configs directory.")
 
     args = parser.parse_args()
     logger = logging.getLogger()
     
     # Config
-    config_dir = Path(__file__).resolve().parents[3] / "configs"
+    if args.config_dir:
+        config_dir = Path(args.config_dir).resolve()
+    else:
+        config_dir = Path(__file__).resolve().parents[3] / "configs"
     data_store = FileSysStore(rootdir=config_dir, scopes={"defaults", "hostname"})
     current_scopes = {"hostname": "dev_computer"}
     logging_config = get_config(data_store=data_store, namespace="logging")
