@@ -1,7 +1,24 @@
 from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from pydantic import BaseModel, Field, ConfigDict
+from typing import Optional, Dict, Any, Literal
 from device_spinner.models import DeviceTrees  # type: ignore
+
+
+class HandlerConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    class_: str = Field(..., alias="class")
+    level: Optional[str] = None
+    formatter: Optional[str] = None
+    filename: Optional[str] = None
+
+
+class LoggingConfig(BaseModel):
+    version: Literal[1]
+    disable_existing_loggers: bool = False
+    formatters: Optional[Dict[str, Dict[str, Any]]] = None
+    handlers: Optional[Dict[str, HandlerConfig]] = None
+    loggers: Optional[Dict[str, Dict[str, Any]]] = None
+    root: Optional[Dict[str, Any]] = None
 
 
 class NamedCallConfig(BaseModel):
@@ -39,6 +56,5 @@ class SeqFlowSystemConfig(BaseModel, validate_assignment=True):
     devices: DeviceTrees = Field(default_factory=dict)
     router_server_kwargs: RouterServerConfig = Field(default_factory=RouterServerConfig)
     router_server_api: RouterServerAPIConfig = Field(default_factory=RouterServerAPIConfig)
-    logging: Dict[str, Any] = Field(default_factory=dict, description="Logging configuration dictionary.")  # TODO: Add pydantic model
-    
+    logging: LoggingConfig
 

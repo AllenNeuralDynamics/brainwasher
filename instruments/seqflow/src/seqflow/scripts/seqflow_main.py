@@ -61,8 +61,8 @@ def main():
 
     # Set log level and get Logger
     if args.log_level:
-        config.logging['handlers']['console']['level'] = args.log_level
-    logging.config.dictConfig(config.logging)
+        config.logging.handlers['console'].level = args.log_level
+    logging.config.dictConfig(config.logging.model_dump(by_alias=True, exclude_none=True))
 
     # Send as spec (class_name -> class object, kwawrgs -> kwds, Remove None values)
     factory = DeviceSpinner()
