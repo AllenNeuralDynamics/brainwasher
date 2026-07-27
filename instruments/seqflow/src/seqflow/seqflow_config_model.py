@@ -2,6 +2,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Dict, Any, Literal
 from device_spinner.models import DeviceTrees  # type: ignore
+from one_liner.models import RouterServerConfig  # type: ignore
 
 
 class HandlerConfig(BaseModel):
@@ -21,24 +22,7 @@ class LoggingConfig(BaseModel):
     root: Optional[Dict[str, Any]] = None
 
 
-class NamedCallConfig(BaseModel):
-    """Configuration for a single named call."""
-    obj_name: str
-    attr_name: str
-
-
-class PeriodicStreamConfig(NamedCallConfig):
-    """Configuration for a periodic stream. Inherits obj and attr names."""
-    frequency_hz: float
-
-
-class RouterServerAPIConfig(BaseModel):
-    """Validates the router_server_api section, defaulting to empty dicts if missing."""
-    named_calls: Dict[str, NamedCallConfig] = Field(default_factory=dict)
-    periodic_streams: Dict[str, PeriodicStreamConfig] = Field(default_factory=dict)
-
-
-class RouterServerConfig(BaseModel):
+class RouterServerPortConfig(BaseModel):
     rpc_port: int = 5557
     broadcast_port: int = 5558
 
@@ -54,7 +38,7 @@ class SeqFlowConfig(BaseModel, validate_assignment=True):
 
 class SeqFlowSystemConfig(BaseModel, validate_assignment=True):
     devices: DeviceTrees = Field(default_factory=dict)
-    router_server_kwargs: RouterServerConfig = Field(default_factory=RouterServerConfig)
-    router_server_api: RouterServerAPIConfig = Field(default_factory=RouterServerAPIConfig)
+    router_server_kwargs: RouterServerPortConfig = Field(default_factory=RouterServerPortConfig)
+    router_server_api: RouterServerConfig
     logging: LoggingConfig
 
