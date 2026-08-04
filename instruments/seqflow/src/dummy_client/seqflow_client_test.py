@@ -23,10 +23,10 @@ def stream_listener(client, stream_name):
 
 def main():
     # Connect to both the RPC and Broadcast ports
-    client = RouterClient(rpc_port=5555, broadcast_port=5556)
+    client = RouterClient(rpc_port=5557, broadcast_port=5558)
     
     # Start the stream listener in a background thread
-    listener = threading.Thread(target=stream_listener, args=(client, "get_progress"), daemon=True)
+    listener = threading.Thread(target=stream_listener, args=(client, "seqflow_get_progress"), daemon=True)
     listener.start()
 
     # Load the job from the YAML file
