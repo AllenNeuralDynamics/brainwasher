@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seqflow"
-version = "0.2.0"
+version = "0.3.1"
 description = "Automated fluidic control for the BARseq platform"
 license = {text = "MIT"}
 readme = "README.md"
@@ -13,9 +13,10 @@ requires-python = ">=3.11"
 dependencies = [
     "mixology",
     "device-spinner",
-    "one-liner",
+    "one-liner>=0.1.1.dev3",
     "pydantic>=2.0.0",
     "pyyaml>=6.0.2",
+    "ficus>=0.1.0",
 ]
 
 [project.scripts]
@@ -37,6 +38,7 @@ pythonpath = ["src", "tests"]
 mixology = { path = "../../", editable = true }
 device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
 one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", branch = "main"}
+ficus = { git = "https://github.com/AllenNeuralDynamics/ficus.git"}
 
 [[tool.mypy.overrides]]
 module = "mixology.*"

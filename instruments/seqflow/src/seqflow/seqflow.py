@@ -4,7 +4,7 @@ from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
 from mixology.devices.simulated_devices.selector import SimSelector
 from seqflow.seqflow_models import SeqFlowJob,SeqFlowJobStatus
-from seqflow.seqflow_config import SeqFlowConfig
+from seqflow.seqflow_config_model import SeqFlowConfig
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
 from datetime import datetime
