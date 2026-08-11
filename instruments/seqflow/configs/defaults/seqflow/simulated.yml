@@ -24,26 +24,28 @@ router_server_kwargs:
     rpc_port: 5557
     broadcast_port: 5558
 devices:
+  selector_port_map:
+    class: builtins.dict
+    kwds:
+      incorporation_buffer: 1
+      pbst: 2
+      iodoacetamide_blocker: 3
+      irm: 4
+      usm: 5
+      crm: 6
+      fish_wash: 7
+      strip: 8
+      hyb_oligos_mix: 9
+      dapi: 10
+      bc_primer_mix: 11
+      gene_primer_mix: 12
+      hyb_oligos_mix_2: 13
+      end: 14
+      hyb_oligos_mix_3: 15
+      hyb_oligos_mix_4: 16
   config: 
     class: seqflow.seqflow_config_model.SeqFlowConfig
     kwds:
-      selector_port_map:
-        incorporation_buffer: 1
-        pbst: 2
-        iodoacetamide_blocker: 3
-        irm: 4
-        usm: 5
-        crm: 6
-        fish_wash: 7
-        strip: 8
-        hyb_oligos_mix: 9
-        dapi: 10
-        bc_primer_mix: 11
-        gene_primer_mix: 12
-        hyb_oligos_mix_2: 13
-        end: 14
-        hyb_oligos_mix_3: 15
-        hyb_oligos_mix_4: 16
       instrument_name: Simulated SeqFlow
   pump:
     class: mixology.devices.simulated_devices.peristaltic_pump.SimPeristalticPump

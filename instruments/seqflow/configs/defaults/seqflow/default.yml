@@ -53,14 +53,14 @@ devices:
         name: "simPump"
         flow_rate_mlpm: 1.5
   sub_selector_1:
-    class: mixology.devices.selector.mux.ElveflowSubSelector
+    class: mixology.devices.selector.selector.SerialSelector
     kwds:
-      selector_name: "ElveflowSelector_1"
+      name: "ElveflowSelector_1"
       port: "COM6"
   sub_selector_2:
-    class: mixology.devices.selector.mux.ElveflowSubSelector
+    class: mixology.devices.selector.selector.SerialSelector
     kwds:
-      selector_name: "ElveflowSelector_2"
+      name: "ElveflowSelector_2"
       port: "COM5"
   sub_selector_list:
     factory: device_spinner.factory_utils.to_list
