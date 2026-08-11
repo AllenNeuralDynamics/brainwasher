@@ -24,57 +24,38 @@ router_server_kwargs:
     rpc_port: 5557
     broadcast_port: 5558
 devices:
-  selector_port_map:
-    class: builtins.dict
-    kwds:
-      incorporation_buffer: 1
-      pbst: 2
-      iodoacetamide_blocker: 3
-      irm: 4
-      usm: 5
-      crm: 6
-      fish_wash: 7
-      strip: 8
-      hyb_oligos_mix: 9
-      dapi: 10
-      bc_primer_mix: 11
-      gene_primer_mix: 12
-      hyb_oligos_mix_2: 13
-      end: 14
-      hyb_oligos_mix_3: 15
-      hyb_oligos_mix_4: 16
-  config:
+  config: 
     class: seqflow.seqflow_config_model.SeqFlowConfig
     kwds:
-      instrument_name: "Simulated SeqFlow"
+      selector_port_map:
+        incorporation_buffer: 1
+        pbst: 2
+        iodoacetamide_blocker: 3
+        irm: 4
+        usm: 5
+        crm: 6
+        fish_wash: 7
+        strip: 8
+        hyb_oligos_mix: 9
+        dapi: 10
+        bc_primer_mix: 11
+        gene_primer_mix: 12
+        hyb_oligos_mix_2: 13
+        end: 14
+        hyb_oligos_mix_3: 15
+        hyb_oligos_mix_4: 16
+      instrument_name: Simulated SeqFlow
   pump:
     class: mixology.devices.simulated_devices.peristaltic_pump.SimPeristalticPump
     kwds:
         name: "simPump"
         flow_rate_mlpm: 1.5
-  sub_selector_1:
-    class: mixology.devices.selector.mux.ElveflowSubSelector
-    kwds:
-      selector_name: "ElveflowSelector_1"
-      port: "COM6"
-  sub_selector_2:
-    class: mixology.devices.selector.mux.ElveflowSubSelector
-    kwds:
-      selector_name: "ElveflowSelector_2"
-      port: "COM5"
-  sub_selector_list:
-    factory: device_spinner.factory_utils.to_list
-    args:
-      - sub_selector_1
-      - sub_selector_2
   selector:
-    class: mixology.devices.selector.mux.ElveflowMux
+    class: mixology.devices.simulated_devices.selector.SimSelector
     kwds:
-      selectors: sub_selector_list
-      position_map: selector_port_map
-      unit_port_count: 11
-      passthrough_port: 12
-      settle_seconds: 2
+        name: "simSelector"
+        positions: 10
+        position_map: selector_port_map
   rxn_vessel:
     class: mixology.devices.vessels.SlideContainer
     skip_kwds: [name]

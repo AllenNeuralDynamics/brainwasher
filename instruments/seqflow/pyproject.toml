@@ -17,6 +17,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "pyyaml>=6.0.2",
     "ficus>=0.1.0",
+    "serial",
 ]
 
 [project.scripts]
