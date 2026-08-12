@@ -68,7 +68,7 @@ devices:
       - sub_selector_1
       - sub_selector_2
   selector:
-    class: mixology.devices.selector.mux.ElveflowMux
+    class: mixology.devices.selector.mux.CascadedMux
     kwds:
       selectors: sub_selector_list
       position_map: selector_port_map

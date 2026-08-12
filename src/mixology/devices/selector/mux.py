@@ -1,4 +1,4 @@
-"""Elveflow fluid selector multiplexer device."""
+"""A generic, cascaded fluid selector multiplexer device."""
 
 import logging
 import math
@@ -10,8 +10,8 @@ import serial
 from pydantic import BaseModel, Field
 
 
-class ElveflowMuxConfig(BaseModel):
-    """Configuration for a cascaded Elveflow MUX."""
+class CascadedMuxConfig(BaseModel):
+    """Configuration for a cascaded multiplexer."""
     selectors: List[SerialSelectorConfig]
     position_map: Dict[str, int]
     unit_port_count: int
@@ -19,10 +19,10 @@ class ElveflowMuxConfig(BaseModel):
     settle_seconds: float
 
 
-class ElveflowMux(SimSelector):
-    """Cascaded Elveflow fluid selector multiplexer.
+class CascadedMux(SimSelector):
+    """Cascaded fluid selector multiplexer.
 
-    Manages a scalable number of serial-connected Elveflow rotary valves
+    Manages a scalable number of serial-connected rotary valves
     to select reagent sources by name.
     """
 
@@ -42,7 +42,7 @@ class ElveflowMux(SimSelector):
         self.port_map = position_map
 
         self.log = logging.getLogger(self.__class__.__name__)
-        self.config = ElveflowMuxConfig(
+        self.config = CascadedMuxConfig(
             selectors=[s.config for s in selectors],
             position_map=position_map,
             unit_port_count=unit_port_count,
@@ -50,7 +50,7 @@ class ElveflowMux(SimSelector):
             settle_seconds=settle_seconds,
         )
         if not self.config.selectors:
-            raise ValueError("ElveflowMux configuration requires at least one selector.")
+            raise ValueError("CascadedMux configuration requires at least one selector.")
 
         if self.port_map:
             max_port = max(self.port_map.values())
@@ -65,7 +65,7 @@ class ElveflowMux(SimSelector):
 
     def connect(self) -> None:
         """Open serial connections to all selectors."""
-        self.log.info(f"Connecting to {len(self.sub_selectors)} Elveflow selectors.")
+        self.log.info(f"Connecting to {len(self.sub_selectors)} sub-selectors.")
         for selector in self.sub_selectors:
             try:
                 selector.connect()
@@ -76,7 +76,7 @@ class ElveflowMux(SimSelector):
 
     def disconnect(self) -> None:
         """Close serial connections to all selectors."""
-        self.log.info(f"Disconnecting {len(self.sub_selectors)} Elveflow selectors.")
+        self.log.info(f"Disconnecting {len(self.sub_selectors)} sub-selectors.")
         for selector in self.sub_selectors:
             selector.disconnect()
 
