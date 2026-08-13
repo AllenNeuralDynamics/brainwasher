@@ -1,13 +1,14 @@
 """A generic, cascaded fluid selector multiplexer device."""
 
 import logging
+import serial
 import math
 import time
 from typing import Optional, List, Dict, Union
-from mixology.devices.selector.selector import SerialSelector, SerialSelectorConfig
-from mixology.devices.simulated_devices.selector import SimSelector
-import serial
+from mixology.devices.selector.selector import Selector, SerialSelector, SerialSelectorConfig
+from mixology.devices.serial_device import SerialDevice
 from pydantic import BaseModel, Field
+
 
 
 class CascadedMuxConfig(BaseModel):
@@ -19,7 +20,7 @@ class CascadedMuxConfig(BaseModel):
     settle_seconds: float
 
 
-class CascadedMux(SimSelector):
+class CascadedMux(Selector, SerialDevice):
     """Cascaded fluid selector multiplexer.
 
     Manages a scalable number of serial-connected rotary valves
@@ -37,8 +38,6 @@ class CascadedMux(SimSelector):
             passthrough_port: Port used for cascading to the next selector.
             settle_seconds: Time to wait for the valve to settle after moving.
         """
-        total_positions = len(selectors) * unit_port_count
-        SimSelector.__init__(self, positions=total_positions, position_map=position_map)
         self.port_map = position_map
 
         self.log = logging.getLogger(self.__class__.__name__)
@@ -124,16 +123,16 @@ class CascadedMux(SimSelector):
         # Set passthrough on all selectors before the target selector
         for i in range(target_selector_index):
             self.log.debug(f"Moving selector {i + 1} to passthrough port {self.config.passthrough_port}")
-            self.sub_selectors[i].move(self.config.passthrough_port)
+            self.sub_selectors[i].move_to_position(self.config.passthrough_port)
             time.sleep(self.config.settle_seconds)
 
         # Set the target port on the target selector
         port_on_target_selector = ((selector_port - 1) % self.config.unit_port_count) + 1
         self.log.debug(f"Moving selector {target_selector_index + 1} to port {port_on_target_selector}")
-        self.sub_selectors[target_selector_index].move(port_on_target_selector)
+        self.sub_selectors[target_selector_index].move_to_position(port_on_target_selector)
         time.sleep(self.config.settle_seconds)
 
-    def config_selector(self) -> None:
+    def test_selector(self) -> None:
         """Test the selector by connecting and cycling through known reagent paths."""
         self.log.info("Running selector configuration test.")
         self.connect()

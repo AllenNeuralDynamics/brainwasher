@@ -1,12 +1,19 @@
 import logging
-import math
-import time
-from typing import Optional
-from mixology.devices.serial_device import SerialDevice
-from mixology.devices.simulated_devices.selector import SimSelector
 import serial
+from typing import Optional, Union, Dict
+from mixology.devices.serial_device import SerialDevice
 from pydantic import BaseModel, Field
+from abc import ABC, abstractmethod
 
+
+class Selector(ABC):
+    """Base interface for all serial-connected selector devices."""
+
+    @abstractmethod
+    def move_to_position(self, position: Union[int, str]) -> None:
+        """Move the selector to the specified position."""
+        ...
+        
 
 class SerialSelectorConfig(BaseModel):
     """Configuration for a single serial-connected selector unit."""
@@ -14,13 +21,14 @@ class SerialSelectorConfig(BaseModel):
     port: str = Field(..., description="The serial COM port for the selector.")
 
 
-class SerialSelector(SerialDevice):
+class SerialSelector(Selector, SerialDevice):
     """Represents a single selector valve that communicates over a serial port."""
 
-    def __init__(self, name: str, port: str):
+    def __init__(self, name: str, port: str, position_map: Dict[str, int] = None):
         self.config = SerialSelectorConfig(selector_name=name, port=port)
         self.log = logging.getLogger(f"{self.__class__.__name__}.{self.config.selector_name}")
         self._connection: Optional[serial.Serial] = None
+        self.port_map = position_map or {}
 
     def connect(self) -> None:
         """Open the serial connection to the device."""
@@ -49,11 +57,19 @@ class SerialSelector(SerialDevice):
         """Return True if the device is currently connected."""
         return self._connection and self._connection.is_open
 
-    def move(self, position: int) -> None:
+    def move_to_position(self, position: Union[int, str]) -> None:
         """Send a move command to this selector device."""
         if not self.is_connected():
             raise RuntimeError("Selector is not connected.")
+
+        if isinstance(position, str):
+            if position not in self.port_map:
+                raise ValueError(f"Reagent '{position}' not found in port map.")
+            port_number = self.port_map[position]
+        else:
+            port_number = int(position)
+
         valve_address = 1  # Default for Elveflow devices
-        command = f"/{valve_address}B{position}R\r"
+        command = f"/{valve_address}B{port_number}R\r"
         self.log.debug(f"Sending command to {self.config.port}: {repr(command)}")
         self._connection.write(command.encode())
