@@ -53,9 +53,13 @@ def main():
     else:
         config_dir = Path(__file__).resolve().parents[3] / "configs"
     data_store = FileSysStore(rootdir=config_dir, scopes={"defaults", "hostname"})
-    current_scopes = {"hostname": "dev_computer"}
+
+    seqflow_namespace = "seqflow"
+    if args.simulated:
+        seqflow_namespace = "seqflow_simulated"
+
     logging_config = get_config(data_store=data_store, namespace="logging")
-    seqflow_config = get_config(data_store=data_store, namespace="seqflow", scope_identifiers=current_scopes)
+    seqflow_config = get_config(data_store=data_store, namespace=seqflow_namespace)
     seqflow_config.data["logging"] = logging_config.data.get("logging", {})
     config = SeqFlowSystemConfig(**seqflow_config.data)
 
