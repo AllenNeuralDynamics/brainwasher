@@ -56,7 +56,6 @@ devices:
     class: mixology.devices.simulated_devices.selector.SimSerialSelector
     kwds:
         name: "simSerialSelector"
-        port: "FAKE_COM6"
         position_map: selector_port_map
   rxn_vessel:
     class: mixology.devices.vessels.SlideContainer

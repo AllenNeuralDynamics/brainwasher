@@ -19,18 +19,19 @@ class SerialSelectorConfig(BaseModel):
     """Configuration for a single serial-connected selector unit."""
     selector_name: str = Field(..., description="A unique name for the selector.")
     port: str = Field(..., description="The serial COM port for the selector.")
+    baudrate: int = Field(..., description="The baudrate for the serial connection.")
 
 
 class SerialSelector(Selector, SerialDevice):
     """Represents a single selector valve that communicates over a serial port."""
 
-    def __init__(self, name: str, port: str, position_map: Dict[str, int] = None):
+    def __init__(self, name: str, port: str, baudrate: int, position_map: Dict[str, int] = None):
         """Initialize the SerialSelector with a name, serial port, and optional position map.
             name: A unique name for the selector.
             port: The serial COM port to which the selector is connected.
             position_map: Optional dictionary mapping reagent names to port numbers.
         """
-        self.config = SerialSelectorConfig(selector_name=name, port=port)
+        self.config = SerialSelectorConfig(selector_name=name, port=port, baudrate=baudrate)
         self.log = logging.getLogger(f"{self.__class__.__name__}.{self.config.selector_name}")
         self._connection: Optional[serial.Serial] = None
         self.port_map = position_map or {}
@@ -41,7 +42,7 @@ class SerialSelector(Selector, SerialDevice):
         try:
             self._connection = serial.Serial(
                 port=self.config.port,
-                baudrate=9600,
+                baudrate=self.config.baudrate,
                 parity=serial.PARITY_NONE,
                 bytesize=serial.EIGHTBITS,
                 stopbits=serial.STOPBITS_ONE,

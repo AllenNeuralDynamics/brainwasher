@@ -20,9 +20,10 @@ class SimSelector:
 
 
 class SimSerialSelector(Selector, SerialDevice):
-    def __init__(self, name: str, port: str, position_map: Dict[str, int] = None):
+    def __init__(self, name: str, port: str = "COM6", baudrate: int = 9600, position_map: Dict[str, int] = None):
         self.log = logging.getLogger(f"{self.__class__.__name__}.{name}")
         self.port = port
+        self.baudrate = baudrate
         self.port_map = position_map or {}
         self._connected = False
 
