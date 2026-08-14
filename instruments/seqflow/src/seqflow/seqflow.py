@@ -199,11 +199,10 @@ class SeqFlow(Instrument):
 
         self.pump.set_flow_rate(flow_rate_mlpm)
         total_vol = sum(solution.values()) if solution else 0.0
-        if total_vol > 0:
+        if solution and total_vol > 0:
             solution_name = next(iter(solution))
             self.selector.move_to_position(solution_name)
         if duration_s is None:
-            solution_name = next(iter(solution))
             duration_s = self.pump.get_dispense_duration_s(total_vol)
         self.rxn_vessel.purge_solution()
         self.rxn_vessel.add_solution(**(solution or {}))
