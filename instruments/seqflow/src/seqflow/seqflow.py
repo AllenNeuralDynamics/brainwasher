@@ -5,7 +5,7 @@ from mixology.devices.selector.mux import CascadedMux
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
 from mixology.devices.simulated_devices.selector import SimSerialSelector
-from seqflow.seqflow_models import SeqFlowJob,SeqFlowJobStatus
+from seqflow.seqflow_models import SeqFlowJob, SeqFlowJobStatus
 from seqflow.seqflow_config_model import SeqFlowConfig
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
@@ -51,7 +51,7 @@ class SeqFlow(Instrument):
 
     def _load_job(self, job_path: str) -> SeqFlowJob:
         return super()._load_job(job_path, job_class=SeqFlowJob)
-    
+
     def restart_run(self, job: SeqFlowJob):
         """
         Reset SeqFlow and start run
@@ -62,7 +62,7 @@ class SeqFlow(Instrument):
         # reset SeqFlow
         self.clear_job()
         self.start_run(job)
-    
+
     def clear_job(self) -> None:
         """
         Clear job and update status
@@ -104,7 +104,7 @@ class SeqFlow(Instrument):
         """Convenience method to get current job"""
         if self._job:
             return self._job.model_dump()
-    
+
         return None
 
     def set_job(self, job: Union[dict, SeqFlowJob]) -> None:
@@ -114,7 +114,9 @@ class SeqFlow(Instrument):
             return
 
         self._job = SeqFlowJob(**job) if isinstance(job, dict) else job
-        status: Literal["paused", "idle"] = "paused" if self._job.resume_state else "idle"
+        status: Literal["paused", "idle"] = (
+            "paused" if self._job.resume_state else "idle"
+        )
         with self.job_status_lock:
             self.log.info(f"Job set and setting to {status}")
             self.job_status = SeqFlowJobStatus(status=status)
@@ -126,7 +128,9 @@ class SeqFlow(Instrument):
             self.log.warning("Cannot clear state while running.")
             return
 
-        status: Literal["paused", "idle"] = "paused" if self._job and self._job.resume_state else "idle"
+        status: Literal["paused", "idle"] = (
+            "paused" if self._job and self._job.resume_state else "idle"
+        )
         with self.job_status_lock:
             self.log.info(
                 f"Clearing {self.job_status.status} job status and setting to {status}"
@@ -184,12 +188,12 @@ class SeqFlow(Instrument):
                     )
 
     def run_step(
-            self,
-            solution: Optional[dict] = None,
-            duration_s: Optional[float] = None,
-            temp_c: Optional[float] = None,
-            flow_rate_mlpm: float = 0.0,
-        ):
+        self,
+        solution: Optional[dict] = None,
+        duration_s: Optional[float] = None,
+        temp_c: Optional[float] = None,
+        flow_rate_mlpm: float = 0.0,
+    ):
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
 
@@ -219,13 +223,13 @@ class SeqFlow(Instrument):
     def _run_job_worker(self, job: SeqFlowJob, job_path: Path):
         # Sync the newly loaded disk object back to our main memory!
         self._job = job
-        
+
         try:
             with self.job_status_lock:
                 self.job_status = SeqFlowJobStatus(status="running")
             # Now hand it off to the base Instrument class
             super()._run_job_worker(job, job_path)
-        
+
             # clear job if finished
             if not job.resume_state:
                 self._job = None
