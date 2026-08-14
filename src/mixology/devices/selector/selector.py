@@ -79,3 +79,4 @@ class SerialSelector(Selector, SerialDevice):
         command = f"/{valve_address}B{port_number}R\r"
         self.log.debug(f"Sending command to {self.config.port}: {repr(command)}")
         self._connection.write(command.encode())
+

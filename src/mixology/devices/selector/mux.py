@@ -146,3 +146,48 @@ class CascadedMux(Selector, SerialDevice):
         finally:
             self.disconnect()
         self.log.info("Selector configuration test finished.")
+
+
+if __name__ == "__main__":
+    import logging
+    from time import sleep
+
+    # Assuming these are properly importable in your actual environment
+    from mixology.devices.selector.selector import SerialSelector, SerialSelectorConfig
+    from mixology.devices.selector.mux import CascadedMux
+
+    logging.basicConfig(level=logging.DEBUG)
+
+    position_map = {
+        "water": 1,
+        "juice": 2,
+        "ginger_beer": 12,
+        "lagavulin": 13,
+    }
+
+    selector1 = SerialSelector(name="selector1", port="COM1", baudrate=9600)
+    selector2 = SerialSelector(name="selector2", port="COM2", baudrate=9600)
+
+    # Instantiate the CascadedMux with the correct signature
+    mux = CascadedMux(
+        selectors=[selector1, selector2],
+        position_map=position_map,
+        unit_port_count=11,
+        passthrough_port=12
+    )
+
+    try:
+        mux.connect()
+        sleep(1)
+
+        ports = ["water", "juice", "ginger_beer", "lagavulin"]
+        for port in ports:
+            print(f"\nMoving to position: {port}")
+            mux.move_to_position(port)
+            sleep(1)
+
+    except Exception as e:
+        logging.error(f"An error occurred during MUX operation: {e}")
+    finally:
+        if mux.is_connected():
+            mux.disconnect()
