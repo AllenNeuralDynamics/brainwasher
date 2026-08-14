@@ -153,10 +153,32 @@ class SeqFlow(Instrument):
 
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
-        # TODO: Add logic 
-        # Example) If total volumn > 0, then solution should be in the selector_port_map (For heat or wait status)
-        # If 
-        pass
+        for i, step in enumerate(job.protocol):
+            total_vol = sum(step.solution.values()) if step.solution else 0.0
+
+            # Prevent conflicting instructions (Volume + Duration)
+            if total_vol > 0 and step.duration_s is not None:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Cannot provide both a volume ({total_vol}mL) and an explicit duration ({step.duration_s}s)."
+                )
+
+            # Prevent undefined wait states (0 Volume without Duration)
+            if total_vol == 0.0 and step.duration_s is None:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Steps with 0.0mL volume (like heat/wait steps) must provide an explicit 'duration_s'."
+                )
+
+            # Verify hardware capabilities (Valid Port Mapping)
+            if total_vol > 0:
+                solution_name = next(iter(step.solution))
+                if solution_name not in self.selector.port_map:
+                    raise ValueError(
+                        f"Validation failed at step {i + 1}: "
+                        f"Solution '{solution_name}' is not in the instrument. "
+                        f"Available ports: {list(self.selector.port_map.keys())}"
+                    )
 
     def run_step(
             self,
