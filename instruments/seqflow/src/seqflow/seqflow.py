@@ -83,6 +83,9 @@ class SeqFlow(Instrument):
         :param job: job to run
 
         """
+        # Clear the vessel state from any previous state. Vessel routes excess liquid to waste.
+        self.rxn_vessel.purge_solution()
+
         # validate and save job so instrument can run
         valid_job = SeqFlowJob(**job)
 
@@ -241,9 +244,7 @@ class SeqFlow(Instrument):
         finally:
             with self.job_status_lock:
                 self.job_status = message
-            if message.status in ["finished", "failed"]:
-                self.pump.stop()
-                self.selector.disconnect()
+            self.pump.stop()
 
     def resume_run(self):
         """
