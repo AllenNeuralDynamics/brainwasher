@@ -16,16 +16,28 @@ DeviceType = Literal["pump", "heat_device", "wait", "stopper"]
 
 class SeqFlowStep(BaseModel):
     """Model representing a single action within a sequence."""
-    # --- STEP PARAMETERS ---
-    duration_s: Optional[float] = Field(default=None, description="Time in seconds for each step.")
-    temp_c: Optional[float] = Field(default=None, description="Temperature in Celsius for the heat wait step.")
-    solution: dict[str, float] = Field(default_factory=dict, description="solution name and volume (mL) to fill into slides.")
-    flow_rate_mlpm: Optional[float] = Field(default=None, description="Step-specific flow rate override in mL/min.")
 
-    # TODO Validation! 
+    # --- STEP PARAMETERS ---
+    duration_s: Optional[float] = Field(
+        default=None, description="Time in seconds for each step."
+    )
+    temp_c: Optional[float] = Field(
+        default=None, description="Temperature in Celsius for the heat wait step."
+    )
+    solution: dict[str, float] = Field(
+        default_factory=dict,
+        description="solution name and volume (mL) to fill into slides.",
+    )
+    flow_rate_mlpm: Optional[float] = Field(
+        default=None, description="Step-specific flow rate override in mL/min."
+    )
+
+    # TODO Validation!
+
 
 class SeqFlowJobStatus(BaseModel):
     """Model of messages used to convey state of seqflow job"""
+
     status: Literal["failed", "finished", "running", "paused", "idle"] = Field(
         ..., description="Indicated if status of job."
     )
@@ -36,7 +48,7 @@ class SeqFlowJobStatus(BaseModel):
 
 class SeqFlowResumeState(BaseModel):
     """Resume state tracking for SeqFlow."""
-    
+
     @staticmethod
     def values_in_seqflow_step(overrides: dict):
         """Ensure keys in the overrides dict exist as SeqFlowStep fields."""
@@ -54,21 +66,23 @@ class SeqFlowResumeState(BaseModel):
             )
 
         # Validate override values against SeqFlowStep value constraints.
-        try:  
+        try:
             # Lazy way: try making a valid Step using dummy metadata
             SeqFlowStep(
                 **overrides,
             )
         except ValidationError as e:
-            extra_msg = "Error validating ResumeState overrides against SeqFlowStep values."
+            extra_msg = (
+                "Error validating ResumeState overrides against SeqFlowStep values."
+            )
             raise ValueError(extra_msg) from e
 
         return overrides
 
     step: int
     starting_solution: dict[str, float] = Field(default_factory=dict)
-    
-    # Overrides are a subset of SeqFlowStep fields whose values will 
+
+    # Overrides are a subset of SeqFlowStep fields whose values will
     # override those in the current step (e.g., partial wait times).
     overrides: Annotated[
         Optional[dict[str, Any]], AfterValidator(values_in_seqflow_step)
@@ -77,17 +91,16 @@ class SeqFlowResumeState(BaseModel):
 
 class SeqFlowJob(Job):
     """SeqFlow specific job containing an ordered list of steps in sequence."""
-    
+
     protocol: list[SeqFlowStep] = Field(
-        default_factory=list, 
-        description="A list of steps to be run in order."
+        default_factory=list, description="A list of steps to be run in order."
     )
     resume_state: Optional[SeqFlowResumeState] = None
 
     def get_duration_s(self, start_step: int = 0) -> float:
         """
         Total job duration in seconds starting from the specified step.
-        Note: Because `protocol` is a list of SeqFlowSteps, `start_step` 
+        Note: Because `protocol` is a list of SeqFlowSteps, `start_step`
         represents the starting step index (e.g., resuming from step 2).
         """
         total_time_s = 0.0
@@ -102,12 +115,10 @@ class SeqFlowJob(Job):
                 total_time_s += step.duration_s
         return total_time_s
 
-    def save_resume_state(
-            self, step: int, starting_solution: dict, **overrides: dict
-        ):
-            """Generates and saves the resume state to the job."""
-            self.resume_state = SeqFlowResumeState(
-                step=step,
-                starting_solution=starting_solution if starting_solution else {},
-                overrides=overrides if overrides else None
-            )
+    def save_resume_state(self, step: int, starting_solution: dict, **overrides: dict):
+        """Generates and saves the resume state to the job."""
+        self.resume_state = SeqFlowResumeState(
+            step=step,
+            starting_solution=starting_solution if starting_solution else {},
+            overrides=overrides if overrides else None,
+        )

@@ -6,10 +6,13 @@ import yaml
 from pathlib import Path
 import threading
 
+
 def stream_listener(client, stream_name):
     """Background task to print broadcast updates."""
     print(f"--- Listening to stream: {stream_name} ---")
-    client.configure_stream(stream_name, storage_type="cache")  # Get most latest message only
+    client.configure_stream(
+        stream_name, storage_type="cache"
+    )  # Get most latest message only
     time.sleep(1)  # Give the stream a moment to start
     while True:
         try:
@@ -21,12 +24,15 @@ def stream_listener(client, stream_name):
             print(f"Error in stream_listener: {e}")
             time.sleep(2)
 
+
 def main():
     # Connect to both the RPC and Broadcast ports
     client = RouterClient(rpc_port=5557, broadcast_port=5558)
-    
+
     # Start the stream listener in a background thread
-    listener = threading.Thread(target=stream_listener, args=(client, "seqflow_get_progress"), daemon=True)
+    listener = threading.Thread(
+        target=stream_listener, args=(client, "seqflow_get_progress"), daemon=True
+    )
     listener.start()
 
     # Load the job from the YAML file
@@ -38,7 +44,7 @@ def main():
     except FileNotFoundError:
         print(f"Job file not found: {yaml_path}")
         return
-    
+
     print("\n--- Starting Sequence ---")
     response = client.call("seqflow", "start_run", kwargs={"job": job_payload})
     print(f"Response: {response}")
@@ -62,7 +68,7 @@ def main():
     print("\n--- Resuming Sequence ---")
     response = client.call("seqflow", "resume_run")
     print(f"Response: {response}")
-    
+
 
 if __name__ == "__main__":
     main()

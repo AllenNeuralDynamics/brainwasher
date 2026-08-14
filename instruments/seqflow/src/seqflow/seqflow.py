@@ -1,9 +1,11 @@
 # seqflow.py
 
+from mixology.devices.selector.selector import SerialSelector
+from mixology.devices.selector.mux import CascadedMux
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
-from mixology.devices.simulated_devices.selector import SimSelector
-from seqflow.seqflow_models import SeqFlowJob,SeqFlowJobStatus
+from mixology.devices.simulated_devices.selector import SimSerialSelector
+from seqflow.seqflow_models import SeqFlowJob, SeqFlowJobStatus
 from seqflow.seqflow_config_model import SeqFlowConfig
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
@@ -25,7 +27,7 @@ class SeqFlow(Instrument):
         self,
         config: SeqFlowConfig,
         pump: SimPeristalticPump,
-        selector: SimSelector,
+        selector: SimSerialSelector | CascadedMux | SerialSelector,
         rxn_vessel: SlideContainer,
     ):
         super().__init__()
@@ -34,8 +36,9 @@ class SeqFlow(Instrument):
         self.selector = selector
         self.rxn_vessel = rxn_vessel
 
-        # start pump
+        # start devices
         self.pump.start()
+        self.selector.connect()
 
         # attribute to track events that occur in job_worker
         self.job_status_lock = Lock()
@@ -48,7 +51,7 @@ class SeqFlow(Instrument):
 
     def _load_job(self, job_path: str) -> SeqFlowJob:
         return super()._load_job(job_path, job_class=SeqFlowJob)
-    
+
     def restart_run(self, job: SeqFlowJob):
         """
         Reset SeqFlow and start run
@@ -59,7 +62,7 @@ class SeqFlow(Instrument):
         # reset SeqFlow
         self.clear_job()
         self.start_run(job)
-    
+
     def clear_job(self) -> None:
         """
         Clear job and update status
@@ -80,6 +83,9 @@ class SeqFlow(Instrument):
         :param job: job to run
 
         """
+        # Clear the vessel state from any previous state. Vessel routes excess liquid to waste.
+        self.rxn_vessel.purge_solution()
+
         # validate and save job so instrument can run
         valid_job = SeqFlowJob(**job)
 
@@ -98,7 +104,7 @@ class SeqFlow(Instrument):
         """Convenience method to get current job"""
         if self._job:
             return self._job.model_dump()
-    
+
         return None
 
     def set_job(self, job: Union[dict, SeqFlowJob]) -> None:
@@ -108,7 +114,9 @@ class SeqFlow(Instrument):
             return
 
         self._job = SeqFlowJob(**job) if isinstance(job, dict) else job
-        status: Literal["paused", "idle"] = "paused" if self._job.resume_state else "idle"
+        status: Literal["paused", "idle"] = (
+            "paused" if self._job.resume_state else "idle"
+        )
         with self.job_status_lock:
             self.log.info(f"Job set and setting to {status}")
             self.job_status = SeqFlowJobStatus(status=status)
@@ -120,7 +128,9 @@ class SeqFlow(Instrument):
             self.log.warning("Cannot clear state while running.")
             return
 
-        status: Literal["paused", "idle"] = "paused" if self._job and self._job.resume_state else "idle"
+        status: Literal["paused", "idle"] = (
+            "paused" if self._job and self._job.resume_state else "idle"
+        )
         with self.job_status_lock:
             self.log.info(
                 f"Clearing {self.job_status.status} job status and setting to {status}"
@@ -150,23 +160,48 @@ class SeqFlow(Instrument):
 
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
-        # TODO: Add logic 
-        # Example) If total volumn > 0, then solution should be in the selector_port_map (For heat or wait status)
-        # If 
-        pass
+        for i, step in enumerate(job.protocol):
+            total_vol = sum(step.solution.values()) if step.solution else 0.0
+
+            # Prevent conflicting instructions (Volume + Duration)
+            if total_vol > 0 and step.duration_s is not None:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Cannot provide both a volume ({total_vol}mL) and an explicit duration ({step.duration_s}s)."
+                )
+
+            # Prevent undefined wait states (0 Volume without Duration)
+            if total_vol == 0.0 and step.duration_s is None:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Steps with 0.0mL volume (like heat/wait steps) must provide an explicit 'duration_s'."
+                )
+
+            # Verify hardware capabilities (Valid Port Mapping)
+            if total_vol > 0:
+                solution_name = next(iter(step.solution))
+                if solution_name not in self.selector.port_map:
+                    raise ValueError(
+                        f"Validation failed at step {i + 1}: "
+                        f"Solution '{solution_name}' is not in the instrument. "
+                        f"Available ports: {list(self.selector.port_map.keys())}"
+                    )
 
     def run_step(
-            self,
-            solution: Optional[dict] = None,
-            duration_s: Optional[float] = None,
-            temp_c: Optional[float] = None,
-            flow_rate_mlpm: float = 0.0,
-        ):
+        self,
+        solution: Optional[dict] = None,
+        duration_s: Optional[float] = None,
+        temp_c: Optional[float] = None,
+        flow_rate_mlpm: float = 0.0,
+    ):
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
 
-        total_vol = sum(solution.values()) if solution else 0.0
         self.pump.set_flow_rate(flow_rate_mlpm)
+        total_vol = sum(solution.values()) if solution else 0.0
+        if solution and total_vol > 0:
+            solution_name = next(iter(solution))
+            self.selector.move_to_position(solution_name)
         if duration_s is None:
             duration_s = self.pump.get_dispense_duration_s(total_vol)
         self.rxn_vessel.purge_solution()
@@ -187,13 +222,13 @@ class SeqFlow(Instrument):
     def _run_job_worker(self, job: SeqFlowJob, job_path: Path):
         # Sync the newly loaded disk object back to our main memory!
         self._job = job
-        
+
         try:
             with self.job_status_lock:
                 self.job_status = SeqFlowJobStatus(status="running")
             # Now hand it off to the base Instrument class
             super()._run_job_worker(job, job_path)
-        
+
             # clear job if finished
             if not job.resume_state:
                 self._job = None
