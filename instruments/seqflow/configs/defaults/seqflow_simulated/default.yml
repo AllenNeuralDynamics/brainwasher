@@ -53,10 +53,10 @@ devices:
         name: "simPump"
         flow_rate_mlpm: 1.5
   selector:
-    class: mixology.devices.simulated_devices.selector.SimSelector
+    class: mixology.devices.simulated_devices.selector.SimSerialSelector
     kwds:
-        name: "simSelector"
-        positions: 10
+        name: "simSerialSelector"
+        port: "FAKE_COM6"
         position_map: selector_port_map
   rxn_vessel:
     class: mixology.devices.vessels.SlideContainer
