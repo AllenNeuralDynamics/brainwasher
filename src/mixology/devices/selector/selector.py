@@ -25,6 +25,11 @@ class SerialSelector(Selector, SerialDevice):
     """Represents a single selector valve that communicates over a serial port."""
 
     def __init__(self, name: str, port: str, position_map: Dict[str, int] = None):
+        """Initialize the SerialSelector with a name, serial port, and optional position map.
+            name: A unique name for the selector.
+            port: The serial COM port to which the selector is connected.
+            position_map: Optional dictionary mapping reagent names to port numbers.
+        """
         self.config = SerialSelectorConfig(selector_name=name, port=port)
         self.log = logging.getLogger(f"{self.__class__.__name__}.{self.config.selector_name}")
         self._connection: Optional[serial.Serial] = None
