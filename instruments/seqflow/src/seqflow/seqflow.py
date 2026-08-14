@@ -1,8 +1,10 @@
 # seqflow.py
 
+from mixology.devices.selector.selector import SerialSelector
+from mixology.devices.selector.mux import CascadedMux
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
-from mixology.devices.simulated_devices.selector import SimSelector
+from mixology.devices.simulated_devices.selector import SimSerialSelector
 from seqflow.seqflow_models import SeqFlowJob,SeqFlowJobStatus
 from seqflow.seqflow_config_model import SeqFlowConfig
 from threading import Lock
@@ -25,7 +27,7 @@ class SeqFlow(Instrument):
         self,
         config: SeqFlowConfig,
         pump: SimPeristalticPump,
-        selector: SimSelector,
+        selector: SimSerialSelector | CascadedMux | SerialSelector,
         rxn_vessel: SlideContainer,
     ):
         super().__init__()
@@ -34,8 +36,9 @@ class SeqFlow(Instrument):
         self.selector = selector
         self.rxn_vessel = rxn_vessel
 
-        # start pump
+        # start devices
         self.pump.start()
+        self.selector.connect()
 
         # attribute to track events that occur in job_worker
         self.job_status_lock = Lock()
@@ -165,9 +168,13 @@ class SeqFlow(Instrument):
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
 
-        total_vol = sum(solution.values()) if solution else 0.0
         self.pump.set_flow_rate(flow_rate_mlpm)
+        total_vol = sum(solution.values()) if solution else 0.0
+        if total_vol > 0:
+            solution_name = next(iter(solution))
+            self.selector.move_to_position(solution_name)
         if duration_s is None:
+            solution_name = next(iter(solution))
             duration_s = self.pump.get_dispense_duration_s(total_vol)
         self.rxn_vessel.purge_solution()
         self.rxn_vessel.add_solution(**(solution or {}))
@@ -212,7 +219,9 @@ class SeqFlow(Instrument):
         finally:
             with self.job_status_lock:
                 self.job_status = message
-            self.pump.stop()
+            if message.status in ["finished", "failed"]:
+                self.pump.stop()
+                self.selector.disconnect()
 
     def resume_run(self):
         """
