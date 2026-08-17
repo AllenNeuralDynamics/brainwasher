@@ -197,16 +197,14 @@ class SeqFlow(Instrument):
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
 
+        self.rxn_vessel.purge_solution()
         self.pump.set_flow_rate(flow_rate_mlpm)
         total_vol = sum(solution.values()) if solution else 0.0
         if solution and total_vol > 0:
             solution_name = next(iter(solution))
             self.selector.move_to_position(solution_name)
-        if duration_s is None:
-            duration_s = self.pump.get_dispense_duration_s(total_vol)
-        self.rxn_vessel.purge_solution()
+            self.pump.pump_volume(total_vol)
         self.rxn_vessel.add_solution(**(solution or {}))
-        self.pump.dispense_by_time(duration_s)
 
         if duration_s is not None and duration_s > 0:
             start_time = time.perf_counter()
