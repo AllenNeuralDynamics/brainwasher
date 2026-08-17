@@ -75,10 +75,8 @@ class Ismatec(object):
 
             if not(stat):
                 self.log.error("Initialization error on %s", self.com_port)
-                print( "Initialization error! Disconnecting!\n")
         else:
             self.log.error("Incorrect pump ID on %s", self.com_port)
-            print( "Incorrect ID returned. Disconnecting\n")
             self.pumpDisconnect()
         self.defaultRate = float(str.split(self.sendToPump("!").strip())[0]) # set flow rate at max rotational speed in mL/min
         self.speed = float(str.split(self.sendToPump("!").strip())[0])
@@ -89,12 +87,12 @@ class Ismatec(object):
         self.sendToPump('I') # stop pump
         self.enableRemoteControl(0) # set to manual control
         self.serial.close() # close out serial
-        print("disconnect pump,close the port!")
+        self.log.debug("disconnect pump, close the port!")
         
     def checkPumpIdentification(self) -> int:
         """Query pump model ID and print it. Returns 1 (always succeeds)."""
         pumpIDRead = self.sendToPump("#")
-        print( "Pump " + pumpIDRead.rstrip() + " Identified\n")
+        self.log.debug("Pump " + pumpIDRead.rstrip() + " Identified")
         return 1
 
     def isPumpRunning(self) -> int:
@@ -109,7 +107,7 @@ class Ismatec(object):
         elif (status == "-"):
             return 0
         else:
-            print("Return from pump \n Got "+status)
+            self.log.warning("Return from pump \n Got "+status)
             return -1
 
     def enableRemoteControl(self, remote: int) -> int:
@@ -148,16 +146,15 @@ class Ismatec(object):
         del clearReturn
         self.defaultRate = float(str.split(self.sendToPump("!").strip())[0]) # set flow rate at max rotational speed in mL/min
         pctRate = np.floor(10000.*flowRate/self.defaultRate)/100.
-        print(pctRate)
         if pctRate > 100.:
-            print( 'Calculated flow rate too high! reducing to max.\n')
+            self.log.warning('Calculated flow rate too high! reducing to max.\n')
             pctRate = 100.
 
         # Send flow rate as percentage of max rate (6-digit integer, e.g., 050000 = 50.00%)
         statusFlowRate = self.sendToPump("S"+str(int(pctRate*100)).zfill(6))
         if statusCheck(statusFlowRate):
             self.speed = pctRate*self.defaultRate/100.
-            print( "Set flow rate to " + str(self.speed) + " ml per min.")
+            self.log.info("Set flow rate to " + str(self.speed) + " ml per min.")
             return True
         else:
             return False
@@ -215,13 +212,13 @@ class Ismatec(object):
             
         else:
             flowTimeStr = 'V0000'
-            print( 'Flow time undefined!\n')
+            self.log.error('Flow time undefined!\n')
 
-        print( flowTimeNow)
+        self.log.debug("Flow time now: " + str(flowTimeNow))
 
         # Calculate actual dispense rate from volume and rounded time
         dispenseRate = float(flowVolume)/float(flowTimeNow)
-        print("Actual dispenseRate is "+str(dispenseRate))
+        self.log.info("Actual dispenseRate is "+str(dispenseRate))
         return
     
     def resetVolumeCounter(self) -> str:
