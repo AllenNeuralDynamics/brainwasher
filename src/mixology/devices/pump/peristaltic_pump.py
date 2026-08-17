@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 
 class PumpConfig(BaseModel):
     """Configuration dict for IsmatecPumpDevice."""
-    pump_name: str
+    name: str
     port: str
     tubingDiameter: float
     pumpID: str
@@ -33,10 +33,16 @@ class SerialPeristalticPumpDevice(PumpDevice, SerialDevice):
         config: Dict with keys 'port', 'tubingDiameter', 'pumpID', 'flowReversed'.
     """
 
-    def __init__(self, config: PumpConfig) -> None:
-        logger_name = self.__class__.__name__
+    def __init__(self, name: str, port: str, tubing_diameter: float, pump_id: str, flow_reversed: int) -> None:
+        logger_name = self.__class__.__name__ + f".{name}"
         self.log = logging.getLogger(logger_name)
-        self.config = config
+        self.config = PumpConfig(
+            name=name,
+            port=port,
+            tubingDiameter=tubing_diameter,
+            pumpID=pump_id,
+            flowReversed=flow_reversed
+        )
         self.driver: Optional[IsmatecDriver] = None
 
     # --- SerialDevice interface methods ---
@@ -58,18 +64,15 @@ class SerialPeristalticPumpDevice(PumpDevice, SerialDevice):
 
     def initialize(self) -> None:
         """Connect to the pump, configure tubing, and set initial flow rate."""
-        IPD_COM_CONFIG = self.config['port']
-        self.driver = IsmatecDriver(serPort=IPD_COM_CONFIG, tubingDiameter=self.config['tubingDiameter'],
-                                    expectedPumpID=self.config['pumpID'])
-        self.driver.setFlowRate(1.2)
-        self.log.info("Pump initialized on %s", IPD_COM_CONFIG)
-        print("initialized ismatecdriver!")
+        self.driver = IsmatecDriver(serPort=self.config.port, tubingDiameter=self.config.tubingDiameter,
+                                    expectedPumpID=self.config.pumpID)
+        self.driver.setFlowRate(0.0)
+        self.log.info("Pump initialized on %s", self.config.port)
 
     def pump_volume(self, volume_ml: float) -> None:
         """Dispense a specified volume at a given flow rate."""
         duration_m = self.get_dispense_duration_m(volume_ml)
         self.driver.setFlowVolumeAndRate(volume_ml, duration_m)
-        self.pumpVolume(volume_ml)
         self.driver.startPump()
 
     def start(self) -> None:
@@ -97,3 +100,22 @@ class SerialPeristalticPumpDevice(PumpDevice, SerialDevice):
         """Verify pump communication by requesting its identification."""
         return self.driver.checkPumpIdentification()
 
+
+if __name__ == "__main__":
+    import logging
+    from time import sleep
+
+    pump = SerialPeristalticPumpDevice(
+        name="TestIsmatecPumpDevice_1",
+        port="COM9",
+        tubing_diameter=0.51,
+        pump_id="IPC_501",
+        flow_reversed=0
+    )
+    
+    pump.connect()
+    sleep(1)
+    pump.set_flow_rate(flow_rate_mlpm = 1.5)
+    sleep(1)
+    pump.pump_volume(volume_ml = 1.5)  # Example volume
+    

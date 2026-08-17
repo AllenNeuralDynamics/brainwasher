@@ -1,6 +1,7 @@
 # seqflow.py
 
 from mixology.devices.selector.selector import SerialSelector
+from mixology.devices.pump.peristaltic_pump import SerialPeristalticPumpDevice
 from mixology.devices.selector.mux import CascadedMux
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
@@ -26,7 +27,7 @@ class SeqFlow(Instrument):
     def __init__(
         self,
         config: SeqFlowConfig,
-        pump: SimPeristalticPump,
+        pump: SimPeristalticPump | SerialPeristalticPumpDevice,
         selector: SimSerialSelector | CascadedMux | SerialSelector,
         rxn_vessel: SlideContainer,
     ):
@@ -37,7 +38,7 @@ class SeqFlow(Instrument):
         self.rxn_vessel = rxn_vessel
 
         # start devices
-        self.pump.start()
+        self.pump.connect()
         self.selector.connect()
 
         # attribute to track events that occur in job_worker
