@@ -2,9 +2,9 @@
 
 import logging
 from time import sleep
+from mixology.devices.peristaltic_pump import PumpDevice
 
-
-class SimPeristalticPump:
+class SimPeristalticPump(PumpDevice):
     def __init__(self, name: str = "", flow_rate_mlpm: float = 1.5):
         logger_name = self.__class__.__name__ + (f".{name}" if name else "")
         self.flow_rate_mlpm = flow_rate_mlpm  # Initial default flow rate
