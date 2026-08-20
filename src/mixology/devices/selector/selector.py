@@ -51,6 +51,16 @@ class SerialSelector(Selector, SerialDevice):
             )
             self.log.info(f"Connected to selector on {self.config.port}")
 
+            valve_address = 1
+            init_command = f"/{valve_address}ZR\r"
+            self.log.debug(f"Initializing valve with command: {repr(init_command)}")
+            self._connection.write(init_command.encode())
+            
+            # Read the response to clear the buffer
+            init_response = self._connection.readline()
+            self.log.debug(f"Initialization response: {init_response}")
+
+
         except serial.SerialException as e:
             self.log.error(f"Failed to connect to selector on {self.config.port}: {e}")
             raise
