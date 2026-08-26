@@ -67,16 +67,3 @@ class SimPeristalticPump(PumpDevice, SerialDevice):
         """Simulates stopping the pump."""
         self._is_running = False
         self.log.info(f"[{self.name}] Pump stopped.")
-
-    def pump_volume(self, volume_ml: float) -> None:
-        """Simulates dispensing a specific volume of fluid at the current rate."""
-        # Calculate duration using the shared base class function
-        duration = self.get_dispense_duration_s(volume_ml)
-        
-        current_speed = self.get_speed_ml_per_min()
-        self.log.info(f"[{self.name}] Dispensing {volume_ml} mL at {current_speed} mL/min (will take {duration:.2f}s)...")
-        
-        self.start()
-        sleep(0.1) 
-        self.stop()
-        self.log.debug(f"[{self.name}] Dispense complete.")

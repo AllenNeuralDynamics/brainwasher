@@ -110,9 +110,8 @@ class SerialPeristalticPumpDevice(PumpDevice, SerialDevice):
 
     def set_flow_rate(self, flow_rate_mlpm: float) -> bool:
         """Translates mL/min request to an RPM command based on tubing yield."""
-        self._current_speed_mlpm = flow_rate_mlpm
-
         if flow_rate_mlpm == 0:
+            self._current_speed_mlpm = 0.0
             return self.driver.stopPump()
 
         # Calculate target RPM
@@ -128,6 +127,9 @@ class SerialPeristalticPumpDevice(PumpDevice, SerialDevice):
                 f"below the min limit of {self.config.min_rpm} RPM. Clamping to min speed."
             )
         target_rpm = max(self.config.min_rpm, min(target_rpm, self.config.max_rpm))
+
+        # Sync the software state to the actual physical output
+        self._current_speed_mlpm = target_rpm * self.config.tubingYield
 
         # Send the calculated RPM to the pump
         return self.driver.setSpeedRPM(target_rpm)

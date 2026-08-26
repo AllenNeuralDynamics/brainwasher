@@ -16,15 +16,6 @@ class PumpDevice():
         ...
 
     @abstractmethod
-    def pump_volume(self, volume_ml: float) -> None:
-        """Dispense a specified volume at the current flow rate.
-
-        Args:
-            volume_ml: Volume to pump in mL.
-        """
-        ...
-
-    @abstractmethod
     def start(self) -> None:
         """Start the pump."""
         ...
@@ -71,3 +62,12 @@ class PumpDevice():
         if current_speed <= 0:
             return 0.0
         return volume_ml / current_speed
+
+    def get_dispense_volume_ml(self, duration_s: float) -> float:
+        """
+        Calculates the volume dispensed in milliliters given the elapsed time and flow rate.
+        """
+        current_speed = self.get_speed_ml_per_min()
+        if current_speed <= 0:
+            return 0.0
+        return (duration_s / 60.0) * current_speed
