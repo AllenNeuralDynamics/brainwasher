@@ -11,41 +11,44 @@ Error Response: '#' (Invalid command) or '~' (Not in remote mode).
 import serial
 import logging
 
+
 class MasterSenseError(Exception):
     """Base exception for MasterSense communication errors."""
+
     pass
+
 
 class MasterSense:
     """Serial driver for Masterflex MasterSense pumps."""
 
-    def __init__(self, serPort: str, baudrate: int, pumpAddress: str = '1') -> None:
+    def __init__(self, serPort: str, baudrate: int, pumpAddress: str = "1") -> None:
         self.log = logging.getLogger(f"{self.__class__.__name__}.{serPort}")
-        self.pump_address = str(pumpAddress) # Default address is 1
-        
+        self.pump_address = str(pumpAddress)  # Default address is 1
         self.log.debug("Opening serial port %s at %d baud", serPort, baudrate)
-        
+
         # MasterSense requires 115200 baud rate, 8 bit, 1 stop bit, no parity
         self.serial = serial.Serial(
             port=serPort,
-            baudrate=baudrate, 
+            baudrate=baudrate,
             parity=serial.PARITY_NONE,
             bytesize=serial.EIGHTBITS,
             stopbits=serial.STOPBITS_ONE,
-            timeout=0.5
+            timeout=0.5,
         )
 
         # Initialize pump and put into Remote mode
         if self.enableRemoteControl(True):
             self.log.info("Pump connected and remote control enabled.")
         else:
-            # FIX: Log a warning instead of an error if the pump rejects RE1
-            self.log.warning("RE1 command rejected. (This is normal if Serial mode is forced via the pump's touchscreen).")
+            self.log.warning(
+                "RE1 command rejected. (This is normal if Serial mode is forced via the pump's touchscreen)."
+            )
 
     def pumpDisconnect(self) -> None:
         """Stop the pump, return to manual control, and close port."""
         if self.serial.is_open:
             self.stopPump()
-            self.enableRemoteControl(False) # Disable remote mode
+            self.enableRemoteControl(False)  # Disable remote mode
             self.serial.close()
             self.log.debug("Disconnected pump and closed serial port.")
 
@@ -66,7 +69,7 @@ class MasterSense:
         response = self.sendToPump("RC")
         try:
             # Example response: "1, 0, 1" -> split by comma
-            parts = response.split(',')
+            parts = response.split(",")
             if len(parts) >= 2:
                 status = int(parts[1].strip())
                 return status
@@ -82,7 +85,7 @@ class MasterSense:
         if not (0.0 <= percent <= 100.0):
             self.log.warning("Percent must be between 0.0 and 100.0")
             return False
-            
+
         # Format to 5 digits, 1 decimal place stripped of the '.'
         # Example: 53.2 -> 00532
         formatted_pct = f"{percent * 10:05.0f}"
@@ -92,12 +95,21 @@ class MasterSense:
     def setSpeedRPM(self, rpm: float) -> bool:
         """
         Set pump speed in RPM.
-        Requires 6 digits representing RPM with two decimal points (e.g., 100.00 -> 010000).
+        Requires 'R' followed by 3 or more digits representing RPM with
+        two decimal points (e.g., 100.00 RPM -> R10000).
         """
-        # Format to 6 digits, 2 decimal places stripped of the '.'
-        # Example: 300.50 -> 030050
-        formatted_rpm = f"{rpm * 100:06.0f}"
+        if rpm < 0:
+            self.log.warning("RPM cannot be negative.")
+            return False
+
+        # Multiply by 100 to shift the two decimal places into the integer
+        # Example: 300.50 * 100 = 30050
+        rpm_int = int(round(rpm * 100))
+
+        formatted_rpm = f"{rpm_int:03d}"
         cmd = f"R{formatted_rpm}"
+
+        self.log.debug(f"Setting pump speed to {rpm} RPM (command: {cmd})")
         return self.statusCheck(self.sendToPump(cmd))
 
     def startPump(self) -> bool:
@@ -130,53 +142,53 @@ class MasterSense:
         """
         # ASCII 13 is \r
         full_command = f"{self.pump_address}{commandString}\r"
-        self.serial.write(full_command.encode('ascii'))
+        self.serial.write(full_command.encode("ascii"))
         self.log.debug(f"Sent: {full_command.strip()}")
         return self.getResponse()
 
     def getResponse(self) -> str:
         """Reads response from pump until carriage return or timeout."""
         # Responses end with ASCII 13 and sometimes ASCII 10 (\r\n)
-        response = self.serial.readline().decode('ascii', errors='ignore').strip()
-        
-        if response == '~':
+        response = self.serial.readline().decode("ascii", errors="ignore").strip()
+
+        if response == "~":
             self.log.error("Pump is not in Serial Communications mode.")
-        elif response == '#':
+        elif response == "#":
             self.log.error("Incorrect serial command string sent.")
-            
+
         return response
 
     def statusCheck(self, response: str) -> bool:
         """The pump confirms valid serial commands by returning an asterisk (*)."""
-        return response == '*'
+        return response == "*"
+
 
 if __name__ == "__main__":
     import logging
     from time import sleep
-    
+
     # Configure logging to output to the console during the test
     logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s:%(name)s:%(levelname)s: %(message)s'
+        level=logging.DEBUG, format="%(asctime)s:%(name)s:%(levelname)s: %(message)s"
     )
-    
+
     log = logging.getLogger("MasterSenseTest")
     log.info("Starting low-level driver test...")
-    
+
     try:
         # Initialize the pump
-        pump = MasterSense(serPort="COM4", baudrate=115200, pumpAddress='1')
+        pump = MasterSense(serPort="COM4", baudrate=115200, pumpAddress="1")
         sleep(1)
-        
+
         # Test setting the speed to 50 RPM
         log.info("Commanding pump to 50.00 RPM...")
-        if pump.setSpeedRPM(50.0):
+        if pump.setSpeedRPM(25.0):
             log.info("Speed successfully set.")
         else:
             log.error("Failed to set speed.")
-            
+
         sleep(1)
-        
+
         # Test starting the pump
         log.info("Starting motor for 5 seconds...")
         if pump.startPump():
@@ -184,16 +196,16 @@ if __name__ == "__main__":
             sleep(5)
         else:
             log.error("Failed to start motor.")
-            
+
         # Test stopping the pump
         log.info("Stopping motor...")
         pump.stopPump()
-        
+
     except Exception as e:
         log.error(f"Test failed due to an exception: {e}")
-        
+
     finally:
         log.info("Cleaning up and disconnecting...")
-        if 'pump' in locals():
+        if "pump" in locals():
             pump.pumpDisconnect()
         log.info("Test finished.")
