@@ -48,10 +48,17 @@ devices:
     kwds:
       instrument_name: "Default SeqFlow"
   pump:
-    class: mixology.devices.simulated_devices.peristaltic_pump.SimPeristalticPump
+    class: mixology.devices.pump.peristaltic_pump.SerialPeristalticPumpDevice
     kwds:
-        name: "simPump"
-        flow_rate_mlpm: 1.5
+        name: "IsmatecPumpDevice_1"
+        port: "COM4"
+        baudrate: 115200
+        tubing_diameter: 0.51
+        tubing_yield: 0.017
+        max_rpm: 160
+        min_rpm: 0.2
+        pump_id: "1"
+        flow_reversed: 0
   sub_selector_1:
     class: mixology.devices.selector.selector.SerialSelector
     kwds:
