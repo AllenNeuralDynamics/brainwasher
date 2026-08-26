@@ -83,22 +83,6 @@ class SerialPeristalticPumpDevice(PumpDevice, SerialDevice):
         self.set_flow_rate(0.0)
         self.log.info(f"Pump initialized on {self.config.port} at address {address}")
 
-    def pump_volume(self, volume_ml: float) -> None:
-        """Dispense a specified volume using exact timing."""
-        if self._current_speed_mlpm <= 0:
-            self.log.error(
-                "Cannot dispense volume: Flow rate is set to 0 or uninitialized."
-            )
-            return
-
-        # Calculate how long the pump needs to run to hit the target volume
-        duration_s = (volume_ml / self._current_speed_mlpm) * 60.0
-
-        self.log.info(f"Dispensing {volume_ml} mL over {duration_s:.2f} seconds.")
-        self.driver.startPump()
-        time.sleep(duration_s)
-        self.driver.stopPump()
-
     def start(self) -> None:
         self.driver.startPump()
 
