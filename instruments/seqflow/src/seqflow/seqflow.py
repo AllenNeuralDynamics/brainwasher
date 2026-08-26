@@ -198,13 +198,15 @@ class SeqFlow(Instrument):
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
 
+        sol_name, vol = next(iter(solution.items())) if solution else (None, 0.0)
+
         self.rxn_vessel.purge_solution()
         self.pump.set_flow_rate(flow_rate_mlpm)
-        total_vol = sum(solution.values()) if solution else 0.0
-        if solution and total_vol > 0:
-            solution_name = next(iter(solution))
-            self.selector.move_to_position(solution_name)
-            self.pump.pump_volume(total_vol)
+        if sol_name in self.selector.port_map:
+            self.selector.move_to_position(sol_name)
+            duration_s = self.pump.get_dispense_duration_s(vol)
+            self.log.debug(f"dispensing volume: {vol:.2f} mL over {duration_s:.2f} seconds.")
+            self.pump.start()
         self.rxn_vessel.add_solution(**(solution or {}))
 
         if duration_s is not None and duration_s > 0:
@@ -215,8 +217,12 @@ class SeqFlow(Instrument):
                     self.log.warning(f"Paused mid-{sol_info}.")
                     elapsed_s = time.perf_counter() - start_time
                     remaining_s = duration_s - elapsed_s
-                    self.resume_state_overrides.update(duration_s=remaining_s)
+                    remaining_vol = self.pump.get_dispense_volume_ml(remaining_s)
+                    self.resume_state_overrides.update(duration_s=remaining_s, solution={sol_name: remaining_vol})
                     return
+
+        if sol_name in self.selector.port_map:
+            self.pump.stop()
 
     def _run_job_worker(self, job: SeqFlowJob, job_path: Path):
         # Sync the newly loaded disk object back to our main memory!
