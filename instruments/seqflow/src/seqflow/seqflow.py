@@ -216,9 +216,10 @@ class SeqFlow(Instrument):
         self.pump.set_flow_rate(flow_rate_mlpm)
         if sol_name in self.selector.port_map:
             self.selector.move_to_position(sol_name)
-            duration_s = self.pump.get_dispense_duration_s(vol)
-            self.log.debug(f"dispensing volume: {vol:.2f} mL over {duration_s:.2f} seconds.")
-            self.pump.start()
+            if vol > 0:
+                duration_s = self.pump.get_dispense_duration_s(vol)
+                self.log.debug(f"dispensing volume: {vol:.2f} mL over {duration_s:.2f} seconds.")
+                self.pump.start()
         self.rxn_vessel.add_solution(**(solution or {}))
 
         if duration_s is not None and duration_s > 0:
@@ -229,7 +230,7 @@ class SeqFlow(Instrument):
                     self.log.warning(f"Paused mid-{sol_info}.")
                     elapsed_s = time.perf_counter() - start_time
                     remaining_s = duration_s - elapsed_s
-                    remaining_vol = self.pump.get_dispense_volume_ml(remaining_s)
+                    remaining_vol = self.pump.get_dispense_volume_ml(remaining_s) if vol > 0 else 0.0
                     override_solution = {sol_name: remaining_vol} if sol_name is not None else solution
                     self.resume_state_overrides.update(
                         duration_s=remaining_s,
