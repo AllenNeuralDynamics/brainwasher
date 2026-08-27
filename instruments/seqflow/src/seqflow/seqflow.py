@@ -1,7 +1,7 @@
 # seqflow.py
 
 from mixology.devices.selector.selector import SerialSelector
-from mixology.devices.pump.peristaltic_pump import SerialPeristalticPumpDevice
+from mixology.devices.pump.ismatec_peristaltic_pump import IsmatecPeristalticPumpDevice
 from mixology.devices.selector.mux import CascadedMux
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
@@ -27,7 +27,7 @@ class SeqFlow(Instrument):
     def __init__(
         self,
         config: SeqFlowConfig,
-        pump: SimPeristalticPump | SerialPeristalticPumpDevice,
+        pump: SimPeristalticPump | IsmatecPeristalticPumpDevice,
         selector: SimSerialSelector | CascadedMux | SerialSelector,
         rxn_vessel: SlideContainer,
     ):
@@ -188,37 +188,24 @@ class SeqFlow(Instrument):
         temp_c: Optional[float] = None,
         flow_rate_mlpm: float = 0.0,
     ):
-        """
-        Executes a single step in the sequence protocol, acting as either a dispense 
-        solution or a wait step depending on the inputs.
-        
-        This method handles purging the reaction vessel (free flow slides), setting the 
-        pump flow rate, selecting the correct port, and dispensing solutions. It also 
-        supports pausing mid-step, saving the remaining time and volume to allow for a 
-        clean resume.
+        """Executes a protocol step, functioning as either a dispense or wait step.
 
-        How duration is determined:
-        1. Dispense Steps: If the solution is found in the selector's port map (meaning 
-           it is a chemical solution), the dispense time is automatically calculated 
-           based on the requested volume and flow rate (overriding any passed `duration_s`).
-        2. Wait/Heat Steps: If the solution is NOT in the port map (such as an incubation 
-           or a label like 'heat_wait'), the method acts as a timer, pausing execution 
-           for the exact number of seconds provided in `duration_s`.
+        Handles vessel purging, port selection, and dispensing. Supports pausing 
+        mid-step to save remaining time and volume for a clean resume.
+
+        Duration logic:
+        - Solution Dispense Steps: Time is dynamically calculated from volume and flow rate.
+        - Wait/Heat Steps: Uses the provided `duration_s` explicitly.
 
         Args:
-            solution (Optional[dict]): A single-item dictionary mapping the solution 
-                name to its target volume in mL (e.g., {'pbst': 0.1}). For heat or 
-                incubation steps, the volume is set to 0.0 (e.g., {'heat_wait': 0.0}). 
-            duration_s (Optional[float]): The explicit wait time in seconds for heat or 
-                incubation steps. Ignored and recalculated if the step is an active 
-                dispense step.
-            temp_c (Optional[float]): The target temperature in degrees Celsius for 
-                this step.
-            flow_rate_mlpm (float): The pump flow rate in milliliters per minute 
-                (mL/min). Defaults to 0.0.
+            solution (Optional[dict]): Solution name mapped to volume in mL (e.g., 
+                {'pbst': 0.1}). Set volume to 0.0 for wait steps.
+            duration_s (Optional[float]): Wait time in seconds. Ignored for dispenses.
+            temp_c (Optional[float]): Target temperature in Celsius.
+            flow_rate_mlpm (float): Pump flow rate in mL/min. Defaults to 0.0.
 
         Raises:
-            ValueError: If `self._job` is None (no job has been loaded).
+            ValueError: If no job is loaded.
         """
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
