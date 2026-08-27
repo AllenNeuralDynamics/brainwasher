@@ -1,3 +1,14 @@
+"""
+Contains communication codes for Masterflex I/P MasterSense pump systems.
+
+For complete communication protocols and command details, navigate to the 
+documentation section on the product page:
+https://www.vwr.com/cn/en/product/40179867/masterflex-i-p-mastersense-pump-systems
+
+Please refer to the following official guide:
+Masterflex MasterSense Adv. Communications Protocols Guide_Ed.05.pdf
+"""
+
 import logging
 import serial
 from typing import Optional
