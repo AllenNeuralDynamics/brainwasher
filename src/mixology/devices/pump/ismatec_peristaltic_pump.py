@@ -49,7 +49,6 @@ class IsmatecPeristalticPumpDevice(PumpDevice, SerialDevice):
 
     # --- PumpDevice Interface Methods ---
     def initialize(self) -> None:
-        """
         self.serial = serial.Serial(
             port=self.config.port,
             baudrate=self.config.baudrate,
@@ -57,7 +56,7 @@ class IsmatecPeristalticPumpDevice(PumpDevice, SerialDevice):
             bytesize=serial.EIGHTBITS,
             stopbits=serial.STOPBITS_ONE,
             timeout=0.5,
-        )"""
+        )
         
         if self._send_command("RE1"):
             self.log.info(f"Pump initialized on {self.config.port} (address {self.pump_address})")
@@ -136,13 +135,3 @@ class IsmatecPeristalticPumpDevice(PumpDevice, SerialDevice):
     def _check_status(self, response: str) -> bool:
         """Evaluates if the raw response indicates a successful command."""
         return response == "*"
-
-
-    def _send_command(self, cmd: str) -> str:
-        return "*"
-
-    
-    def _check_status(self, response: str) -> bool:
-        """Evaluates if the raw response indicates a successful command."""
-        return True
-    
