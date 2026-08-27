@@ -1,6 +1,7 @@
 # seqflow.py
 
 from mixology.devices.selector.selector import SerialSelector
+from mixology.devices.pump.ismatec_peristaltic_pump import IsmatecPeristalticPumpDevice
 from mixology.devices.selector.mux import CascadedMux
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
@@ -26,7 +27,7 @@ class SeqFlow(Instrument):
     def __init__(
         self,
         config: SeqFlowConfig,
-        pump: SimPeristalticPump,
+        pump: SimPeristalticPump | IsmatecPeristalticPumpDevice,
         selector: SimSerialSelector | CascadedMux | SerialSelector,
         rxn_vessel: SlideContainer,
     ):
@@ -37,7 +38,7 @@ class SeqFlow(Instrument):
         self.rxn_vessel = rxn_vessel
 
         # start devices
-        self.pump.start()
+        self.pump.connect()
         self.selector.connect()
 
         # attribute to track events that occur in job_worker
@@ -163,13 +164,6 @@ class SeqFlow(Instrument):
         for i, step in enumerate(job.protocol):
             total_vol = sum(step.solution.values()) if step.solution else 0.0
 
-            # Prevent conflicting instructions (Volume + Duration)
-            if total_vol > 0 and step.duration_s is not None:
-                raise ValueError(
-                    f"Validation failed at step {i + 1}: "
-                    f"Cannot provide both a volume ({total_vol}mL) and an explicit duration ({step.duration_s}s)."
-                )
-
             # Prevent undefined wait states (0 Volume without Duration)
             if total_vol == 0.0 and step.duration_s is None:
                 raise ValueError(
@@ -194,19 +188,38 @@ class SeqFlow(Instrument):
         temp_c: Optional[float] = None,
         flow_rate_mlpm: float = 0.0,
     ):
+        """Executes a protocol step, functioning as either a dispense or wait step.
+
+        Handles vessel purging, port selection, and dispensing. Supports pausing 
+        mid-step to save remaining time and volume for a clean resume.
+
+        Duration logic:
+        - Solution Dispense Steps: Time is dynamically calculated from volume and flow rate.
+        - Wait/Heat Steps: Uses the provided `duration_s` explicitly.
+
+        Args:
+            solution (Optional[dict]): Solution name mapped to volume in mL (e.g., 
+                {'pbst': 0.1}). Set volume to 0.0 for wait steps.
+            duration_s (Optional[float]): Wait time in seconds. Ignored for dispenses.
+            temp_c (Optional[float]): Target temperature in Celsius.
+            flow_rate_mlpm (float): Pump flow rate in mL/min. Defaults to 0.0.
+
+        Raises:
+            ValueError: If no job is loaded.
+        """
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
 
-        self.pump.set_flow_rate(flow_rate_mlpm)
-        total_vol = sum(solution.values()) if solution else 0.0
-        if solution and total_vol > 0:
-            solution_name = next(iter(solution))
-            self.selector.move_to_position(solution_name)
-        if duration_s is None:
-            duration_s = self.pump.get_dispense_duration_s(total_vol)
+        sol_name, vol = next(iter(solution.items())) if solution else (None, 0.0)
+
         self.rxn_vessel.purge_solution()
+        self.pump.set_flow_rate(flow_rate_mlpm)
+        if sol_name in self.selector.port_map:
+            self.selector.move_to_position(sol_name)
+            duration_s = self.pump.get_dispense_duration_s(vol)
+            self.log.debug(f"dispensing volume: {vol:.2f} mL over {duration_s:.2f} seconds.")
+            self.pump.start()
         self.rxn_vessel.add_solution(**(solution or {}))
-        self.pump.dispense_by_time(duration_s)
 
         if duration_s is not None and duration_s > 0:
             start_time = time.perf_counter()
@@ -216,8 +229,16 @@ class SeqFlow(Instrument):
                     self.log.warning(f"Paused mid-{sol_info}.")
                     elapsed_s = time.perf_counter() - start_time
                     remaining_s = duration_s - elapsed_s
-                    self.resume_state_overrides.update(duration_s=remaining_s)
+                    remaining_vol = self.pump.get_dispense_volume_ml(remaining_s)
+                    override_solution = {sol_name: remaining_vol} if sol_name is not None else solution
+                    self.resume_state_overrides.update(
+                        duration_s=remaining_s,
+                        solution=override_solution
+                    )
                     return
+
+        if sol_name in self.selector.port_map:
+            self.pump.stop()
 
     def _run_job_worker(self, job: SeqFlowJob, job_path: Path):
         # Sync the newly loaded disk object back to our main memory!

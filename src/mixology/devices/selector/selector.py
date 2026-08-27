@@ -1,4 +1,5 @@
 import logging
+from urllib import response
 import serial
 from typing import Optional, Union, Dict
 from mixology.devices.serial_device import SerialDevice
@@ -49,6 +50,17 @@ class SerialSelector(Selector, SerialDevice):
                 timeout=1,
             )
             self.log.info(f"Connected to selector on {self.config.port}")
+
+            valve_address = 1
+            init_command = f"/{valve_address}ZR\r"
+            self.log.debug(f"Initializing valve with command: {repr(init_command)}")
+            self._connection.write(init_command.encode())
+            
+            # Read the response to clear the buffer
+            init_response = self._connection.readline()
+            self.log.debug(f"Initialization response: {init_response}")
+
+
         except serial.SerialException as e:
             self.log.error(f"Failed to connect to selector on {self.config.port}: {e}")
             raise
@@ -80,3 +92,48 @@ class SerialSelector(Selector, SerialDevice):
         self.log.debug(f"Sending command to {self.config.port}: {repr(command)}")
         self._connection.write(command.encode())
 
+        response = self._connection.readline() # Clears the acknowledgement from the buffer
+        self.log.debug(f"Valve response: {response}")
+
+
+
+if __name__ == "__main__":
+    import logging
+    from time import sleep
+    logging.basicConfig(level=logging.DEBUG)
+
+    test_port_map = {
+        "water": 1,
+        "juice": 2,
+        "buffer": 3,
+        "wash": 6,
+    }
+
+    selector1 = SerialSelector(
+        name="ElveflowSelector_1",
+        port="COM6",
+        baudrate=9600,
+        position_map=test_port_map
+    )
+
+    try:
+        selector1.connect()
+        sleep(1)  # Brief pause after opening the serial port
+
+        test_positions = ["water", "juice", "wash"]
+        for pos in test_positions:
+            print(f"\nMoving to position: {pos} (Port {test_port_map[pos]})")
+            selector1.move_to_position(pos)
+            sleep(3)
+
+        # Test moving directly by integer to port 1 to reset it
+        print("\nMoving directly to integer port: 1")
+        selector1.move_to_position(1)
+        sleep(3)
+
+    except Exception as e:
+        logging.error(f"An error occurred during selector operation: {e}")
+    finally:
+        if selector1.is_connected():
+            print("\nDisconnecting...")
+            selector1.disconnect()

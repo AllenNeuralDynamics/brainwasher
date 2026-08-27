@@ -1,48 +1,69 @@
-"""Simulated Peristaltic Pump"""
-
 import logging
 from time import sleep
 
+from mixology.devices.pump.peristaltic_pump import PumpDevice
+from mixology.devices.serial_device import SerialDevice
 
-class SimPeristalticPump:
-    def __init__(self, name: str = "", flow_rate_mlpm: float = 1.5):
-        logger_name = self.__class__.__name__ + (f".{name}" if name else "")
-        self.flow_rate_mlpm = flow_rate_mlpm  # Initial default flow rate
+class SimPeristalticPump(PumpDevice, SerialDevice):
+    """Simulated Peristaltic Pump for testing and offline development."""
+
+    def __init__(self, name: str = "SimPump", flow_rate_mlpm: float = 1.5):
+        # Initialize the base class
+        super().__init__(name=name)
+        
+        logger_name = f"{self.__class__.__name__}.{self.name}"
         self.log = logging.getLogger(logger_name)
+        
+        # Simulated hardware state (single source of truth for the simulator)
+        self._speed_ml_per_min = flow_rate_mlpm
+        self._is_running = False
+        self._connected = False
 
-    def set_flow_rate(self, flow_rate_mlpm: float):
-        """
-        Updates the hardware flow rate
-        """
+    def connect(self) -> None:
+        self.log.debug("Connecting to simulated serial selector.")
+        self._connected = True
+
+    def disconnect(self) -> None:
+        self.log.debug("Disconnecting from simulated serial selector.")
+        self._connected = False
+
+    def is_connected(self) -> bool:
+        """Return True if the device is currently connected."""
+        return self._connected
+
+    def is_connected(self) -> bool:
+        """Return True if the driver has been initialized."""
+        return self.driver is not None
+
+    def initialize(self) -> None:
+        """Simulates connection and initialization."""
+        self.log.info(f"[{self.name}] Initialized simulated pump.")
+
+    def set_flow_rate(self, flow_rate_mlpm: float) -> bool:
+        """Updates the simulated hardware flow rate."""
         if flow_rate_mlpm < 0:
             raise ValueError("Flow rate must be greater or equal to zero.")
 
-        if self.flow_rate_mlpm != flow_rate_mlpm:
-            self.flow_rate_mlpm = flow_rate_mlpm
-            self.log.debug(f"Flow rate updated to {self.flow_rate_mlpm} mL/min.")
+        if self._speed_ml_per_min != flow_rate_mlpm:
+            self._speed_ml_per_min = flow_rate_mlpm
+            self.log.debug(f"[{self.name}] Flow rate updated to {self._speed_ml_per_min} mL/min.")
+        
+        return True
 
-    def dispense(self, volume_ml: float):
-        """Simulates dispensing a specific volume of fluid."""
-        self.log.info(f"[{self.log.name}] Dispensing {volume_ml} mL at {self.flow_rate_mlpm} mL/min...")
-        sleep(0.1) 
-        self.log.debug(f"[{self.log.name}] Dispense complete.")
+    def get_speed_ml_per_min(self) -> float:
+        """Returns the simulated pump speed."""
+        return self._speed_ml_per_min
 
-    def dispense_by_time(self, duration_s: float):
-        """Simulates dispensing for a specific duration."""
-        if duration_s <= 0.0 or self.flow_rate_mlpm <= 0.0:
-            return
-        self.log.info(f"[{self.log.name}] Dispensing for {duration_s:.2f} seconds at {self.flow_rate_mlpm} mL/min...")
+    def is_running(self) -> bool:
+        """Returns the simulated running state."""
+        return self._is_running
 
-    def get_dispense_duration_s(self, volume_ml: float) -> float:
-        """Calculates how long a dispense will take at the current flow rate."""
-        if self.flow_rate_mlpm <= 0:
-            return 0.0
-        return (volume_ml / self.flow_rate_mlpm) * 60.0
-    
-    def stop(self):
-        """Simulates stopping the pump."""
-        self.log.info(f"[{self.log.name}] Pump stopped.")
-
-    def start(self):
+    def start(self) -> None:
         """Simulates starting the pump."""
-        self.log.info(f"[{self.log.name}] Pump started.")
+        self._is_running = True
+        self.log.info(f"[{self.name}] Pump started.")
+
+    def stop(self) -> None:
+        """Simulates stopping the pump."""
+        self._is_running = False
+        self.log.info(f"[{self.name}] Pump stopped.")
