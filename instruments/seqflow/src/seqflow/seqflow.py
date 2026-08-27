@@ -243,7 +243,11 @@ class SeqFlow(Instrument):
                     elapsed_s = time.perf_counter() - start_time
                     remaining_s = duration_s - elapsed_s
                     remaining_vol = self.pump.get_dispense_volume_ml(remaining_s)
-                    self.resume_state_overrides.update(duration_s=remaining_s, solution={sol_name: remaining_vol})
+                    override_solution = {sol_name: remaining_vol} if sol_name is not None else solution
+                    self.resume_state_overrides.update(
+                        duration_s=remaining_s,
+                        solution=override_solution
+                    )
                     return
 
         if sol_name in self.selector.port_map:
