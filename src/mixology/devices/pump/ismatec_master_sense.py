@@ -37,7 +37,7 @@ class MasterSense:
         )
 
         # Initialize pump and put into Remote mode
-        if self.enableRemoteControl(True):
+        if self.enable_remote_control(True):
             self.log.info("Pump connected and remote control enabled.")
         else:
             self.log.warning(
@@ -48,25 +48,25 @@ class MasterSense:
         """Stop the pump, return to manual control, and close port."""
         if self.serial.is_open:
             self.stopPump()
-            self.enableRemoteControl(False)  # Disable remote mode
+            self.enable_remote_control(False)  # Disable remote mode
             self.serial.close()
             self.log.debug("Disconnected pump and closed serial port.")
 
-    def enableRemoteControl(self, enable: bool) -> bool:
+    def enable_remote_control(self, enable: bool) -> bool:
         """
         Toggle serial communications remote mode.
         1 = enable, 0 = disable.
         """
         cmd = "RE1" if enable else "RE0"
-        return self.statusCheck(self.sendToPump(cmd))
+        return self.status_check(self.send_to_pump(cmd))
 
-    def isPumpRunning(self) -> int:
+    def is_pump_running(self) -> int:
         """
         Display current pump status.
         Returns 1 if running, 0 if stopped, -1 on error.
         """
         # RC command returns integers (address, running status, direction)
-        response = self.sendToPump("RC")
+        response = self.send_to_pump("RC")
         try:
             # Example response: "1, 0, 1" -> split by comma
             parts = response.split(",")
@@ -77,7 +77,7 @@ class MasterSense:
             self.log.warning(f"Failed to parse pump status: {response}")
         return -1
 
-    def setSpeedPercent(self, percent: float) -> bool:
+    def set_speed_percent(self, percent: float) -> bool:
         """
         Set pump speed in % of max rotation speed.
         Requires 5 digits representing percent to one decimal point (e.g., 50.0% -> 00500).
@@ -90,9 +90,9 @@ class MasterSense:
         # Example: 53.2 -> 00532
         formatted_pct = f"{percent * 10:05.0f}"
         cmd = f"S{formatted_pct}"
-        return self.statusCheck(self.sendToPump(cmd))
+        return self.status_check(self.send_to_pump(cmd))
 
-    def setSpeedRPM(self, rpm: float) -> bool:
+    def set_speed_rpm(self, rpm: float) -> bool:
         """
         Set pump speed in RPM.
         Requires 'R' followed by 3 or more digits representing RPM with
@@ -110,43 +110,43 @@ class MasterSense:
         cmd = f"R{formatted_rpm}"
 
         self.log.debug(f"Setting pump speed to {rpm} RPM (command: {cmd})")
-        return self.statusCheck(self.sendToPump(cmd))
+        return self.status_check(self.send_to_pump(cmd))
 
-    def startPump(self) -> bool:
+    def start_pump(self) -> bool:
         """Start Pump dispensing."""
-        return self.statusCheck(self.sendToPump("H"))
+        return self.status_check(self.send_to_pump("H"))
 
-    def stopPump(self) -> bool:
+    def stop_pump(self) -> bool:
         """Stop pump dispensing."""
-        return self.statusCheck(self.sendToPump("I"))
+        return self.status_check(self.send_to_pump("I"))
 
-    def setFlowDirection(self, clockwise: bool) -> bool:
+    def set_flow_direction(self, clockwise: bool) -> bool:
         """
         Change pump revolution direction.
         J = clockwise, K = counterclockwise.
         """
         cmd = "J" if clockwise else "K"
-        return self.statusCheck(self.sendToPump(cmd))
+        return self.status_check(self.send_to_pump(cmd))
 
-    def resetVolumeCounter(self) -> bool:
+    def reset_volume_counter(self) -> bool:
         """Reset cumulative volume."""
-        return self.statusCheck(self.sendToPump("W"))
+        return self.status_check(self.send_to_pump("W"))
 
-    def inquireCumulativeVolume(self) -> str:
+    def inquire_cumulative_volume(self) -> str:
         """Display current cumulative volume."""
-        return self.sendToPump(":")
+        return self.send_to_pump(":")
 
-    def sendToPump(self, commandString: str) -> str:
+    def send_to_pump(self, cmd: str) -> str:
         """
         Format: (Address) (Serial Command) (ASCII 13 Carriage Return).
         """
         # ASCII 13 is \r
-        full_command = f"{self.pump_address}{commandString}\r"
+        full_command = f"{self.pump_address}{cmd}\r"
         self.serial.write(full_command.encode("ascii"))
         self.log.debug(f"Sent: {full_command.strip()}")
-        return self.getResponse()
+        return self.get_response()
 
-    def getResponse(self) -> str:
+    def get_response(self) -> str:
         """Reads response from pump until carriage return or timeout."""
         # Responses end with ASCII 13 and sometimes ASCII 10 (\r\n)
         response = self.serial.readline().decode("ascii", errors="ignore").strip()
@@ -158,7 +158,7 @@ class MasterSense:
 
         return response
 
-    def statusCheck(self, response: str) -> bool:
+    def status_check(self, response: str) -> bool:
         """The pump confirms valid serial commands by returning an asterisk (*)."""
         return response == "*"
 
@@ -182,7 +182,7 @@ if __name__ == "__main__":
 
         # Test setting the speed to 50 RPM
         log.info("Commanding pump to 50.00 RPM...")
-        if pump.setSpeedRPM(25.0):
+        if pump.set_speed_rpm(25.0):
             log.info("Speed successfully set.")
         else:
             log.error("Failed to set speed.")
@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
         # Test starting the pump
         log.info("Starting motor for 5 seconds...")
-        if pump.startPump():
+        if pump.start_pump():
             log.info("Motor running...")
             sleep(5)
         else:
@@ -199,7 +199,7 @@ if __name__ == "__main__":
 
         # Test stopping the pump
         log.info("Stopping motor...")
-        pump.stopPump()
+        pump.stop_pump()
 
     except Exception as e:
         log.error(f"Test failed due to an exception: {e}")
@@ -207,5 +207,5 @@ if __name__ == "__main__":
     finally:
         log.info("Cleaning up and disconnecting...")
         if "pump" in locals():
-            pump.pumpDisconnect()
+            pump.pump_disconnect()
         log.info("Test finished.")
