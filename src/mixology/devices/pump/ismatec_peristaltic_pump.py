@@ -3,7 +3,7 @@ import serial
 from typing import Optional
 from pydantic import BaseModel
 
-from mixology.devices.peristaltic_pump import PumpDevice
+from mixology.devices.pump.peristaltic_pump import PumpDevice
 from mixology.devices.serial_device import SerialDevice
 
 
@@ -88,6 +88,16 @@ class IsmatecPeristalticPumpDevice(PumpDevice, SerialDevice):
             return True
 
         target_rpm = flow_rate_mlpm / self.config.tubing_yield
+        if target_rpm > self.config.max_rpm:
+            self.log.warning(
+                f"Requested {flow_rate_mlpm} mL/min requires {target_rpm:.2f} RPM. "
+                f"Clamping to max ({self.config.max_rpm})."
+            )
+        elif target_rpm < self.config.min_rpm:
+            self.log.warning(
+                f"Requested {flow_rate_mlpm} mL/min requires {target_rpm:.2f} RPM. "
+                f"Clamping to min ({self.config.min_rpm})."
+            )
         target_rpm = max(self.config.min_rpm, min(target_rpm, self.config.max_rpm))
 
         rpm_int = int(round(target_rpm * 100))

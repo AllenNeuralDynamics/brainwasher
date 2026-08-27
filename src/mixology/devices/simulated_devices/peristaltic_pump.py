@@ -1,7 +1,7 @@
 import logging
 from time import sleep
 
-from mixology.devices.peristaltic_pump import PumpDevice
+from mixology.devices.pump.peristaltic_pump import PumpDevice
 from mixology.devices.serial_device import SerialDevice
 
 class SimPeristalticPump(PumpDevice, SerialDevice):

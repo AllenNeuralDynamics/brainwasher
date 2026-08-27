@@ -48,7 +48,7 @@ devices:
     kwds:
       instrument_name: "Default SeqFlow"
   pump:
-    class: mixology.devices.pump.peristaltic_pump.SerialPeristalticPumpDevice
+    class: mixology.devices.pump.ismatec_peristaltic_pump.IsmatecPeristalticPumpDevice
     kwds:
         name: "IsmatecPumpDevice_1"
         port: "COM4"
