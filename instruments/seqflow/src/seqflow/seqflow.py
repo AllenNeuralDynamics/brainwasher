@@ -83,8 +83,6 @@ class SeqFlow(Instrument):
         Reset SeqFlow and start run
         :param job: job to run (can be a raw dictionary or a validated SeqFlowJob object)
         """
-        self.rxn_vessel.purge_solution()
-
         # Check if it needs validation, or if it's already a valid object
         valid_job = SeqFlowJob(**job) if isinstance(job, dict) else job
 
@@ -270,6 +268,7 @@ class SeqFlow(Instrument):
             with self.job_status_lock:
                 self.job_status = message
             self.pump.stop()
+            self.rxn_vessel.purge_solution()
 
     def resume_run(self):
         """
