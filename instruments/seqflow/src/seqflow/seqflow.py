@@ -11,7 +11,7 @@ from seqflow.seqflow_config_model import SeqFlowConfig
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
 from datetime import datetime
-from typing import Union, Optional, Any, Literal
+from typing import List, Union, Optional, Any, Literal
 from pathlib import Path
 import time
 import yaml
@@ -77,18 +77,16 @@ class SeqFlow(Instrument):
         with self.job_status_lock:
             self.job_status = SeqFlowJobStatus(status="idle")
 
-    def start_run(self, job: SeqFlowJob):
+
+    def start_run(self, job: Union[dict, SeqFlowJob]):
         """
         Reset SeqFlow and start run
-
-        :param job: job to run
-
+        :param job: job to run (can be a raw dictionary or a validated SeqFlowJob object)
         """
-        # Clear the vessel state from any previous state. Vessel routes excess liquid to waste.
         self.rxn_vessel.purge_solution()
 
-        # validate and save job so instrument can run
-        valid_job = SeqFlowJob(**job)
+        # Check if it needs validation, or if it's already a valid object
+        valid_job = SeqFlowJob(**job) if isinstance(job, dict) else job
 
         # create path for job
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -287,3 +285,29 @@ class SeqFlow(Instrument):
             return
 
         self.run(job.source_protocol.path)
+
+    def get_available_protocols(self) -> List[str]:
+        """
+        Scans the predefined protocols directory and returns a list of available sequence names.
+        """
+        protocol_dir = Path(__file__).parent.parent.parent / "protocols"
+        if not protocol_dir.exists():
+            self.log.error(f"Protocol directory not found at {protocol_dir}")
+            return []
+
+        # Return file names without the .yml extension
+        return [file.stem for file in protocol_dir.glob("*.yml")]
+
+    def start_run_by_name(self, protocol_name: str) -> dict:
+        """
+        Loads a locally stored protocol by name, assigns it, and starts the run.
+        """
+        protocol_dir = Path(__file__).parent.parent.parent / "protocols"
+        yaml_path = protocol_dir / f"{protocol_name}.yml"
+
+        if not yaml_path.exists():
+            raise FileNotFoundError(f"Protocol '{protocol_name}' does not exist.")
+
+        job: SeqFlowJob = self._load_job(str(yaml_path))
+        self.set_job(job)
+        return self.start_run(job)
