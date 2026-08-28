@@ -40,7 +40,7 @@ protocol:
 
   - description: "PBST Wash"
     solution:
-      pbst_wash: 2.0
+      pbst: 2.0
     flow_rate_mlpm: 1.5
 
   - description: "Empty End"
