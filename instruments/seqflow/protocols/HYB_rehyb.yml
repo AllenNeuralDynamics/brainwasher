@@ -1,0 +1,51 @@
+name: "HYB Rehyb"
+starting_solution: {}
+protocol:
+  - description: "Fish Wash"
+    solution:
+      fish_wash: 5.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Oligos Mix"
+    solution:
+      hyb_oligos_mix: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Oligos Mix Incubation Heat Wait"
+    duration_s: 120
+    temp_c: 37.0
+
+  - description: "Oligos Mix Incubation Wait"
+    duration_s: 600
+
+  - description: "Fish Wash"
+    solution:
+      fish_wash: 3.0
+    flow_rate_mlpm: 1.5
+
+  - description: "NISSL"
+    solution:
+      dapi: 4.0
+    flow_rate_mlpm: 1.5
+
+  - description: "NISSL Mix Incubation Wait"
+    duration_s: 600
+
+  - description: "PBST"
+    solution:
+      pbst: 4.0
+    flow_rate_mlpm: 1.5
+
+  - description: "NISSL Wash Wait"
+    duration_s: 600
+
+  - description: "USM"
+    solution:
+      usm: 1.5
+    flow_rate_mlpm: 1.5
+
+  - description: "Empty End"
+    duration_s: 0
+    solution:
+      empty_end: 0.0
+    flow_rate_mlpm: 0.0
