@@ -11,7 +11,7 @@ from seqflow.seqflow_config_model import SeqFlowConfig
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
 from datetime import datetime
-from typing import Union, Optional, Any, Literal
+from typing import List, Union, Optional, Any, Literal
 from pathlib import Path
 import time
 import yaml
@@ -77,18 +77,14 @@ class SeqFlow(Instrument):
         with self.job_status_lock:
             self.job_status = SeqFlowJobStatus(status="idle")
 
-    def start_run(self, job: SeqFlowJob):
+
+    def start_run(self, job: Union[dict, SeqFlowJob]):
         """
         Reset SeqFlow and start run
-
-        :param job: job to run
-
+        :param job: job to run (can be a raw dictionary or a validated SeqFlowJob object)
         """
-        # Clear the vessel state from any previous state. Vessel routes excess liquid to waste.
-        self.rxn_vessel.purge_solution()
-
-        # validate and save job so instrument can run
-        valid_job = SeqFlowJob(**job)
+        # Check if it needs validation, or if it's already a valid object
+        valid_job = SeqFlowJob(**job) if isinstance(job, dict) else job
 
         # create path for job
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -161,6 +157,7 @@ class SeqFlow(Instrument):
 
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
+        # TODO Add more validation checks for the instrument
         for i, step in enumerate(job.protocol):
             total_vol = sum(step.solution.values()) if step.solution else 0.0
 
@@ -187,6 +184,7 @@ class SeqFlow(Instrument):
         duration_s: Optional[float] = None,
         temp_c: Optional[float] = None,
         flow_rate_mlpm: float = 0.0,
+        **kwargs,
     ):
         """Executes a protocol step, functioning as either a dispense or wait step.
 
@@ -202,7 +200,7 @@ class SeqFlow(Instrument):
                 {'pbst': 0.1}). Set volume to 0.0 for wait steps.
             duration_s (Optional[float]): Wait time in seconds. Ignored for dispenses.
             temp_c (Optional[float]): Target temperature in Celsius.
-            flow_rate_mlpm (float): Pump flow rate in mL/min. Defaults to 0.0.
+            flow_rate_mlpm ([float]): Pump flow rate in mL/min. Defaults to 0.0.
 
         Raises:
             ValueError: If no job is loaded.
@@ -217,7 +215,6 @@ class SeqFlow(Instrument):
         if sol_name in self.selector.port_map:
             self.selector.move_to_position(sol_name)
             duration_s = self.pump.get_dispense_duration_s(vol)
-            self.log.debug(f"dispensing volume: {vol:.2f} mL over {duration_s:.2f} seconds.")
             self.pump.start()
         self.rxn_vessel.add_solution(**(solution or {}))
 
@@ -229,7 +226,7 @@ class SeqFlow(Instrument):
                     self.log.warning(f"Paused mid-{sol_info}.")
                     elapsed_s = time.perf_counter() - start_time
                     remaining_s = duration_s - elapsed_s
-                    remaining_vol = self.pump.get_dispense_volume_ml(remaining_s)
+                    remaining_vol = self.pump.get_dispense_volume_ml(remaining_s) if vol > 0 else 0.0
                     override_solution = {sol_name: remaining_vol} if sol_name is not None else solution
                     self.resume_state_overrides.update(
                         duration_s=remaining_s,
@@ -269,6 +266,7 @@ class SeqFlow(Instrument):
             with self.job_status_lock:
                 self.job_status = message
             self.pump.stop()
+            self.rxn_vessel.purge_solution()
 
     def resume_run(self):
         """
@@ -284,3 +282,53 @@ class SeqFlow(Instrument):
             return
 
         self.run(job.source_protocol.path)
+
+    def get_config(self) -> dict:
+        """
+        Convienence method to get config
+        """
+        return self.config.model_dump()
+
+    def _get_protocol_dir(self) -> Path:
+        """Helper to get the base directory for protocols."""
+        self.log.debug(f"Using protocol directory: {self.config.protocol_folder}")
+        return self.config.protocol_folder
+
+    def _get_protocol_path(self, protocol_name: str) -> Path:
+        """Helper to resolve and validate the path for a specific protocol."""
+        yaml_path = self._get_protocol_dir() / f"{protocol_name}.yml"
+        if not yaml_path.exists():
+            raise FileNotFoundError(f"Protocol '{protocol_name}' not found at {yaml_path}")
+        return yaml_path
+
+    def get_protocol_names(self) -> List[str]:
+        """
+        Scans the predefined protocols directory and returns a list of available sequence names.
+        """
+        protocol_dir = self._get_protocol_dir()
+        if not protocol_dir.exists():
+            self.log.error(f"Protocol directory not found at {protocol_dir}")
+            return []
+
+        # Return file names without the .yml extension
+        return [file.stem for file in protocol_dir.glob("*.yml")]
+
+    def start_by_protocol_name(self, protocol_name: str) -> dict:
+        """
+        Loads a locally stored protocol by name, assigns it, and starts the run.
+        """
+        yaml_path = self._get_protocol_path(protocol_name)
+        job: SeqFlowJob = self._load_job(str(yaml_path))
+        self.set_job(job)
+        return self.start_run(job)
+
+    def get_protocol_by_name(self, protocol_name: str) -> dict:
+        """
+        Validate, calculate duration, and serialize a job by name.
+        """
+        yaml_path = self._get_protocol_path(protocol_name)
+        job: SeqFlowJob = self._load_job(str(yaml_path))
+        self.validate_job_against_instrument(job)
+
+        # Serialize the job and inject the calculated duration
+        return {**job.model_dump(), "total_duration_s": job.get_duration_s()}

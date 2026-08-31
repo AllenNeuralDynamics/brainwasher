@@ -1,0 +1,119 @@
+name: "Gene Seq 02+"
+starting_solution: {}
+protocol:
+  - description: "Incorporation Buffer"
+    solution:
+      incorporation_buffer: 2.0
+    flow_rate_mlpm: 1.5
+
+  - description: "CRM"
+    solution:
+      crm: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "CRM Heat Wait"
+    duration_s: 180
+    temp_c: 37.0
+
+  - description: "Incorporation Buffer"
+    solution:
+      incorporation_buffer: 3.0
+    flow_rate_mlpm: 1.5
+
+  - description: "PBST"
+    solution:
+      pbst: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Iodoacetamide Blocker"
+    solution:
+      iodoacetamide_blocker: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Iodoacetamide Blocker Heat Wait"
+    duration_s: 180
+    temp_c: 37.0
+
+  - description: "PBST"
+    solution:
+      pbst: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Incorporation Buffer"
+    solution:
+      incorporation_buffer: 3.0
+    flow_rate_mlpm: 1.5
+
+  - description: "IRM"
+    solution:
+      irm: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "IRM Heat Wait 1"
+    duration_s: 180
+    temp_c: 37.0
+
+  - description: "PBST"
+    solution:
+      pbst: 4.0
+    flow_rate_mlpm: 1.5
+
+  - description: "PBST Wait 1"
+    duration_s: 180
+    temp_c: 37.0
+
+  - description: "PBST"
+    solution:
+      pbst: 4.0
+    flow_rate_mlpm: 1.5
+
+  - description: "PBST Wait 2"
+    duration_s: 180
+    temp_c: 37.0
+
+  - description: "PBST"
+    solution:
+      pbst: 4.0
+    flow_rate_mlpm: 1.5
+
+  - description: "PBST Wait 3"
+    duration_s: 180
+    temp_c: 37.0
+
+  - description: "PBST"
+    solution:
+      pbst: 4.0
+    flow_rate_mlpm: 1.5
+
+  - description: "PBST Wait 4"
+    duration_s: 180
+    temp_c: 37.0
+
+  - description: "PBST"
+    solution:
+      pbst: 4.0
+    flow_rate_mlpm: 1.5
+
+  - description: "DAPI"
+    solution:
+      dapi: 2.0
+    flow_rate_mlpm: 1.5
+
+  - description: "DAPI Mix Incubation Wait"
+    duration_s: 600
+
+  - description: "PBST"
+    solution:
+      pbst: 2.0
+    flow_rate_mlpm: 1.5
+
+  - description: "USM"
+    solution:
+      usm: 1.5
+    flow_rate_mlpm: 1.5
+
+  - description: "Empty End"
+    duration_s: 0
+    solution:
+      empty_end: 0.0
+    flow_rate_mlpm: 0.0
