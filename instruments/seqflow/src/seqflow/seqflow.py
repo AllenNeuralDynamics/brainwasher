@@ -214,10 +214,8 @@ class SeqFlow(Instrument):
         self.pump.set_flow_rate(flow_rate_mlpm)
         if sol_name in self.selector.port_map:
             self.selector.move_to_position(sol_name)
-            if vol > 0:
-                duration_s = self.pump.get_dispense_duration_s(vol)
-                self.log.debug(f"dispensing volume: {vol:.2f} mL over {duration_s:.2f} seconds.")
-                self.pump.start()
+            duration_s = self.pump.get_dispense_duration_s(vol)
+            self.pump.start()
         self.rxn_vessel.add_solution(**(solution or {}))
 
         if duration_s is not None and duration_s > 0:
