@@ -285,6 +285,7 @@ class SeqFlow(Instrument):
 
     def _get_protocol_dir(self) -> Path:
         """Helper to get the base directory for protocols."""
+        self.log.debug(f"Using protocol directory: {self.config.protocol_folder}")
         return self.config.protocol_folder
 
     def _get_protocol_path(self, protocol_name: str) -> Path:
