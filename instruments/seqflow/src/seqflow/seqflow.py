@@ -283,6 +283,12 @@ class SeqFlow(Instrument):
 
         self.run(job.source_protocol.path)
 
+    def get_config(self) -> dict:
+        """
+        Convienence method to get config
+        """
+        return self.config.model_dump()
+
     def _get_protocol_dir(self) -> Path:
         """Helper to get the base directory for protocols."""
         self.log.debug(f"Using protocol directory: {self.config.protocol_folder}")
