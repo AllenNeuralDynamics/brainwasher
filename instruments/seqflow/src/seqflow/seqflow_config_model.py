@@ -33,7 +33,7 @@ class SeqFlowConfig(BaseModel, validate_assignment=True):
     )
     # Use default_factory to satisfy mypy's static type checker
     save_folder: Path = Field(default_factory=lambda: Path("../../seq_flow_jobs/"))
-    protocols_folder: Path = Field(
+    protocol_folder: Path = Field(
         default_factory=lambda: Path(__file__).parent.parent.parent / "protocols"
     )
 
