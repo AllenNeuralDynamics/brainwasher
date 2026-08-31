@@ -285,11 +285,22 @@ class SeqFlow(Instrument):
 
         self.run(job.source_protocol.path)
 
+    def _get_protocol_dir(self) -> Path:
+        """Helper to get the base directory for protocols."""
+        return Path(__file__).parent.parent.parent / "protocols"
+
+    def _get_protocol_path(self, protocol_name: str) -> Path:
+        """Helper to resolve and validate the path for a specific protocol."""
+        yaml_path = self._get_protocol_dir() / f"{protocol_name}.yml"
+        if not yaml_path.exists():
+            raise FileNotFoundError(f"Protocol '{protocol_name}' not found at {yaml_path}")
+        return yaml_path
+
     def get_protocol_names(self) -> List[str]:
         """
         Scans the predefined protocols directory and returns a list of available sequence names.
         """
-        protocol_dir = Path(__file__).parent.parent.parent / "protocols"
+        protocol_dir = self._get_protocol_dir()
         if not protocol_dir.exists():
             self.log.error(f"Protocol directory not found at {protocol_dir}")
             return []
@@ -301,24 +312,16 @@ class SeqFlow(Instrument):
         """
         Loads a locally stored protocol by name, assigns it, and starts the run.
         """
-        protocol_dir = Path(__file__).parent.parent.parent / "protocols"
-        yaml_path = protocol_dir / f"{protocol_name}.yml"
-
-        if not yaml_path.exists():
-            raise FileNotFoundError(f"Protocol '{protocol_name}' does not exist.")
-
+        yaml_path = self._get_protocol_path(protocol_name)
         job: SeqFlowJob = self._load_job(str(yaml_path))
         self.set_job(job)
         return self.start_run(job)
 
-    def get_protocol_by_name(self, protocol_name: str) -> SeqFlowJob:
+    def get_protocol_by_name(self, protocol_name: str) -> dict:
         """
         Validate, calculate duration, and serialize a job by name.
         """
-        yaml_path = Path(__file__).parent.parent.parent / "protocols" / f"{protocol_name}.yml"
-        if not yaml_path.exists():
-            raise FileNotFoundError(f"Protocol '{protocol_name}' not found.")
-
+        yaml_path = self._get_protocol_path(protocol_name)
         job: SeqFlowJob = self._load_job(str(yaml_path))
         self.validate_job_against_instrument(job)
 
