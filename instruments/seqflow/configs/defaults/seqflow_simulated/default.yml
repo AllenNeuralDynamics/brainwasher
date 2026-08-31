@@ -69,7 +69,6 @@ devices:
   rxn_vessel:
     class: mixology.devices.vessels.SlideContainer
     skip_kwds: [name]
-
     kwds:
         name: slide_container
         num_slides: 3
