@@ -28,12 +28,14 @@ class RouterServerPortConfig(BaseModel):
 
 
 class SeqFlowConfig(BaseModel, validate_assignment=True):
-    # Use default_factory to satisfy mypy's static type checker
-    save_folder: Path = Field(default_factory=lambda: Path("../../seq_flow_jobs/"))
     instrument_name: Optional[str] = Field(
         default=None, description="Optional instrument name."
     )
-
+    # Use default_factory to satisfy mypy's static type checker
+    save_folder: Path = Field(default_factory=lambda: Path("../../seq_flow_jobs/"))
+    protocols_folder: Path = Field(
+        default_factory=lambda: Path(__file__).parent.parent.parent / "protocols"
+    )
 
 class SeqFlowSystemConfig(BaseModel, validate_assignment=True):
     devices: DeviceTrees = Field(default_factory=dict)

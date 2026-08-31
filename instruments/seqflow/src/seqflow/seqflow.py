@@ -285,7 +285,7 @@ class SeqFlow(Instrument):
 
     def _get_protocol_dir(self) -> Path:
         """Helper to get the base directory for protocols."""
-        return Path(__file__).parent.parent.parent / "protocols"
+        return self.config.protocols_folder
 
     def _get_protocol_path(self, protocol_name: str) -> Path:
         """Helper to resolve and validate the path for a specific protocol."""
