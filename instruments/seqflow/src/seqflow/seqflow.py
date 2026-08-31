@@ -310,3 +310,17 @@ class SeqFlow(Instrument):
         job: SeqFlowJob = self._load_job(str(yaml_path))
         self.set_job(job)
         return self.start_run(job)
+
+    def get_protocol_by_name(self, protocol_name: str) -> SeqFlowJob:
+        """
+        Validate, calculate duration, and serialize a job by name.
+        """
+        yaml_path = Path(__file__).parent.parent.parent / "protocols" / f"{protocol_name}.yml"
+        if not yaml_path.exists():
+            raise FileNotFoundError(f"Protocol '{protocol_name}' not found.")
+
+        job: SeqFlowJob = self._load_job(str(yaml_path))
+        self.validate_job_against_instrument(job)
+
+        # Serialize the job and inject the calculated duration
+        return {**job.model_dump(), "total_duration_s": job.get_duration_s()}
