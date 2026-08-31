@@ -285,7 +285,7 @@ class SeqFlow(Instrument):
 
         self.run(job.source_protocol.path)
 
-    def get_available_protocols(self) -> List[str]:
+    def get_protocol_names(self) -> List[str]:
         """
         Scans the predefined protocols directory and returns a list of available sequence names.
         """
@@ -297,7 +297,7 @@ class SeqFlow(Instrument):
         # Return file names without the .yml extension
         return [file.stem for file in protocol_dir.glob("*.yml")]
 
-    def start_run_by_name(self, protocol_name: str) -> dict:
+    def start_by_protocol_name(self, protocol_name: str) -> dict:
         """
         Loads a locally stored protocol by name, assigns it, and starts the run.
         """

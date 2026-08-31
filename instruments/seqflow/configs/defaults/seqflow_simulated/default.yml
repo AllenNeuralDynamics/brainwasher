@@ -15,6 +15,15 @@ router_server_api:
     seqflow_get_config:
       obj_name: "seqflow"
       attr_name: "get_config"
+    seqflow_get_protocol_names:
+      obj_name: "seqflow"
+      attr_name: "get_protocol_names"
+    seqflow_start_by_protocol_name:
+      obj_name: "seqflow"
+      attr_name: "start_by_protocol_name"
+    seqflow_get_protocol_by_name:
+      obj_name: "seqflow"
+      attr_name: "get_protocol_by_name"
   periodic_streams:
     seqflow_get_progress:
       frequency_hz: 1
@@ -60,6 +69,7 @@ devices:
   rxn_vessel:
     class: mixology.devices.vessels.SlideContainer
     skip_kwds: [name]
+
     kwds:
         name: slide_container
         num_slides: 3
