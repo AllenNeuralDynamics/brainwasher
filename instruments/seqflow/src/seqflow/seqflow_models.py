@@ -28,8 +28,8 @@ class SeqFlowStep(BaseModel):
         default_factory=dict,
         description="solution name and volume (mL) to fill into slides.",
     )
-    flow_rate_mlpm: Optional[float] = Field(
-        default=None, description="Step-specific flow rate override in mL/min."
+    flow_rate_mlpm: float = Field(
+        default=0.0, description="Step-specific flow rate override in mL/min."
     )
 
     # TODO Validation!

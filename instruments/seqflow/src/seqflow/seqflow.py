@@ -183,7 +183,7 @@ class SeqFlow(Instrument):
         solution: Optional[dict] = None,
         duration_s: Optional[float] = None,
         temp_c: Optional[float] = None,
-        flow_rate_mlpm: Optional[float] = None,
+        flow_rate_mlpm: float = 0.0,
         **kwargs,
     ):
         """Executes a protocol step, functioning as either a dispense or wait step.
@@ -200,7 +200,7 @@ class SeqFlow(Instrument):
                 {'pbst': 0.1}). Set volume to 0.0 for wait steps.
             duration_s (Optional[float]): Wait time in seconds. Ignored for dispenses.
             temp_c (Optional[float]): Target temperature in Celsius.
-            flow_rate_mlpm (Optional[float]): Pump flow rate in mL/min. Defaults to 0.0.
+            flow_rate_mlpm ([float]): Pump flow rate in mL/min. Defaults to 0.0.
 
         Raises:
             ValueError: If no job is loaded.
@@ -211,7 +211,7 @@ class SeqFlow(Instrument):
         sol_name, vol = next(iter(solution.items())) if solution else (None, 0.0)
 
         self.rxn_vessel.purge_solution()
-        self.pump.set_flow_rate(flow_rate_mlpm or 0.0)
+        self.pump.set_flow_rate(flow_rate_mlpm)
         if sol_name in self.selector.port_map:
             self.selector.move_to_position(sol_name)
             if vol > 0:
