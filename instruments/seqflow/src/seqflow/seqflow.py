@@ -95,7 +95,6 @@ class SeqFlow(Instrument):
         with open(Path(job_path), "w") as f:
             yaml.dump(valid_job.model_dump(), f)
         self.run(job_path)
-        return {"message": "Starting run!"}
 
     def get_job(self) -> dict | None:
         """Convenience method to get current job"""
@@ -313,14 +312,14 @@ class SeqFlow(Instrument):
         # Return file names without the .yml extension
         return [file.stem for file in protocol_dir.glob("*.yml")]
 
-    def start_by_protocol_name(self, protocol_name: str) -> dict:
+    def start_by_protocol_name(self, protocol_name: str):
         """
         Loads a locally stored protocol by name, assigns it, and starts the run.
         """
         yaml_path = self._get_protocol_path(protocol_name)
         job: SeqFlowJob = self._load_job(str(yaml_path))
         self.set_job(job)
-        return self.start_run(job)
+        self.start_run(job)
 
     def get_protocol_by_name(self, protocol_name: str) -> dict:
         """
