@@ -138,11 +138,11 @@ class SeqFlow(Instrument):
         save the protocol path and current step to the config."""
         super().pause()
 
-    def get_progress(self) -> dict:
+    def check_job_status(self) -> dict:
         """Get current progress of job as a dict."""
-        # TODO get more details
         if not self._job:
-            return {"status": "idle"}
+            status = SeqFlowJobStatus(status="idle", message="No job currently loaded.")
+            return status.model_dump()
         current_status = self.get_job_status()
         return current_status.model_dump()
 
