@@ -329,5 +329,4 @@ class SeqFlow(Instrument):
         job: SeqFlowJob = self._load_job(str(yaml_path))
         self.validate_job_against_instrument(job)
 
-        # Serialize the job and inject the calculated duration
-        return {**job.model_dump(), "total_duration_s": job.get_duration_s()}
+        return job.model_dump()
