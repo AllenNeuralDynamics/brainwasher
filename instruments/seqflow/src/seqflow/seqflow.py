@@ -140,9 +140,6 @@ class SeqFlow(Instrument):
 
     def check_job_status(self) -> dict:
         """Get current progress of job as a dict."""
-        if not self._job:
-            status = SeqFlowJobStatus(status="idle", message="No job currently loaded.")
-            return status.model_dump()
         current_status = self.get_job_status()
         return current_status.model_dump()
 
