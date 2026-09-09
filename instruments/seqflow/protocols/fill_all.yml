@@ -1,0 +1,82 @@
+name: "Fill All"
+starting_solution: {}
+protocol:
+  - description: "Fill Port 1 (Incorporation Buffer)"
+    solution:
+      incorporation_buffer: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 2 (PBST)"
+    solution:
+      pbst: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 3 (Iodoacetamide Blocker)"
+    solution:
+      iodoacetamide_blocker: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 4 (IRM)"
+    solution:
+      irm: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 5 (USM)"
+    solution:
+      usm: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 6 (CRM)"
+    solution:
+      crm: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 7 (Fish Wash)"
+    solution:
+      fish_wash: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 8 (Strip)"
+    solution:
+      strip: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 9 (Hyb Oligos Mix)"
+    solution:
+      hyb_oligos_mix: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 10 (DAPI)"
+    solution:
+      dapi: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 11 (BC Primer Mix)"
+    solution:
+      bc_primer_mix: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 12 (Gene Primer Mix)"
+    solution:
+      gene_primer_mix: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 13 (Hyb Oligos Mix 2)"
+    solution:
+      hyb_oligos_mix_2: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 15 (Hyb Oligos Mix 3)"
+    solution:
+      hyb_oligos_mix_3: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Fill Port 16 (Hyb Oligos Mix 4)"
+    solution:
+      hyb_oligos_mix_4: 1.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Final Flush (PBST)"
+    solution:
+      pbst: 4.0
+    flow_rate_mlpm: 1.5

@@ -6,6 +6,7 @@ from pydantic import (
     Field,
     ValidationError,
     AfterValidator,
+    computed_field,
 )
 from mixology.job import Job
 from typing import Optional, Annotated, Any, Literal
@@ -28,8 +29,8 @@ class SeqFlowStep(BaseModel):
         default_factory=dict,
         description="solution name and volume (mL) to fill into slides.",
     )
-    flow_rate_mlpm: Optional[float] = Field(
-        default=None, description="Step-specific flow rate override in mL/min."
+    flow_rate_mlpm: float = Field(
+        default=0.0, description="Step-specific flow rate override in mL/min."
     )
 
     # TODO Validation!
@@ -96,6 +97,20 @@ class SeqFlowJob(Job):
         default_factory=list, description="A list of steps to be run in order."
     )
     resume_state: Optional[SeqFlowResumeState] = None
+
+    @computed_field
+    @property
+    def total_duration_s(self) -> float:
+        """
+        Calculates the duration of the job.
+        If the job is resuming from a paused state,
+        it returns the REMAINING duration from the resumed step.
+        """
+        if self.resume_state is not None:
+            # Calculate from the step we are resuming at
+            return self.get_duration_s(start_step=self.resume_state.step)
+
+        return self.get_duration_s(start_step=0)
 
     def get_duration_s(self, start_step: int = 0) -> float:
         """

@@ -1,0 +1,29 @@
+name: "Strip"
+starting_solution: {}
+protocol:
+  - description: "Strip"
+    solution:
+      strip: 8.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Strip Buffer Heat Wait 1"
+    duration_s: 300
+    temp_c: 37.0
+
+  - description: "Strip"
+    solution:
+      strip: 8.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Strip Buffer Heat Wait 2"
+    duration_s: 300
+    temp_c: 37.0
+
+  - description: "Strip"
+    solution:
+      strip: 8.0
+    flow_rate_mlpm: 1.5
+
+  - description: "Strip Buffer Heat Wait 3"
+    duration_s: 300
+    temp_c: 37.0
