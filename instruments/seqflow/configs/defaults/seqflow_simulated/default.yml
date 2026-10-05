@@ -47,7 +47,7 @@ devices:
       bc_primer_mix: 11
       gene_primer_mix: 12
       hyb_oligos_mix_2: 13
-      end: 14
+      empty_end: 14
       hyb_oligos_mix_3: 15
       hyb_oligos_mix_4: 16
   config:
