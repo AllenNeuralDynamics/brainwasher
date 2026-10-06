@@ -64,6 +64,14 @@ devices:
     kwds:
         name: "simSerialSelector"
         position_map: selector_port_map
+  heater:
+    class: mixology.devices.simulated_devices.heater.SimHeater
+    kwds:
+        name: "simHeater"
+        stage_names: [heatstage1, heatstage2, heatstage3]
+        ramp_rate_c_per_s: 1.0
+        temp_tolerance_c: 1.5
+        ramp_timeout_s: 300
   rxn_vessel:
     class: mixology.devices.vessels.SlideContainer
     skip_kwds: [name]
@@ -78,3 +86,4 @@ devices:
       pump: pump
       selector: selector
       rxn_vessel: rxn_vessel
+      heater: heater
