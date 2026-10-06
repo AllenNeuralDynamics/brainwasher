@@ -13,8 +13,19 @@ class HeaterDevice(ABC):
     stages to reach temperature and how long to hold it there.
     """
 
-    def __init__(self, name: str = ""):
+    def __init__(
+        self, name: str = "", temp_tolerance_c: float = 1.5, ramp_timeout_s: float = 300.0
+    ):
+        """
+        Args:
+            name: Device name.
+            temp_tolerance_c: A stage counts as at temperature within this many
+                degrees C below the target.
+            ramp_timeout_s: Max time for the stages to reach the target temperature.
+        """
         self.name = name
+        self.temp_tolerance_c = temp_tolerance_c
+        self.ramp_timeout_s = ramp_timeout_s
 
     @abstractmethod
     def connect(self) -> None:
@@ -63,3 +74,16 @@ class HeaterDevice(ABC):
             RuntimeError: If any stage fails the test.
         """
         ...
+
+    # --- Shared Common Functions ---
+    def get_cold_stages(self, temp_c: float) -> dict[str, float]:
+        """Return each stage that is on but still more than `temp_tolerance_c`
+        below `temp_c`, with its current temperature [C].
+        """
+        stages_on = self.get_stage_states()
+        threshold_c = temp_c - self.temp_tolerance_c
+        return {
+            stage: stage_temp_c
+            for stage, stage_temp_c in self.get_temperatures_c().items()
+            if stages_on[stage] and stage_temp_c < threshold_c
+        }
