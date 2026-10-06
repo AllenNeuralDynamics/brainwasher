@@ -102,25 +102,30 @@ class SeqFlowJob(Job):
     @property
     def total_duration_s(self) -> float:
         """
-        Calculates the duration of the job.
-        If the job is resuming from a paused state,
-        it returns the REMAINING duration from the resumed step.
+        Duration in seconds of the job left to run, or of the whole job when
+        there is no resume state (not started yet, or finished).
+        For a paused job, the step it paused in counts only its remaining time.
         """
-        if self.resume_state is not None:
-            # Calculate from the step we are resuming at
-            return self.get_duration_s(start_step=self.resume_state.step)
+        if self.resume_state is None:
+            return self.get_duration_s()
+        return self.get_duration_s(self.resume_state.step, self.resume_state.overrides)
 
-        return self.get_duration_s(start_step=0)
-
-    def get_duration_s(self, start_step: int = 0) -> float:
+    def get_duration_s(
+        self, start_step: int = 0, overrides: Optional[dict] = None
+    ) -> float:
         """
         Total job duration in seconds starting from the specified step.
         Note: Because `protocol` is a list of SeqFlowSteps, `start_step`
         represents the starting step index (e.g., resuming from step 2).
+        `overrides` (e.g., a paused step's remaining time and volume) are
+        applied to the starting step.
         """
+        steps = self.protocol[start_step:]
+        if overrides and steps:
+            steps = [steps[0].model_copy(update=overrides), *steps[1:]]
         total_time_s = 0.0
 
-        for step in self.protocol[start_step:]:
+        for step in steps:
             total_volume = sum(step.solution.values()) if step.solution else 0.0
             # Implicit Pump Step
             if total_volume > 0 and step.flow_rate_mlpm > 0:
