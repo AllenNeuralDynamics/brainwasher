@@ -18,6 +18,10 @@ DeviceType = Literal["pump", "heat_device", "wait", "stopper"]
 class SeqFlowStep(BaseModel):
     """Model representing a single action within a sequence."""
 
+    description: Optional[str] = Field(
+        default=None, description="Step name shown to users (e.g., 'PBST Wait 1')."
+    )
+
     # --- STEP PARAMETERS ---
     duration_s: Optional[float] = Field(
         default=None, description="Time in seconds for each step."
