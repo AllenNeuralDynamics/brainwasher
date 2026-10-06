@@ -149,6 +149,7 @@ class SeqFlow(Instrument):
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
         # TODO Add more validation checks for the instrument
+        # (e.g max_temp_c for heating steps)
         for i, step in enumerate(job.protocol):
             total_vol = sum(step.solution.values()) if step.solution else 0.0
 
@@ -242,10 +243,11 @@ class SeqFlow(Instrument):
                     )
                     return
 
-        if sol_name in self.selector.port_map:
-            self.pump.stop()
         if temp_c is not None:
             self.heater.turn_off()
+        if sol_name in self.selector.port_map:
+            self.pump.stop()
+
 
     def _run_job_worker(self, job: SeqFlowJob, job_path: Path):
         # Sync the newly loaded disk object back to our main memory!
