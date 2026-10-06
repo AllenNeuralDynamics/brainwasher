@@ -1,6 +1,5 @@
 """Simulated Heater"""
 
-import logging
 import math
 from threading import Lock
 from time import perf_counter
@@ -24,9 +23,9 @@ class SimHeater(HeaterDevice):
         ramp_rate_c_per_s: float = 1.0,
         **kwds,
     ):
-        """`kwds` (e.g., temp_tolerance_c, ramp_timeout_s) go to HeaterDevice."""
+        """`kwds` (e.g., temp_tolerance_c, ramp_timeout_s, poll_interval_s) go to
+        HeaterDevice."""
         super().__init__(name=name, **kwds)
-        self.log = logging.getLogger(f"{self.__class__.__name__}.{self.name}")
         self.ambient_temp_c = ambient_temp_c
         self.ramp_rate_c_per_s = ramp_rate_c_per_s
         self._temps_c = {stage: ambient_temp_c for stage in stage_names}

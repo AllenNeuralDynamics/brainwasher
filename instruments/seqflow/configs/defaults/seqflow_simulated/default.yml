@@ -72,6 +72,7 @@ devices:
         ramp_rate_c_per_s: 1.0
         temp_tolerance_c: 1.5
         ramp_timeout_s: 300
+        poll_interval_s: 1.0
   rxn_vessel:
     class: mixology.devices.vessels.SlideContainer
     skip_kwds: [name]
