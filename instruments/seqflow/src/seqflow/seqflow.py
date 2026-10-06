@@ -156,6 +156,13 @@ class SeqFlow(Instrument):
                     f"Steps with 0.0mL volume (like heat/wait steps) must provide an explicit 'duration_s'."
                 )
 
+            # Prevent undefined dispense durations (Volume without Flow Rate)
+            if total_vol > 0 and step.flow_rate_mlpm <= 0:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Steps with {total_vol}mL volume must provide a positive 'flow_rate_mlpm'."
+                )
+
             # Verify hardware capabilities (Valid Port Mapping)
             if total_vol > 0:
                 solution_name = next(iter(step.solution))

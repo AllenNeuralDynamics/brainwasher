@@ -123,8 +123,7 @@ class SeqFlowJob(Job):
         for step in self.protocol[start_step:]:
             total_volume = sum(step.solution.values()) if step.solution else 0.0
             # Implicit Pump Step
-            if total_volume > 0 and step.flow_rate_mlpm is not None:
-                # Use step override if it exists, otherwise fall back to job default
+            if total_volume > 0 and step.flow_rate_mlpm > 0:
                 total_time_s += (total_volume / step.flow_rate_mlpm) * 60.0
             elif step.duration_s:
                 total_time_s += step.duration_s
