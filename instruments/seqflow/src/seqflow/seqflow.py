@@ -3,6 +3,7 @@
 from mixology.devices.selector.selector import SerialSelector
 from mixology.devices.pump.ismatec_peristaltic_pump import IsmatecPeristalticPumpDevice
 from mixology.devices.selector.mux import CascadedMux
+from mixology.devices.heater.heater import HeaterDevice
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
 from mixology.devices.simulated_devices.selector import SimSerialSelector
@@ -30,16 +31,19 @@ class SeqFlow(Instrument):
         pump: SimPeristalticPump | IsmatecPeristalticPumpDevice,
         selector: SimSerialSelector | CascadedMux | SerialSelector,
         rxn_vessel: SlideContainer,
+        heater: HeaterDevice,
     ):
         super().__init__()
         self.config = config
         self.pump = pump
         self.selector = selector
         self.rxn_vessel = rxn_vessel
+        self.heater = heater
 
         # start devices
         self.pump.connect()
         self.selector.connect()
+        self.heater.connect()
 
         # attribute to track events that occur in job_worker
         self.job_status_lock = Lock()
@@ -76,7 +80,6 @@ class SeqFlow(Instrument):
         self._job = None
         with self.job_status_lock:
             self.job_status = SeqFlowJobStatus(status="idle")
-
 
     def start_run(self, job: Union[dict, SeqFlowJob]):
         """
@@ -189,6 +192,8 @@ class SeqFlow(Instrument):
         Duration logic:
         - Solution Dispense Steps: Time is dynamically calculated from volume and flow rate.
         - Wait/Heat Steps: Uses the provided `duration_s` explicitly.
+        - Heat Steps (`temp_c` set): first waits for every heating stage to reach
+          `temp_c`; `duration_s` is the hold time after that.
 
         Args:
             solution (Optional[dict]): Solution name mapped to volume in mL (e.g., 
@@ -202,6 +207,14 @@ class SeqFlow(Instrument):
         """
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
+
+        if temp_c is not None and not self.heater.heat_up(
+            temp_c, cancel=self.pause_requested
+        ):
+            # User paused during heat-up; the hold hasn't started, so the full
+            # duration_s remains.
+            self.resume_state_overrides.update(duration_s=duration_s)
+            return
 
         sol_name, vol = next(iter(solution.items())) if solution else (None, 0.0)
 
@@ -231,6 +244,8 @@ class SeqFlow(Instrument):
 
         if sol_name in self.selector.port_map:
             self.pump.stop()
+        if temp_c is not None:
+            self.heater.turn_off()
 
     def _run_job_worker(self, job: SeqFlowJob, job_path: Path):
         # Sync the newly loaded disk object back to our main memory!
@@ -261,6 +276,7 @@ class SeqFlow(Instrument):
             with self.job_status_lock:
                 self.job_status = message
             self.pump.stop()
+            self.heater.turn_off()
             self.rxn_vessel.purge_solution()
 
     def resume_run(self):
