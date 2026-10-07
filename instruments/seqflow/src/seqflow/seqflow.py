@@ -138,18 +138,10 @@ class SeqFlow(Instrument):
         save the protocol path and current step to the config."""
         super().pause()
 
-    def check_job_status(self) -> dict:
-        """Get current progress of job as a dict."""
-        current_status = self.get_job_status()
-        return current_status.model_dump()
-
-    def get_job_status(self) -> SeqFlowJobStatus:
-        """
-        Getter function that returns the job_status attribute
-        """
-
+    def get_job_status(self) -> dict:
+        """Get the current job status as a dict."""
         with self.job_status_lock:
-            return self.job_status
+            return self.job_status.model_dump()
 
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
