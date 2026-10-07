@@ -52,6 +52,8 @@ class PumpDevice():
         """
         Calculates how long a dispense will take in seconds at the current flow rate.
         """
+        if volume_ml <= 0:
+            return 0.0
         return self.get_dispense_duration_m(volume_ml) * 60.0
 
     def get_dispense_duration_m(self, volume_ml: float) -> float:

@@ -76,6 +76,9 @@ class IsmatecPeristalticPumpDevice(PumpDevice, SerialDevice):
         self.set_flow_rate(0.0)
 
     def start(self) -> None:
+        if self._current_speed_mlpm == 0:
+            self.log.debug("Current flow rate is 0.0, ignoring start command.")
+            return
         self._send_command("H")
 
     def stop(self) -> None:
@@ -95,6 +98,7 @@ class IsmatecPeristalticPumpDevice(PumpDevice, SerialDevice):
     def set_flow_rate(self, flow_rate_mlpm: float) -> bool:
         if flow_rate_mlpm == 0:
             self.stop()
+            self._current_speed_mlpm = 0.0
             return True
 
         target_rpm = flow_rate_mlpm / self.config.tubing_yield

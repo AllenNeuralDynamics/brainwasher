@@ -31,10 +31,6 @@ class SimPeristalticPump(PumpDevice, SerialDevice):
         """Return True if the device is currently connected."""
         return self._connected
 
-    def is_connected(self) -> bool:
-        """Return True if the driver has been initialized."""
-        return self.driver is not None
-
     def initialize(self) -> None:
         """Simulates connection and initialization."""
         self.log.info(f"[{self.name}] Initialized simulated pump.")
@@ -60,6 +56,9 @@ class SimPeristalticPump(PumpDevice, SerialDevice):
 
     def start(self) -> None:
         """Simulates starting the pump."""
+        if self._speed_ml_per_min <= 0:
+            self.log.debug("Current flow rate is 0.0, ignoring start command.")
+            return
         self._is_running = True
         self.log.info(f"[{self.name}] Pump started.")
 
