@@ -104,12 +104,15 @@ class SeqFlowJob(Job):
 
     @computed_field
     @property
-    def total_duration_s(self) -> float:
+    def remaining_duration_s(self) -> float:
         """
-        Duration in seconds of the job left to run, or of the whole job when
-        there is no resume state (not started yet, or finished).
-        For a paused job, the step it paused in counts only its remaining time.
+        Duration in seconds still left to run: the whole job before it starts,
+        0 once it has finished. For a paused job, the step it paused in counts
+        only its remaining time.
         """
+        events = self.history.events if self.history else None
+        if events and events[-1].type == "end":
+            return 0.0
         if self.resume_state is None:
             return self.get_duration_s()
         return self.get_duration_s(self.resume_state.step, self.resume_state.overrides)
