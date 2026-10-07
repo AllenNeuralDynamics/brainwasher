@@ -150,6 +150,7 @@ class SeqFlow(Instrument):
         """Validate that the job is compatible with the instrument."""
         # TODO Add more validation checks for the instrument
         # (e.g max_temp_c for heating steps)
+        # Do not accept temp_c and solution together in the same step
         for i, step in enumerate(job.protocol):
             total_vol = sum(step.solution.values()) if step.solution else 0.0
 
