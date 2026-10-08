@@ -44,14 +44,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "datetime", specifier = ">=5.5" },
-    { name = "device-spinner", git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git" },
+    { name = "device-spinner", git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git?rev=3a2d201588e0cabac762d1e1a33d5e6339ec27c0" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "mixology", extras = ["brainslosher"], directory = "../../" },
-    { name = "one-liner", git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git?branch=main" },
+    { name = "one-liner", git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git?rev=22aa37370c3678726ebacb2f0a2e8ae263a94704" },
     { name = "pydantic", specifier = ">=2.11.4" },
     { name = "pydantic-settings", specifier = ">=2.12.0" },
     { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "runze-control", git = "https://github.com/AllenNeuralDynamics/runze-control.git?branch=fix-dynamic-version" },
+    { name = "runze-control", git = "https://github.com/AllenNeuralDynamics/runze-control.git?rev=d72a981dd71587c806962e5edf126614377a72e8" },
 ]
 
 [package.metadata.requires-dev]
@@ -167,7 +167,7 @@ wheels = [
 [[package]]
 name = "device-spinner"
 version = "0.0.3"
-source = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git#3a2d201588e0cabac762d1e1a33d5e6339ec27c0" }
+source = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git?rev=3a2d201588e0cabac762d1e1a33d5e6339ec27c0#3a2d201588e0cabac762d1e1a33d5e6339ec27c0" }
 dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -376,8 +376,8 @@ wheels = [
 
 [[package]]
 name = "one-liner"
-version = "0.1.1.dev8"
-source = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git?branch=main#85474e719393072b9046799272fd4d4834c74d0d" }
+version = "0.1.1.dev2"
+source = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git?rev=22aa37370c3678726ebacb2f0a2e8ae263a94704#22aa37370c3678726ebacb2f0a2e8ae263a94704" }
 dependencies = [
     { name = "orjson" },
     { name = "pydantic" },
@@ -925,7 +925,7 @@ wheels = [
 [[package]]
 name = "runze-control"
 version = "0.1.2"
-source = { git = "https://github.com/AllenNeuralDynamics/runze-control.git?branch=fix-dynamic-version#d72a981dd71587c806962e5edf126614377a72e8" }
+source = { git = "https://github.com/AllenNeuralDynamics/runze-control.git?rev=d72a981dd71587c806962e5edf126614377a72e8#d72a981dd71587c806962e5edf126614377a72e8" }
 dependencies = [
     { name = "pyserial" },
 ]
