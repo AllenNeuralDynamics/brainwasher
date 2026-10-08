@@ -52,6 +52,24 @@ class SeqFlowJobStatus(BaseModel):
     )
 
 
+class HeaterStageStatus(BaseModel):
+    """State of one heater stage."""
+
+    temp_c: float = Field(..., description="Current temperature in Celsius.")
+    heating: bool = Field(..., description="Whether the stage is heating right now.")
+    active: bool = Field(
+        ..., description="Whether heat steps turn this stage on (user selection)."
+    )
+
+
+class SeqFlowHeaterStatus(BaseModel):
+    """State of every heater stage, for the GUI heater panel."""
+
+    stages: dict[str, HeaterStageStatus] = Field(
+        ..., description="Status of each heater stage, keyed by stage name."
+    )
+
+
 class SeqFlowResumeState(BaseModel):
     """Resume state tracking for SeqFlow."""
 

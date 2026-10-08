@@ -7,7 +7,12 @@ from mixology.devices.heater.heater import HeaterDevice
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
 from mixology.devices.simulated_devices.selector import SimSerialSelector
-from seqflow.seqflow_models import SeqFlowJob, SeqFlowJobStatus
+from seqflow.seqflow_models import (
+    HeaterStageStatus,
+    SeqFlowHeaterStatus,
+    SeqFlowJob,
+    SeqFlowJobStatus,
+)
 from seqflow.seqflow_config_model import SeqFlowConfig
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
@@ -122,12 +127,6 @@ class SeqFlow(Instrument):
             self.log.info(f"Job set and setting to {status}")
             self.job_status = SeqFlowJobStatus(status=status)
 
-    def get_active_heater_stages(self) -> list[str]:
-        """Return the heater stages that heat steps turn on."""
-        if self.heater.active_stages is None:
-            return list(self.heater.get_stage_states())
-        return list(self.heater.active_stages)
-
     def set_active_heater_stages(self, stages: list[str]) -> None:
         """Set the heater stages that heat steps turn on. Not allowed while running.
 
@@ -140,6 +139,23 @@ class SeqFlow(Instrument):
         self._check_heater_stages(stages)
         self.heater.active_stages = list(stages)
         self.log.info(f"Heater stages set to {stages}.")
+
+    def get_heater_status(self) -> dict:
+        """Get each heater stage's temperature, heating state, and selection as a dict."""
+        temps_c = self.heater.get_temperatures_c()
+        heating = self.heater.get_stage_states()
+        active = self.heater.active_stages
+        status = SeqFlowHeaterStatus(
+            stages={
+                stage: HeaterStageStatus(
+                    temp_c=temp_c,
+                    heating=heating[stage],
+                    active=active is None or stage in active,
+                )
+                for stage, temp_c in temps_c.items()
+            }
+        )
+        return status.model_dump()
 
     def _check_heater_stages(self, stages: list[str]) -> None:
         """Raise ValueError if any of `stages` is not one of the heater's stages."""
