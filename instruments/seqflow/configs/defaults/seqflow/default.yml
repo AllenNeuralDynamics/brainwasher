@@ -27,6 +27,12 @@ router_server_api:
     seqflow_get_job_status:
       obj_name: "seqflow"
       attr_name: "get_job_status"
+    seqflow_get_active_heater_stages:
+      obj_name: "seqflow"
+      attr_name: "get_active_heater_stages"
+    seqflow_set_active_heater_stages:
+      obj_name: "seqflow"
+      attr_name: "set_active_heater_stages"
 router_server_kwargs:
     rpc_port: 5557
     broadcast_port: 5558
