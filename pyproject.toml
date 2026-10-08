@@ -33,7 +33,6 @@ brainwasher = [
     "SM16univin",
     "smbus2"
 ]
-brainslosher = ["pyharp"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "tests"]
