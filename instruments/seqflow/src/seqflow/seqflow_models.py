@@ -7,6 +7,7 @@ from pydantic import (
     ValidationError,
     AfterValidator,
     computed_field,
+    model_validator,
 )
 from mixology.job import Job
 from typing import Optional, Annotated, Any, Literal
@@ -17,6 +18,10 @@ DeviceType = Literal["pump", "heat_device", "wait", "stopper"]
 
 class SeqFlowStep(BaseModel):
     """Model representing a single action within a sequence."""
+
+    description: Optional[str] = Field(
+        default=None, description="Step name shown to users (e.g., 'PBST Wait 1')."
+    )
 
     # --- STEP PARAMETERS ---
     duration_s: Optional[float] = Field(
@@ -98,33 +103,61 @@ class SeqFlowJob(Job):
     )
     resume_state: Optional[SeqFlowResumeState] = None
 
+    @model_validator(mode="after")
+    def validate_protocol_steps(self):
+        """Ensure every step has a defined duration."""
+        for i, step in enumerate(self.protocol):
+            total_vol = sum(step.solution.values()) if step.solution else 0.0
+
+            # Prevent undefined wait states (0 Volume without Duration)
+            if total_vol == 0.0 and step.duration_s is None:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Steps with 0.0mL volume (like heat/wait steps) must provide an explicit 'duration_s'."
+                )
+
+            # Prevent undefined dispense durations (Volume without Flow Rate)
+            if total_vol > 0 and step.flow_rate_mlpm <= 0:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Steps with {total_vol}mL volume must provide a positive 'flow_rate_mlpm'."
+                )
+        return self
+
     @computed_field
     @property
-    def total_duration_s(self) -> float:
+    def remaining_duration_s(self) -> float:
         """
-        Calculates the duration of the job.
-        If the job is resuming from a paused state,
-        it returns the REMAINING duration from the resumed step.
+        Duration in seconds still left to run: the whole job before it starts,
+        0 once it has finished. For a paused job, the step it paused in counts
+        only its remaining time.
         """
-        if self.resume_state is not None:
-            # Calculate from the step we are resuming at
-            return self.get_duration_s(start_step=self.resume_state.step)
+        events = self.history.events if self.history else None
+        if events and events[-1].type == "end":
+            return 0.0
+        if self.resume_state is None:
+            return self.get_duration_s()
+        return self.get_duration_s(self.resume_state.step, self.resume_state.overrides)
 
-        return self.get_duration_s(start_step=0)
-
-    def get_duration_s(self, start_step: int = 0) -> float:
+    def get_duration_s(
+        self, start_step: int = 0, overrides: Optional[dict] = None
+    ) -> float:
         """
         Total job duration in seconds starting from the specified step.
         Note: Because `protocol` is a list of SeqFlowSteps, `start_step`
         represents the starting step index (e.g., resuming from step 2).
+        `overrides` (e.g., a paused step's remaining time and volume) are
+        applied to the starting step.
         """
+        steps = self.protocol[start_step:]
+        if overrides and steps:
+            steps = [steps[0].model_copy(update=overrides), *steps[1:]]
         total_time_s = 0.0
 
-        for step in self.protocol[start_step:]:
+        for step in steps:
             total_volume = sum(step.solution.values()) if step.solution else 0.0
             # Implicit Pump Step
-            if total_volume > 0 and step.flow_rate_mlpm is not None:
-                # Use step override if it exists, otherwise fall back to job default
+            if total_volume > 0 and step.flow_rate_mlpm > 0:
                 total_time_s += (total_volume / step.flow_rate_mlpm) * 60.0
             elif step.duration_s:
                 total_time_s += step.duration_s

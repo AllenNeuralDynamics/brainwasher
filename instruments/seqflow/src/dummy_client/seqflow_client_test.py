@@ -4,36 +4,10 @@ from one_liner.client import RouterClient  # type: ignore
 import time
 import yaml
 from pathlib import Path
-import threading
-
-
-def stream_listener(client, stream_name):
-    """Background task to print broadcast updates."""
-    print(f"--- Listening to stream: {stream_name} ---")
-    client.configure_stream(
-        stream_name, storage_type="cache"
-    )  # Get most latest message only
-    time.sleep(1)  # Give the stream a moment to start
-    while True:
-        try:
-            # This uses the broadcast_port internally
-            _, msg = client.get_stream(stream_name)
-            print(f"  Status update: {msg}")
-            time.sleep(2)
-        except Exception as e:
-            print(f"Error in stream_listener: {e}")
-            time.sleep(2)
-
 
 def main():
     # Connect to both the RPC and Broadcast ports
     client = RouterClient(rpc_port=5557, broadcast_port=5558)
-
-    # Start the stream listener in a background thread
-    listener = threading.Thread(
-        target=stream_listener, args=(client, "seqflow_get_progress"), daemon=True
-    )
-    listener.start()
 
     # Load the job from the YAML file
     current_dir = Path(__file__).parent
