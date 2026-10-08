@@ -43,40 +43,20 @@ devices:
       end: 14
       hyb_oligos_mix_3: 15
       hyb_oligos_mix_4: 16
-  config:
+  config: 
     class: seqflow.seqflow_config_model.SeqFlowConfig
     kwds:
-      instrument_name: "Default SeqFlow"
+      instrument_name: Simulated SeqFlow
   pump:
     class: mixology.devices.simulated_devices.peristaltic_pump.SimPeristalticPump
     kwds:
         name: "simPump"
         flow_rate_mlpm: 1.5
-  sub_selector_1:
-    class: mixology.devices.selector.selector.SerialSelector
-    kwds:
-      name: "ElveflowSelector_1"
-      port: "COM6"
-      baudrate: 9600
-  sub_selector_2:
-    class: mixology.devices.selector.selector.SerialSelector
-    kwds:
-      name: "ElveflowSelector_2"
-      port: "COM5"
-      baudrate: 9600
-  sub_selector_list:
-    factory: device_spinner.factory_utils.to_list
-    args:
-      - sub_selector_1
-      - sub_selector_2
   selector:
-    class: mixology.devices.selector.mux.CascadedMux
+    class: mixology.devices.simulated_devices.selector.SimSerialSelector
     kwds:
-      selectors: sub_selector_list
-      position_map: selector_port_map
-      unit_port_count: 11
-      passthrough_port: 12
-      settle_seconds: 2
+        name: "simSerialSelector"
+        position_map: selector_port_map
   rxn_vessel:
     class: mixology.devices.vessels.SlideContainer
     skip_kwds: [name]
