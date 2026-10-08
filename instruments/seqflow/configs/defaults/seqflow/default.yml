@@ -1,0 +1,72 @@
+router_server_api:
+  named_calls:
+    seqflow_start:
+      obj_name: "seqflow"
+      attr_name: "start_run"
+    seqflow_pause:
+      obj_name: "seqflow"
+      attr_name: "pause"
+    seqflow_get_job:
+      obj_name: "seqflow"
+      attr_name: "get_job"
+    seqflow_set_job:
+      obj_name: "seqflow"
+      attr_name: "set_job"
+    seqflow_get_config:
+      obj_name: "seqflow"
+      attr_name: "get_config"
+  periodic_streams:
+    seqflow_get_progress:
+      frequency_hz: 1
+      obj_name: "seqflow"
+      attr_name: "get_progress"
+router_server_kwargs:
+    rpc_port: 5557
+    broadcast_port: 5558
+devices:
+  config: 
+    class: seqflow.seqflow_config_model.SeqFlowConfig
+    kwds:
+      selector_port_map:
+        incorporation_buffer: 1
+        pbst: 2
+        iodoacetamide_blocker: 3
+        irm: 4
+        usm: 5
+        crm: 6
+        fish_wash: 7
+        strip: 8
+        hyb_oligos_mix: 9
+        dapi: 10
+        bc_primer_mix: 11
+        gene_primer_mix: 12
+        hyb_oligos_mix_2: 13
+        end: 14
+        hyb_oligos_mix_3: 15
+        hyb_oligos_mix_4: 16
+      instrument_name: Simulated SeqFlow
+  pump:
+    class: mixology.devices.simulated_devices.peristaltic_pump.SimPeristalticPump
+    kwds:
+        name: "simPump"
+        flow_rate_mlpm: 1.5
+  selector:
+    class: mixology.devices.simulated_devices.selector.SimSelector
+    kwds:
+        name: "simSelector"
+        positions: 10
+        position_map: selector_port_map
+  rxn_vessel:
+    class: mixology.devices.vessels.SlideContainer
+    skip_kwds: [name]
+    kwds:
+        name: slide_container
+        num_slides: 3
+  # Full System:
+  seqflow:
+    class: seqflow.seqflow.SeqFlow
+    kwds:
+      config: config
+      pump: pump
+      selector: selector
+      rxn_vessel: rxn_vessel
