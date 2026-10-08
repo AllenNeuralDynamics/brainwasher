@@ -19,6 +19,7 @@ class HeaterDevice(ABC):
     def __init__(
         self,
         name: str = "",
+        active_stages: Optional[list[str]] = None,
         temp_tolerance_c: float = 1.5,
         ramp_timeout_s: float = 300.0,
         poll_interval_s: float = 1.0,
@@ -26,6 +27,7 @@ class HeaterDevice(ABC):
         """
         Args:
             name: Device name.
+            active_stages: Stages that `heat_up` turns on (every stage if None).
             temp_tolerance_c: A stage counts as at temperature within this many
                 degrees C below the target.
             ramp_timeout_s: Max time for the stages to reach the target temperature.
@@ -34,6 +36,7 @@ class HeaterDevice(ABC):
         logger_name = self.__class__.__name__ + (f".{name}" if name else "")
         self.log = logging.getLogger(logger_name)
         self.name = name
+        self.active_stages = active_stages
         self.temp_tolerance_c = temp_tolerance_c
         self.ramp_timeout_s = ramp_timeout_s
         self.poll_interval_s = poll_interval_s
@@ -100,7 +103,7 @@ class HeaterDevice(ABC):
         }
 
     def heat_up(self, temp_c: float, cancel: Optional[Event] = None) -> bool:
-        """Turn every stage on and wait until all of them reach `temp_c`.
+        """Turn the active stages on and wait until all of them reach `temp_c`.
 
         Heating stays on when this returns or raises; the caller turns it off.
 
@@ -116,7 +119,7 @@ class HeaterDevice(ABC):
         """
         cancel = cancel or Event()
         self.set_target_temperature(temp_c)
-        self.turn_on()
+        self.turn_on(self.active_stages)
         deadline_s = perf_counter() + self.ramp_timeout_s
         while cold_stages := self.get_cold_stages(temp_c):
             self.log.debug(f"Waiting for stages to reach {temp_c} C: {cold_stages}")

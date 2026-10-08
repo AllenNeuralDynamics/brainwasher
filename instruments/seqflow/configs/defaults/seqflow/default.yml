@@ -96,6 +96,7 @@ devices:
     kwds:
         name: "simHeater"
         stage_names: [heatstage1, heatstage2, heatstage3]
+        active_stages: [heatstage1, heatstage2, heatstage3]
         ramp_rate_c_per_s: 1.0
         temp_tolerance_c: 1.5
         ramp_timeout_s: 300
