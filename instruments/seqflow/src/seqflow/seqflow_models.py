@@ -7,6 +7,7 @@ from pydantic import (
     ValidationError,
     AfterValidator,
     computed_field,
+    model_validator,
 )
 from mixology.job import Job
 from typing import Optional, Annotated, Any, Literal
@@ -102,14 +103,38 @@ class SeqFlowJob(Job):
     )
     resume_state: Optional[SeqFlowResumeState] = None
 
+    @model_validator(mode="after")
+    def validate_protocol_steps(self):
+        """Ensure every step has a defined duration."""
+        for i, step in enumerate(self.protocol):
+            total_vol = sum(step.solution.values()) if step.solution else 0.0
+
+            # Prevent undefined wait states (0 Volume without Duration)
+            if total_vol == 0.0 and step.duration_s is None:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Steps with 0.0mL volume (like heat/wait steps) must provide an explicit 'duration_s'."
+                )
+
+            # Prevent undefined dispense durations (Volume without Flow Rate)
+            if total_vol > 0 and step.flow_rate_mlpm <= 0:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Steps with {total_vol}mL volume must provide a positive 'flow_rate_mlpm'."
+                )
+        return self
+
     @computed_field
     @property
-    def total_duration_s(self) -> float:
+    def remaining_duration_s(self) -> float:
         """
-        Duration in seconds of the job left to run, or of the whole job when
-        there is no resume state (not started yet, or finished).
-        For a paused job, the step it paused in counts only its remaining time.
+        Duration in seconds still left to run: the whole job before it starts,
+        0 once it has finished. For a paused job, the step it paused in counts
+        only its remaining time.
         """
+        events = self.history.events if self.history else None
+        if events and events[-1].type == "end":
+            return 0.0
         if self.resume_state is None:
             return self.get_duration_s()
         return self.get_duration_s(self.resume_state.step, self.resume_state.overrides)
