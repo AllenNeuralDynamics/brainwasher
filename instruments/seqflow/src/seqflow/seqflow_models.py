@@ -7,6 +7,7 @@ from pydantic import (
     ValidationError,
     AfterValidator,
     computed_field,
+    model_validator,
 )
 from mixology.job import Job
 from typing import Optional, Annotated, Any, Literal
@@ -101,6 +102,27 @@ class SeqFlowJob(Job):
         default_factory=list, description="A list of steps to be run in order."
     )
     resume_state: Optional[SeqFlowResumeState] = None
+
+    @model_validator(mode="after")
+    def validate_protocol_steps(self):
+        """Ensure every step has a defined duration."""
+        for i, step in enumerate(self.protocol):
+            total_vol = sum(step.solution.values()) if step.solution else 0.0
+
+            # Prevent undefined wait states (0 Volume without Duration)
+            if total_vol == 0.0 and step.duration_s is None:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Steps with 0.0mL volume (like heat/wait steps) must provide an explicit 'duration_s'."
+                )
+
+            # Prevent undefined dispense durations (Volume without Flow Rate)
+            if total_vol > 0 and step.flow_rate_mlpm <= 0:
+                raise ValueError(
+                    f"Validation failed at step {i + 1}: "
+                    f"Steps with {total_vol}mL volume must provide a positive 'flow_rate_mlpm'."
+                )
+        return self
 
     @computed_field
     @property
