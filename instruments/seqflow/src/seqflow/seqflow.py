@@ -49,8 +49,7 @@ class SeqFlow(Instrument):
         self.pump.connect()
         self.selector.connect()
         self.heater.connect()
-        if self.heater.active_stages is not None:
-            self._check_heater_stages(self.heater.active_stages)
+        self._check_heater_stages(self.heater.active_stages)
 
         # attribute to track events that occur in job_worker
         self.job_status_lock = Lock()
@@ -144,13 +143,12 @@ class SeqFlow(Instrument):
         """Get each heater stage's temperature, heating state, and selection as a dict."""
         temps_c = self.heater.get_temperatures_c()
         heating = self.heater.get_stage_states()
-        active = self.heater.active_stages
         status = SeqFlowHeaterStatus(
             stages={
                 stage: HeaterStageStatus(
                     temp_c=temp_c,
                     heating=heating[stage],
-                    active=active is None or stage in active,
+                    active=stage in self.heater.active_stages,
                 )
                 for stage, temp_c in temps_c.items()
             }
