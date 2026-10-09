@@ -27,7 +27,7 @@ class HeaterDevice(ABC):
         """
         Args:
             name: Device name.
-            active_stages: Stages that `heat_up` turns on (every stage if None).
+            active_stages: Stages that `heat_up` turns on (none if None).
             temp_tolerance_c: A stage counts as at temperature within this many
                 degrees C below the target.
             ramp_timeout_s: Max time for the stages to reach the target temperature.
@@ -36,7 +36,7 @@ class HeaterDevice(ABC):
         logger_name = self.__class__.__name__ + (f".{name}" if name else "")
         self.log = logging.getLogger(logger_name)
         self.name = name
-        self.active_stages = active_stages
+        self.active_stages: list[str] = list(active_stages or [])
         self.temp_tolerance_c = temp_tolerance_c
         self.ramp_timeout_s = ramp_timeout_s
         self.poll_interval_s = poll_interval_s
@@ -117,6 +117,9 @@ class HeaterDevice(ABC):
         Raises:
             RuntimeError: If a stage is still too cold after `ramp_timeout_s`.
         """
+        if not self.active_stages:
+            self.log.warning(f"No active stages; skipping heat-up to {temp_c} C.")
+            return True
         cancel = cancel or Event()
         self.set_target_temperature(temp_c)
         self.turn_on(self.active_stages)
