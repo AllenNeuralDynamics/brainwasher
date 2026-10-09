@@ -1,0 +1,6668 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentation for mixology and the instrument packages in this repository.">
+      
+      
+        <meta name="author" content="Allen Institute for Neural Dynamics">
+      
+      
+      
+        <link rel="prev" href="../../">
+      
+      
+        <link rel="next" href="../brainwasher_job/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>brainwasher - mixology</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="black">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#brainwasher" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="mixology" class="md-header__button md-logo" aria-label="mixology" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            mixology
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              brainwasher
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="black"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="white"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/AllenNeuralDynamics/brainwasher" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/instrument/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../brainslosher_docs/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Brainslosher
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../brainslosher_docs/api/brainslosher/" class="md-tabs__link">
+          
+  
+  
+  Brainslosher API Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Brainwasher
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  Brainwasher API Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../seqflow_docs/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Seqflow
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../seqflow_docs/api/seqflow/" class="md-tabs__link">
+          
+  
+  
+  Seqflow API Reference
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="mixology" class="md-nav__button md-logo" aria-label="mixology" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    mixology
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/AllenNeuralDynamics/brainwasher" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instrument
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Instrument
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/instrument/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    instrument
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Job
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Job
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/job/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    job
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protocol
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Protocol
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/protocol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    protocol
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices/devices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    devices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices/liquid_presence_detection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    liquid_presence_detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices/mixer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    mixer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices/pressure_sensor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pressure_sensor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices/vessels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vessels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices.Harp
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Devices.Harp
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_harp/devices_harp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    devices.harp
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_harp/mixer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    mixer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices.Ika
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Devices.Ika
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_ika/devices_ika/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    devices.ika
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_ika/rct_basic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    rct_basic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_ika/rct_basic_device_codes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    rct_basic_device_codes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices.Pololu
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Devices.Pololu
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_pololu/devices_pololu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    devices.pololu
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_pololu/pololu_tic_mixer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pololu_tic_mixer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices.Raspberry Pi
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Devices.Raspberry Pi
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_raspberry_pi/devices_raspberry_pi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    devices.raspberry_pi
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_raspberry_pi/mixer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    mixer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices.Sequent Microsystems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Devices.Sequent Microsystems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_sequent_microsystems/devices_sequent_microsystems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    devices.sequent_microsystems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_sequent_microsystems/liquid_presence_detection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    liquid_presence_detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_sequent_microsystems/mixer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    mixer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_sequent_microsystems/pressure_sensor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pressure_sensor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_sequent_microsystems/valve/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    valve
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices.Simulated Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Devices.Simulated Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_simulated_devices/devices_simulated_devices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    devices.simulated_devices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_simulated_devices/peristaltic_pump/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    peristaltic_pump
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_simulated_devices/pressure_sensor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pressure_sensor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_simulated_devices/selector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    selector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_simulated_devices/syringe_pump/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    syringe_pump
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_11" id="__nav_2_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Devices.Valves
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Devices.Valves
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_valves/devices_valves/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    devices.valves
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_valves/closeable_vici/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    closeable_vici
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/devices_valves/valve/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    valve
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../brainslosher_docs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Brainslosher
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Brainslosher API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Brainslosher API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Brainslosher
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Brainslosher
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../brainslosher_docs/api/brainslosher/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    brainslosher
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Brainslosher Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Brainslosher Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../brainslosher_docs/api/brainslosher_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    brainslosher_models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utils
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utils
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../brainslosher_docs/api/utils/utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../brainslosher_docs/api/utils/email_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    email_issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Brainwasher
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Brainwasher API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Brainwasher API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Brainwasher
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Brainwasher
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    brainwasher
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    brainwasher
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        brainwasher
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="brainwasher">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.SIMULATED" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SIMULATED
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BrainWasher
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="BrainWasher">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.PUMP_APPROX_ZERO_UL" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PUMP_APPROX_ZERO_UL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.MAX_SAFE_PRESSURE_PSIG" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAX_SAFE_PRESSURE_PSIG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.MAX_PURGE_PRESSURE_PSIG" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAX_PURGE_PRESSURE_PSIG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.LEAK_CHECK_SQUEEZE_PERCENT" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LEAK_CHECK_SQUEEZE_PERCENT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.PRESSURE_POCKET_TIMEOUT_S" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRESSURE_POCKET_TIMEOUT_S
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        log
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.selector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        selector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.selector_lds_map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        selector_lds_map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pump" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pump
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.rxn_vessel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rxn_vessel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.waste_vessels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        waste_vessels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.mixer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mixer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_sensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_sensor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.rv_source_valve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rv_source_valve
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.rv_exhaust_valve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rv_exhaust_valve
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.output_bypass_valves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output_bypass_valves
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.waste_drain_valves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        waste_drain_valves
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pump_prime_lds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pump_prime_lds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.prime_volumes_ul" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prime_volumes_ul
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pump_is_primed_with" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pump_is_primed_with
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.nominal_pump_speed_percent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        nominal_pump_speed_percent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.slow_pump_speed_percent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        slow_pump_speed_percent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pump_unprime_speed_percent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pump_unprime_speed_percent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pump_purge_speed_percent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pump_purge_speed_percent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.monitoring_pressure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        monitoring_pressure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.buffer_samples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        buffer_samples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_sample_buffer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_sample_buffer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_monitor_thread" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_monitor_thread
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_avg_start_time_s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_avg_start_time_s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_avg_duration_s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_avg_duration_s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_psig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_psig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.job_worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        job_worker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.flowpath_lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        flowpath_lock
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pause_requested" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pause_requested
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.resume_state_overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resume_state_overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.plumbed_chemicals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plumbed_chemicals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.halt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        halt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.deenergize_all_valves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deenergize_all_valves
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.start_pressure_monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        start_pressure_monitor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.stop_pressure_monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stop_pressure_monitor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.get_average_psig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_average_psig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.get_compatible_waste_vessel_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_compatible_waste_vessel_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.reset_waste_vessel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset_waste_vessel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.prime_reservoir_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prime_reservoir_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.unprime_reservoir_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unprime_reservoir_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.prime_pump_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prime_pump_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.purge_pump_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        purge_pump_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.dispense_to_vessel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dispense_to_vessel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.drain_vessel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drain_vessel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.fast_gas_charge_syringe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fast_gas_charge_syringe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.run_step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_step
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.run_wash_step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_wash_step
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.mix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.fill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fill
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.create_job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        create_job
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.validate_job_against_instrument" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_job_against_instrument
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pause
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.abort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        abort
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.run_leak_checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_leak_checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_selector_common_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        leak_check_syringe_to_selector_common_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_rv_exaust_normally_open_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        leak_check_syringe_to_rv_exaust_normally_open_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_waste_bypass_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        leak_check_syringe_to_waste_bypass_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_reaction_vessel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        leak_check_syringe_to_reaction_vessel
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.lock_flowpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        lock_flowpath
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.syringe_empty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        syringe_empty
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Brainwasher Job
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Brainwasher Job
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../brainwasher_job/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    brainwasher_job
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Errors
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors/instrument_errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    instrument_errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../seqflow_docs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Seqflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Seqflow API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Seqflow API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_1" id="__nav_8_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Seqflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Seqflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../seqflow_docs/api/seqflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    seqflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_2" id="__nav_8_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Seqflow Config Model
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Seqflow Config Model
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../seqflow_docs/api/seqflow_config_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    seqflow_config_model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_3" id="__nav_8_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Seqflow Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Seqflow Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../seqflow_docs/api/seqflow_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    seqflow_models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        brainwasher
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="brainwasher">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.SIMULATED" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SIMULATED
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BrainWasher
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="BrainWasher">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.PUMP_APPROX_ZERO_UL" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PUMP_APPROX_ZERO_UL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.MAX_SAFE_PRESSURE_PSIG" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAX_SAFE_PRESSURE_PSIG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.MAX_PURGE_PRESSURE_PSIG" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAX_PURGE_PRESSURE_PSIG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.LEAK_CHECK_SQUEEZE_PERCENT" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LEAK_CHECK_SQUEEZE_PERCENT
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.PRESSURE_POCKET_TIMEOUT_S" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PRESSURE_POCKET_TIMEOUT_S
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        log
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.selector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        selector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.selector_lds_map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        selector_lds_map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pump" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pump
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.rxn_vessel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rxn_vessel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.waste_vessels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        waste_vessels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.mixer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mixer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_sensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_sensor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.rv_source_valve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rv_source_valve
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.rv_exhaust_valve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rv_exhaust_valve
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.output_bypass_valves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        output_bypass_valves
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.waste_drain_valves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        waste_drain_valves
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pump_prime_lds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pump_prime_lds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.prime_volumes_ul" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prime_volumes_ul
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pump_is_primed_with" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pump_is_primed_with
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.nominal_pump_speed_percent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        nominal_pump_speed_percent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.slow_pump_speed_percent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        slow_pump_speed_percent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pump_unprime_speed_percent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pump_unprime_speed_percent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pump_purge_speed_percent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pump_purge_speed_percent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.monitoring_pressure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        monitoring_pressure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.buffer_samples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        buffer_samples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_sample_buffer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_sample_buffer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_monitor_thread" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_monitor_thread
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_avg_start_time_s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_avg_start_time_s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_avg_duration_s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_avg_duration_s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pressure_psig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pressure_psig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.job_worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        job_worker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.flowpath_lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        flowpath_lock
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pause_requested" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pause_requested
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.resume_state_overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resume_state_overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.plumbed_chemicals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plumbed_chemicals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.halt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        halt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.deenergize_all_valves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        deenergize_all_valves
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.start_pressure_monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        start_pressure_monitor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.stop_pressure_monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stop_pressure_monitor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.get_average_psig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_average_psig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.get_compatible_waste_vessel_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_compatible_waste_vessel_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.reset_waste_vessel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset_waste_vessel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.prime_reservoir_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prime_reservoir_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.unprime_reservoir_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unprime_reservoir_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.prime_pump_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prime_pump_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.purge_pump_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        purge_pump_line
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.dispense_to_vessel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dispense_to_vessel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.drain_vessel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drain_vessel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.fast_gas_charge_syringe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fast_gas_charge_syringe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.run_step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_step
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.run_wash_step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_wash_step
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.mix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.fill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fill
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.create_job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        create_job
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.validate_job_against_instrument" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_job_against_instrument
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.pause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pause
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.abort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        abort
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.run_leak_checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_leak_checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_selector_common_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        leak_check_syringe_to_selector_common_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_rv_exaust_normally_open_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        leak_check_syringe_to_rv_exaust_normally_open_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_waste_bypass_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        leak_check_syringe_to_waste_bypass_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_reaction_vessel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        leak_check_syringe_to_reaction_vessel
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.lock_flowpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        lock_flowpath
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#brainwasher.brainwasher.syringe_empty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        syringe_empty
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="./" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Brainwasher API Reference
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="./" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Brainwasher
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="brainwasher">brainwasher<a class="headerlink" href="#brainwasher" title="Permanent link">&para;</a></h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="brainwasher.brainwasher" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">brainwasher.brainwasher</span>
+
+
+<a href="#brainwasher.brainwasher" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Tissue-clearing proof-of-concept</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="brainwasher.brainwasher.SIMULATED" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">SIMULATED</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.SIMULATED" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">SIMULATED</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="brainwasher.brainwasher.BrainWasher" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">BrainWasher</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">BrainWasher</span><span class="p">(</span>
+    <span class="n">selector</span><span class="p">:</span> <span class="n">CloseableVICI</span><span class="p">,</span>
+    <span class="n">selector_lds_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="n">pump</span><span class="p">:</span> <span class="n">SyringePump</span><span class="p">,</span>
+    <span class="n">reaction_vessel</span><span class="p">:</span> <span class="n">ReactionVessel</span><span class="p">,</span>
+    <span class="n">mixer</span><span class="p">:</span> <span class="n">Mixer</span><span class="p">,</span>
+    <span class="n">pressure_sensor</span><span class="p">:</span> <span class="n">PressureSensor</span><span class="p">,</span>
+    <span class="n">rv_source_valve</span><span class="p">:</span> <span class="n">ThreeTwoValve</span><span class="p">,</span>
+    <span class="n">rv_exhaust_valve</span><span class="p">:</span> <span class="n">ThreeTwoValve</span><span class="p">,</span>
+    <span class="n">waste_vessels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">WasteVessel</span><span class="p">],</span>
+    <span class="n">output_bypass_valves</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">NCValve</span><span class="p">],</span>
+    <span class="n">waste_drain_valves</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">NCValve</span><span class="p">],</span>
+    <span class="n">pump_prime_lds</span><span class="p">:</span> <span class="n">BubbleDetectionSensor</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Class for controlling/maintaining the FlowChamber.</p>
+<p>Note that functions should work whether an "empty" reaction vessel is
+installed (i.e: for cleaning) or a normal reaction vessel with tissue is
+installed.</p>
+
+        <p>:param waste_vessels: list of waste vessels, each of which may have
+    different compatible chemicals that can be added to it.
+:param waste_drain_valves: list of valves gating each waste vessel.
+    Valve order must match the order of the waste vessels.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.PUMP_APPROX_ZERO_UL" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">PUMP_APPROX_ZERO_UL</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.PUMP_APPROX_ZERO_UL" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">PUMP_APPROX_ZERO_UL</span> <span class="o">=</span> <span class="mf">30.0</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.MAX_SAFE_PRESSURE_PSIG" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">MAX_SAFE_PRESSURE_PSIG</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.MAX_SAFE_PRESSURE_PSIG" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">MAX_SAFE_PRESSURE_PSIG</span> <span class="o">=</span> <span class="mf">13.0</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.MAX_PURGE_PRESSURE_PSIG" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">MAX_PURGE_PRESSURE_PSIG</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.MAX_PURGE_PRESSURE_PSIG" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">MAX_PURGE_PRESSURE_PSIG</span> <span class="o">=</span> <span class="mf">8.0</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.LEAK_CHECK_SQUEEZE_PERCENT" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">LEAK_CHECK_SQUEEZE_PERCENT</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.LEAK_CHECK_SQUEEZE_PERCENT" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">LEAK_CHECK_SQUEEZE_PERCENT</span> <span class="o">=</span> <span class="mf">15.0</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">MIN_LEAK_CHECK_STARTING_PRESSURE_PSIG</span> <span class="o">=</span> <span class="mf">1.0</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">MAX_LEAK_CHECK_PRESSURE_DELTA_PSIG</span> <span class="o">=</span> <span class="mf">0.1</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.PRESSURE_POCKET_TIMEOUT_S" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">PRESSURE_POCKET_TIMEOUT_S</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.PRESSURE_POCKET_TIMEOUT_S" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">PRESSURE_POCKET_TIMEOUT_S</span> <span class="o">=</span> <span class="mf">6.0</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.log" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">log</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.log" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.selector" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">selector</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.selector" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">selector</span> <span class="o">=</span> <span class="n">selector</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.selector_lds_map" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">selector_lds_map</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.selector_lds_map" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">selector_lds_map</span> <span class="o">=</span> <span class="n">selector_lds_map</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pump" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pump</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pump" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pump</span> <span class="o">=</span> <span class="n">pump</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.rxn_vessel" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">rxn_vessel</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.rxn_vessel" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">rxn_vessel</span> <span class="o">=</span> <span class="n">reaction_vessel</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.waste_vessels" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">waste_vessels</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.waste_vessels" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">waste_vessels</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="n">waste_vessels</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.mixer" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">mixer</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.mixer" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">mixer</span> <span class="o">=</span> <span class="n">mixer</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pressure_sensor" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pressure_sensor</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pressure_sensor" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pressure_sensor</span> <span class="o">=</span> <span class="n">pressure_sensor</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.rv_source_valve" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">rv_source_valve</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.rv_source_valve" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">rv_source_valve</span> <span class="o">=</span> <span class="n">rv_source_valve</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.rv_exhaust_valve" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">rv_exhaust_valve</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.rv_exhaust_valve" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">rv_exhaust_valve</span> <span class="o">=</span> <span class="n">rv_exhaust_valve</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.output_bypass_valves" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">output_bypass_valves</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.output_bypass_valves" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">output_bypass_valves</span> <span class="o">=</span> <span class="n">output_bypass_valves</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.waste_drain_valves" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">waste_drain_valves</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.waste_drain_valves" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">waste_drain_valves</span> <span class="o">=</span> <span class="n">waste_drain_valves</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pump_prime_lds" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pump_prime_lds</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pump_prime_lds" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pump_prime_lds</span> <span class="o">=</span> <span class="n">pump_prime_lds</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.prime_volumes_ul" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">prime_volumes_ul</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.prime_volumes_ul" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">prime_volumes_ul</span> <span class="o">=</span> <span class="p">{}</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pump_is_primed_with" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pump_is_primed_with</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pump_is_primed_with" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pump_is_primed_with</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.nominal_pump_speed_percent" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">nominal_pump_speed_percent</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.nominal_pump_speed_percent" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">nominal_pump_speed_percent</span> <span class="o">=</span> <span class="mi">20</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.slow_pump_speed_percent" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">slow_pump_speed_percent</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.slow_pump_speed_percent" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">slow_pump_speed_percent</span> <span class="o">=</span> <span class="mi">10</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pump_unprime_speed_percent" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pump_unprime_speed_percent</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pump_unprime_speed_percent" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pump_unprime_speed_percent</span> <span class="o">=</span> <span class="mi">60</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pump_purge_speed_percent" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pump_purge_speed_percent</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pump_purge_speed_percent" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pump_purge_speed_percent</span> <span class="o">=</span> <span class="mi">100</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.monitoring_pressure" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">monitoring_pressure</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.monitoring_pressure" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">monitoring_pressure</span> <span class="o">=</span> <span class="n">Event</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.buffer_samples" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">buffer_samples</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.buffer_samples" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">buffer_samples</span> <span class="o">=</span> <span class="n">Event</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pressure_sample_buffer" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pressure_sample_buffer</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pressure_sample_buffer" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pressure_sample_buffer</span> <span class="o">=</span> <span class="p">[]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pressure_monitor_thread" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pressure_monitor_thread</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pressure_monitor_thread" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pressure_monitor_thread</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pressure_avg_start_time_s" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pressure_avg_start_time_s</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pressure_avg_start_time_s" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pressure_avg_start_time_s</span> <span class="o">=</span> <span class="mi">0</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pressure_avg_duration_s" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pressure_avg_duration_s</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pressure_avg_duration_s" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pressure_avg_duration_s</span> <span class="o">=</span> <span class="mi">0</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pressure_psig" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pressure_psig</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pressure_psig" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pressure_psig</span> <span class="o">=</span> <span class="mi">0</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.job_worker" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">job_worker</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.job_worker" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">job_worker</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.flowpath_lock" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">flowpath_lock</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.flowpath_lock" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">flowpath_lock</span> <span class="o">=</span> <span class="n">RLock</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pause_requested" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">pause_requested</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.pause_requested" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pause_requested</span> <span class="o">=</span> <span class="n">Event</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.resume_state_overrides" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">resume_state_overrides</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.resume_state_overrides" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">resume_state_overrides</span> <span class="o">=</span> <span class="p">{}</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.plumbed_chemicals" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">plumbed_chemicals</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#brainwasher.brainwasher.BrainWasher.plumbed_chemicals" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">plumbed_chemicals</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Chemicals that the instrument is currently plumbed with.</p>
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.reset" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">reset</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.reset" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">reset</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize all hardware while ensuring that the system can bleed any
+pressure pockets created to waste.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.halt" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">halt</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.halt" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">halt</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.deenergize_all_valves" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">deenergize_all_valves</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.deenergize_all_valves" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">deenergize_all_valves</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.start_pressure_monitor" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">start_pressure_monitor</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.start_pressure_monitor" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">start_pressure_monitor</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.stop_pressure_monitor" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">stop_pressure_monitor</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.stop_pressure_monitor" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">stop_pressure_monitor</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.get_average_psig" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get_average_psig</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.get_average_psig" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_average_psig</span><span class="p">(</span><span class="n">duration_s</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.get_compatible_waste_vessel_id" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get_compatible_waste_vessel_id</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.get_compatible_waste_vessel_id" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_compatible_waste_vessel_id</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">chemicals</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">waste_vessels</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">WasteVessel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Given a series of chemicals, return a waste vessel chemically
+compatible to store the solution contents. If multiple are
+compatible, return the vessel with the most spare volume.</p>
+<p>.. Note::
+   If unspecified, <code>waste_vessels</code> defaults to <code>self.waste_vessels</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.reset_waste_vessel" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">reset_waste_vessel</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.reset_waste_vessel" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">reset_waste_vessel</span><span class="p">(</span><span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Update the specified waste vessel volume to empty.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.prime_reservoir_line" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">prime_reservoir_line</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.prime_reservoir_line" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">prime_reservoir_line</span><span class="p">(</span>
+    <span class="n">chemical</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_pump_displacement_ul</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12500</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Fill the specified chemical's flowpath up to the port of the
+selector valve. Bail if we exceed max pump distance and no chemical
+is detected.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.unprime_reservoir_line" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">unprime_reservoir_line</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.unprime_reservoir_line" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">unprime_reservoir_line</span><span class="p">(</span>
+    <span class="n">chemical</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_pump_displacement_ul</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25000</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Unprime reservoir line by using N2 to push back volume used to prime
+(+10%) or max_pump_displacement_ul if unspecified.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.prime_pump_line" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">prime_pump_line</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.prime_pump_line" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">prime_pump_line</span><span class="p">(</span><span class="n">chemical</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Fill the selector-to-syringe line flowpath with the specified
+chemical.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.purge_pump_line" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">purge_pump_line</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.purge_pump_line" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">purge_pump_line</span><span class="p">(</span>
+    <span class="n">chemical</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">destination</span><span class="p">:</span> <span class="n">Vessel</span><span class="p">,</span>
+    <span class="n">full_cycles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">gas_cycles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Empty selector-to-pump line by purging contents to destination.</p>
+<p>.. Note::
+   It is OK if the pump does not enter this function fully-plunged.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.dispense_to_vessel" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">dispense_to_vessel</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.dispense_to_vessel" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">dispense_to_vessel</span><span class="p">(</span><span class="n">microliters</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">chemical</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Withdraw specified chemical from the appropriate container and
+dispense it into the reaction vessel.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.drain_vessel" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">drain_vessel</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.drain_vessel" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">drain_vessel</span><span class="p">(</span><span class="n">drain_volume_ul</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">40000</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Drain the reaction vessel.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.fast_gas_charge_syringe" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">fast_gas_charge_syringe</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.fast_gas_charge_syringe" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">fast_gas_charge_syringe</span><span class="p">(</span><span class="n">percent</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>quickly charge the syringe with gas.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.run_step" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">run_step</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.run_step" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">run_step</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.run_wash_step" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">run_wash_step</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.run_wash_step" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">run_wash_step</span><span class="p">(</span>
+    <span class="n">duration_s</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">mix_speed_rpm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">intermittent_mixing_on_time_s</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">intermittent_mixing_off_time_s</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">start_empty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">end_empty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">solution</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Drain (optional), mix, and empty (opt) the reaction vessel to
+complete one wash cycle.</p>
+<p>:param duration_s: time in seconds to mix.
+:param mix_speed_rpm: speed (in rpm) to mix the chemicals during
+    the mixing step.
+:param intermittent_mixing_on_time_s: if specified greater-than-0
+    along with <code>intermittent_mixing_off_time_s</code>,
+    the time the mixer will be turned on intermittently.
+:param intermittent_mixing_off_time_s: if specified greater-than-0,
+    along with <code>intermittent_mixing_on_time_s</code>,
+    the time the mixer will be turned off intermittently.
+:param start_empty: if True, drain the vessel before introducing new
+    liquids.
+:param end_empty: if True, draing the vessel after mixing.
+:param solution: dict, keyed by chemical name of chemical
+    amount in microliters.</p>
+<p>.. note::
+   If both <code>intermittent_mixing_on_time_s</code> and
+   <code>intermittent_mixing_on_time_s</code> are specified,
+   mixing will cycle between mixing for the
+   <code>intermittent_mixing_on_time_s</code> and stopping for the
+   <code>intermittent_mixing_off_time_s</code>.</p>
+<p>.. note::
+   It is possible to call this function with <em>no</em> chemicals specified
+   and <code>start_empty=False</code> i.e: for a pure-mixing step.</p>
+<p>.. note::
+   It is possible to call this function with <em>no</em> mixing time and
+   <code>end_empty=False</code> i.e: a pure fill step.</p>
+<p>.. note::
+   It is possible to call this function with <em>no</em> mixing speed i.e:
+   a pure passive exposure step.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.mix" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">mix</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.mix" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">mix</span><span class="p">(</span>
+    <span class="n">duration_s</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">mix_speed_rpm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+    <span class="n">intermittent_mixing_on_time_s</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">intermittent_mixing_off_time_s</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.fill" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">fill</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.fill" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">fill</span><span class="p">(</span><span class="n">empty_first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">solution</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.create_job" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">create_job</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.create_job" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">create_job</span><span class="p">(</span><span class="n">job_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Create a job file from path pointing to a protocol or existing job.
+If not source is specified, create and return an empty job.</p>
+<p>:param job_path: the filepath to save the job
+:param source: the url or path pointing to an existing protocol from which
+    to create the job or None to create an empty job file.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.validate_job_against_instrument" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">validate_job_against_instrument</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.validate_job_against_instrument" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">validate_job_against_instrument</span><span class="p">(</span><span class="n">job</span><span class="p">:</span> <span class="n">Job</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Validate that the job can be executed on this instrument configuration</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.run" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">run</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.run" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">run</span><span class="p">(</span><span class="n">job_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Run the job specified from the specified filepath.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.pause" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">pause</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.pause" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">pause</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Request that the system pause the currently running protocol and
+save the protocol path and current step to the config.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.abort" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">abort</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.abort" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">abort</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.run_leak_checks" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">run_leak_checks</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.run_leak_checks" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">run_leak_checks</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Leak check the entire system.</p>
+<p>:raises RuntimeError: upon the leak check that failed.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_selector_common_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">leak_check_syringe_to_selector_common_path</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_selector_common_path" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">leak_check_syringe_to_selector_common_path</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Test for leaks between the syringe pump and selector common position.</p>
+<p>:raises LeakCheckError: upon failure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_rv_exaust_normally_open_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">leak_check_syringe_to_rv_exaust_normally_open_path</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_rv_exaust_normally_open_path" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">leak_check_syringe_to_rv_exaust_normally_open_path</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_waste_bypass_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">leak_check_syringe_to_waste_bypass_path</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_waste_bypass_path" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">leak_check_syringe_to_waste_bypass_path</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_reaction_vessel" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">leak_check_syringe_to_reaction_vessel</span>
+
+
+<a href="#brainwasher.brainwasher.BrainWasher.leak_check_syringe_to_reaction_vessel" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">leak_check_syringe_to_reaction_vessel</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="brainwasher.brainwasher.lock_flowpath" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">lock_flowpath</span>
+
+
+<a href="#brainwasher.brainwasher.lock_flowpath" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">lock_flowpath</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Provide methods with exclusive access to components that alter the flowpath.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="brainwasher.brainwasher.syringe_empty" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">syringe_empty</span>
+
+
+<a href="#brainwasher.brainwasher.syringe_empty" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">syringe_empty</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Ensure that the syringe is empty (i.e: fully plunged).</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.tabs.link", "content.code.copy", "navigation.tabs", "navigation.sections", "navigation.top", "navigation.tracking", "navigation.path", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
