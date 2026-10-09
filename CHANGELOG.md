@@ -1,7 +1,8 @@
 # Changelog
 
-# main
-* Rework Brainslosher `run_wash_step` function to drain -> fill -> mix, similar to the Brainwasher's `run_wash_step` function.
+# brainslosher-v0.3.1
+* Improves the brainslosher README with clearer setup, startup, client/server usage, development workflow, and safety notes.
+* Adds pre-run validation check for waste container overflow and prohibits run if check fails
 
 # v1.0.0
 * Refactors structure to have instruments as uv workspaces
