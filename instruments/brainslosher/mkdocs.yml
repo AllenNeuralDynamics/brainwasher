@@ -1,0 +1,84 @@
+site_name: brainslosher
+site_description: Documentation for mixology and the instrument packages in this repository.
+site_author: Allen Institute for Neural Dynamics
+repo_url: https://github.com/AllenNeuralDynamics/brainwasher
+repo_name: GitHub
+theme:
+  name: material
+  palette:
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    primary: white
+    accent: black
+    toggle:
+      icon: material/brightness-7
+      name: Switch to dark mode
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    primary: black
+    accent: white
+    toggle:
+      icon: material/brightness-4
+      name: Switch to light mode
+  features:
+  - content.tabs.link
+  - content.code.copy
+  - navigation.tabs
+  - navigation.sections
+  - navigation.top
+  - navigation.tracking
+  - navigation.path
+  - search.suggest
+  - toc.follow
+plugins:
+- search
+- mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        paths:
+        - src
+        - instruments/brainwasher/src
+        - instruments/brainslosher/src
+        - instruments/seqflow/src
+        options:
+          separate_signature: true
+          merge_init_into_class: true
+          show_signature_annotations: true
+          show_bases: true
+          members_order: source
+          show_root_heading: true
+          show_source: false
+          show_if_no_docstring: true
+          inherited_members: true
+          filters:
+          - '!^_'
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+markdown_extensions:
+- tables
+- toc:
+    permalink: true
+    title: Page contents
+- admonition
+- pymdownx.details
+- pymdownx.superfences
+- pymdownx.highlight:
+    pygments_lang_class: true
+- pymdownx.extra
+- pymdownx.tabbed:
+    alternate_style: true
+- pymdownx.snippets
+nav:
+- Home: index.md
+- API Reference:
+  - Brainslosher:
+    - brainslosher: api/brainslosher.md
+  - Brainslosher Models:
+    - brainslosher_models: api/brainslosher_models.md
+  - Utils:
+    - utils: api/utils/utils.md
+    - email_issues: api/utils/email_issues.md

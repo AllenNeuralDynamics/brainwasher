@@ -1,0 +1,1 @@
+--8<-- "docs/seqflow_docs/.snippets/README.md"

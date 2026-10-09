@@ -1,0 +1,144 @@
+site_name: mixology
+site_description: Documentation for mixology and the instrument packages in this repository.
+site_author: Allen Institute for Neural Dynamics
+repo_url: https://github.com/AllenNeuralDynamics/brainwasher
+repo_name: GitHub
+theme:
+  name: material
+  palette:
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    primary: white
+    accent: black
+    toggle:
+      icon: material/brightness-7
+      name: Switch to dark mode
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    primary: black
+    accent: white
+    toggle:
+      icon: material/brightness-4
+      name: Switch to light mode
+  features:
+  - content.tabs.link
+  - content.code.copy
+  - navigation.tabs
+  - navigation.sections
+  - navigation.top
+  - navigation.tracking
+  - navigation.path
+  - search.suggest
+  - toc.follow
+plugins:
+- search
+- mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        paths:
+        - src
+        - instruments/brainwasher/src
+        - instruments/brainslosher/src
+        - instruments/seqflow/src
+        options:
+          separate_signature: true
+          merge_init_into_class: true
+          show_signature_annotations: true
+          show_bases: true
+          members_order: source
+          show_root_heading: true
+          show_source: false
+          show_if_no_docstring: true
+          inherited_members: true
+          filters:
+          - '!^_'
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+markdown_extensions:
+- tables
+- toc:
+    permalink: true
+    title: Page contents
+- admonition
+- pymdownx.details
+- pymdownx.superfences
+- pymdownx.highlight:
+    pygments_lang_class: true
+- pymdownx.extra
+- pymdownx.tabbed:
+    alternate_style: true
+- pymdownx.snippets
+nav:
+- Home: index.md
+- API Reference:
+  - Instrument:
+    - instrument: api/instrument.md
+  - Job:
+    - job: api/job.md
+  - Protocol:
+    - protocol: api/protocol.md
+  - Devices:
+    - devices: api/devices/devices.md
+    - liquid_presence_detection: api/devices/liquid_presence_detection.md
+    - mixer: api/devices/mixer.md
+    - pressure_sensor: api/devices/pressure_sensor.md
+    - vessels: api/devices/vessels.md
+  - Devices.Harp:
+    - devices.harp: api/devices_harp/devices_harp.md
+    - mixer: api/devices_harp/mixer.md
+  - Devices.Ika:
+    - devices.ika: api/devices_ika/devices_ika.md
+    - rct_basic: api/devices_ika/rct_basic.md
+    - rct_basic_device_codes: api/devices_ika/rct_basic_device_codes.md
+  - Devices.Pololu:
+    - devices.pololu: api/devices_pololu/devices_pololu.md
+    - pololu_tic_mixer: api/devices_pololu/pololu_tic_mixer.md
+  - Devices.Raspberry Pi:
+    - devices.raspberry_pi: api/devices_raspberry_pi/devices_raspberry_pi.md
+    - mixer: api/devices_raspberry_pi/mixer.md
+  - Devices.Sequent Microsystems:
+    - devices.sequent_microsystems: api/devices_sequent_microsystems/devices_sequent_microsystems.md
+    - liquid_presence_detection: api/devices_sequent_microsystems/liquid_presence_detection.md
+    - mixer: api/devices_sequent_microsystems/mixer.md
+    - pressure_sensor: api/devices_sequent_microsystems/pressure_sensor.md
+    - valve: api/devices_sequent_microsystems/valve.md
+  - Devices.Simulated Devices:
+    - devices.simulated_devices: api/devices_simulated_devices/devices_simulated_devices.md
+    - peristaltic_pump: api/devices_simulated_devices/peristaltic_pump.md
+    - pressure_sensor: api/devices_simulated_devices/pressure_sensor.md
+    - selector: api/devices_simulated_devices/selector.md
+    - syringe_pump: api/devices_simulated_devices/syringe_pump.md
+  - Devices.Valves:
+    - devices.valves: api/devices_valves/devices_valves.md
+    - closeable_vici: api/devices_valves/closeable_vici.md
+    - valve: api/devices_valves/valve.md
+- Brainslosher: brainslosher_docs/index.md
+- Brainslosher API Reference:
+  - Brainslosher:
+    - brainslosher: brainslosher_docs/api/brainslosher.md
+  - Brainslosher Models:
+    - brainslosher_models: brainslosher_docs/api/brainslosher_models.md
+  - Utils:
+    - utils: brainslosher_docs/api/utils/utils.md
+    - email_issues: brainslosher_docs/api/utils/email_issues.md
+- Brainwasher: brainwasher_docs/index.md
+- Brainwasher API Reference:
+  - Brainwasher:
+    - brainwasher: brainwasher_docs/api/brainwasher.md
+  - Brainwasher Job:
+    - brainwasher_job: brainwasher_docs/api/brainwasher_job.md
+  - Errors:
+    - errors: brainwasher_docs/api/errors/errors.md
+    - instrument_errors: brainwasher_docs/api/errors/instrument_errors.md
+- Seqflow: seqflow_docs/index.md
+- Seqflow API Reference:
+  - Seqflow:
+    - seqflow: seqflow_docs/api/seqflow.md
+  - Seqflow Config Model:
+    - seqflow_config_model: seqflow_docs/api/seqflow_config_model.md
+  - Seqflow Models:
+    - seqflow_models: seqflow_docs/api/seqflow_models.md

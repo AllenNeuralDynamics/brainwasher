@@ -1,0 +1,3 @@
+# errors
+
+::: brainwasher.errors

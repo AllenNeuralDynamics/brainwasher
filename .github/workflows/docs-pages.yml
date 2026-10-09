@@ -1,0 +1,88 @@
+name: Docs Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install root docs dependencies
+        run: uv sync --group docs
+
+      - name: Install brainwasher docs dependencies
+        working-directory: instruments/brainwasher
+        run: uv sync --group docs
+
+      - name: Install brainslosher docs dependencies
+        working-directory: instruments/brainslosher
+        run: uv sync --group docs
+
+      - name: Install seqflow docs dependencies
+        working-directory: instruments/seqflow
+        run: uv sync --group docs
+
+      - name: Build brainwasher docs
+        working-directory: instruments/brainwasher
+        run: |
+          uv run .\docs\build.py
+          uv run mkdocs build
+
+      - name: Build brainslosher docs
+        working-directory: instruments/brainslosher
+        run: |
+          uv run .\docs\build.py
+          uv run mkdocs build
+
+      - name: Build seqflow docs
+        working-directory: instruments/seqflow
+        run: |
+          uv run .\docs\build.py
+          uv run mkdocs build
+
+      - name: Build root docs
+        run: |
+          uv run .\docs\build.py
+          uv run mkdocs build
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
