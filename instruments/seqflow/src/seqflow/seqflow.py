@@ -3,10 +3,16 @@
 from mixology.devices.selector.selector import SerialSelector
 from mixology.devices.pump.ismatec_peristaltic_pump import IsmatecPeristalticPumpDevice
 from mixology.devices.selector.mux import CascadedMux
+from mixology.devices.heater.heater import HeaterDevice
 from mixology.instrument import Instrument
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
 from mixology.devices.simulated_devices.selector import SimSerialSelector
-from seqflow.seqflow_models import SeqFlowJob, SeqFlowJobStatus
+from seqflow.seqflow_models import (
+    HeaterStageStatus,
+    SeqFlowHeaterStatus,
+    SeqFlowJob,
+    SeqFlowJobStatus,
+)
 from seqflow.seqflow_config_model import SeqFlowConfig
 from threading import Lock
 from mixology.devices.vessels import SlideContainer
@@ -30,16 +36,20 @@ class SeqFlow(Instrument):
         pump: SimPeristalticPump | IsmatecPeristalticPumpDevice,
         selector: SimSerialSelector | CascadedMux | SerialSelector,
         rxn_vessel: SlideContainer,
+        heater: HeaterDevice,
     ):
         super().__init__()
         self.config = config
         self.pump = pump
         self.selector = selector
         self.rxn_vessel = rxn_vessel
+        self.heater = heater
 
         # start devices
         self.pump.connect()
         self.selector.connect()
+        self.heater.connect()
+        self._check_heater_stages(self.heater.active_stages)
 
         # attribute to track events that occur in job_worker
         self.job_status_lock = Lock()
@@ -76,7 +86,6 @@ class SeqFlow(Instrument):
         self._job = None
         with self.job_status_lock:
             self.job_status = SeqFlowJobStatus(status="idle")
-
 
     def start_run(self, job: Union[dict, SeqFlowJob]):
         """
@@ -117,6 +126,44 @@ class SeqFlow(Instrument):
             self.log.info(f"Job set and setting to {status}")
             self.job_status = SeqFlowJobStatus(status=status)
 
+    def set_active_heater_stages(self, stages: list[str]) -> None:
+        """Set the heater stages that heat steps turn on. Not allowed while running.
+
+        Raises:
+            ValueError: If a stage name is not one of the heater's stages.
+        """
+        if self.job_status.status == "running":
+            self.log.warning("Cannot change heater stages while running.")
+            return
+        self._check_heater_stages(stages)
+        self.heater.active_stages = list(stages)
+        self.log.info(f"Heater stages set to {stages}.")
+
+    def get_heater_status(self) -> dict:
+        """Get each heater stage's temperature, heating state, and selection as a dict."""
+        temps_c = self.heater.get_temperatures_c()
+        heating = self.heater.get_stage_states()
+        status = SeqFlowHeaterStatus(
+            stages={
+                stage: HeaterStageStatus(
+                    temp_c=temp_c,
+                    heating=heating[stage],
+                    active=stage in self.heater.active_stages,
+                )
+                for stage, temp_c in temps_c.items()
+            }
+        )
+        return status.model_dump()
+
+    def _check_heater_stages(self, stages: list[str]) -> None:
+        """Raise ValueError if any of `stages` is not one of the heater's stages."""
+        all_stages = self.heater.get_stage_states()
+        unknown = [stage for stage in stages if stage not in all_stages]
+        if unknown:
+            raise ValueError(
+                f"Unknown heater stages: {unknown}. Available: {list(all_stages)}"
+            )
+
     def clear_status(self) -> None:
         """clear status of failed if possible."""
 
@@ -146,6 +193,8 @@ class SeqFlow(Instrument):
     def validate_job_against_instrument(self, job: SeqFlowJob):
         """Validate that the job is compatible with the instrument."""
         # TODO Add more validation checks for the instrument
+        # (e.g max_temp_c for heating steps)
+        # Do not accept temp_c and solution together in the same step
         for i, step in enumerate(job.protocol):
             total_vol = sum(step.solution.values()) if step.solution else 0.0
 
@@ -175,6 +224,8 @@ class SeqFlow(Instrument):
         Duration logic:
         - Solution Dispense Steps: Time is dynamically calculated from volume and flow rate.
         - Wait/Heat Steps: Uses the provided `duration_s` explicitly.
+        - Heat Steps (`temp_c` set): first waits for every heating stage to reach
+          `temp_c`; `duration_s` is the hold time after that.
 
         Args:
             solution (Optional[dict]): Solution name mapped to volume in mL (e.g., 
@@ -188,6 +239,14 @@ class SeqFlow(Instrument):
         """
         if self._job is None:
             raise ValueError("No job loaded. Please load a job before running a step.")
+
+        if temp_c is not None and not self.heater.heat_up(
+            temp_c, cancel=self.pause_requested
+        ):
+            # User paused during heat-up; the hold hasn't started, so the full
+            # duration_s remains.
+            self.resume_state_overrides.update(duration_s=duration_s)
+            return
 
         sol_name, vol = next(iter(solution.items())) if solution else (None, 0.0)
 
@@ -215,8 +274,11 @@ class SeqFlow(Instrument):
                     )
                     return
 
+        if temp_c is not None:
+            self.heater.turn_off()
         if sol_name in self.selector.port_map:
             self.pump.stop()
+
 
     def _run_job_worker(self, job: SeqFlowJob, job_path: Path):
         # Sync the newly loaded disk object back to our main memory!
@@ -247,6 +309,7 @@ class SeqFlow(Instrument):
             with self.job_status_lock:
                 self.job_status = message
             self.pump.stop()
+            self.heater.turn_off()
             self.rxn_vessel.purge_solution()
 
     def resume_run(self):
