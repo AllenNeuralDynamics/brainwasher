@@ -9,14 +9,14 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-   "mixology[brainslosher]",
-   "device-spinner",
-   "runze-control",
+    "mixology @ git+https://github.com/AllenNeuralDynamics/brainwasher.git@v1.0.0",
+    "device-spinner @ git+ssh://git@github.com/AllenNeuralDynamics/device-spinner.git@3a2d201588e0cabac762d1e1a33d5e6339ec27c0",
+    "runze-control @ git+https://github.com/AllenNeuralDynamics/runze-control.git@d72a981dd71587c806962e5edf126614377a72e8",
    "pydantic>=2.11.4",
    "datetime>=5.5",
    "pyyaml>=6.0.2",
    "pydantic-settings>=2.12.0",
-   "one-liner",
+    "one-liner @ git+ssh://git@github.com/AllenNeuralDynamics/one-liner.git@22aa37370c3678726ebacb2f0a2e8ae263a94704",
    "email-validator>=2.3.0",
 ]
 
@@ -30,10 +30,4 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "tests"]
-
-[tool.uv.sources]
-mixology = { path = "../../" }
-one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", rev = "22aa37370c3678726ebacb2f0a2e8ae263a94704"}
-runze-control = { git = "https://github.com/AllenNeuralDynamics/runze-control.git", rev = "d72a981dd71587c806962e5edf126614377a72e8" }
-device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git", rev = "3a2d201588e0cabac762d1e1a33d5e6339ec27c0"}
 

@@ -25,9 +25,9 @@ dev = [
 
 [project.optional-dependencies]
 brainwasher = [
-    "pyharp",
-    "vicivalve",
-    "rpi-hardware-pwm",
+    "pyharp @ git+https://github.com/AllenNeuralDynamics/pyharp.git",
+    "vicivalve @ git+https://gitlab.com/Poofjunior/vicivalve.git",
+    "rpi-hardware-pwm @ git+https://github.com/Pioreactor/rpi_hardware_pwm.git",
     "SM16inpind",
     "SM8mosind",
     "SM16univin",
@@ -36,9 +36,3 @@ brainwasher = [
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "tests"]
-
-[tool.uv.sources]
-pyharp = { git = "https://github.com/AllenNeuralDynamics/pyharp.git"  }
-vicivalve = { git = "https://gitlab.com/Poofjunior/vicivalve.git"}
-rpi-hardware-pwm = { git = "https://github.com/Pioreactor/rpi_hardware_pwm.git" }
-harp-device-valve-controller = { git = "https://github.com/AllenNeuralDynamics/harp.device.valve-controller.git" }
