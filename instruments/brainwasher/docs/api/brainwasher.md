@@ -1,0 +1,3 @@
+# brainwasher
+
+::: brainwasher.brainwasher

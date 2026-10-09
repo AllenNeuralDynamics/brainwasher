@@ -9,7 +9,7 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "mixology[brainwasher]@https://github.com/AllenNeuralDynamics/brainwasher.git@v1.0.0",
+    "mixology[brainwasher] @ git+https://github.com/AllenNeuralDynamics/brainwasher.git@v1.0.0",
     "runze-control",
     "inpromptu",
     "igraph>=0.11.5",
@@ -26,6 +26,13 @@ dev = [
     "pytest>=8.3.5",
     "ruff>=0.9.9"
     ]
+
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.7",
+    "mkdocstrings[python]>=1.0.6",
+    "pymdown-extensions>=10.0.0",
+]
 
 
 [tool.pytest.ini_options]

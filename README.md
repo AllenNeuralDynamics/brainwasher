@@ -84,7 +84,7 @@ uv run ruff check
 
 ## Release Strategy
 
-Releases are automated from [.github/release.yml](.github/release.yml) and are handled per package instead of as one monolithic project release.
+Releases are automated from [.github/release.yml](https://github.com/AllenNeuralDynamics/brainwasher/blob/main/.github/release.yml) and are handled per package instead of as one monolithic project release.
 
 - A push to `main` or `dev` starts the release workflow.
 - The workflow checks which package roots changed in the commit range.

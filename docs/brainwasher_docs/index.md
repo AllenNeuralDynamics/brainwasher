@@ -1,0 +1,1 @@
+--8<-- "docs/brainwasher_docs/.snippets/README.md"
