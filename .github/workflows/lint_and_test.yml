@@ -1,4 +1,4 @@
-name: Lint and Build Docs
+name: Lint and Tests
 on:
   workflow_call:
   pull_request: 
