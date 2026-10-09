@@ -1,3 +1,4 @@
+from typing import Optional
 from brainslosher.brainslosher import BrainSlosher
 from brainslosher.utils.email_issues import send_email
 import logging
@@ -16,10 +17,10 @@ logging.basicConfig(level=logging.DEBUG)
 class ZMQServer(RouterServer):
     def __init__(
         self,
+        instances: dict,
         rpc_port: str = "5555",
         broadcast_port: str = "5556",
-        config: dict[str, str] = None,
-        instances: dict = None,
+        config: Optional[dict[str, str]] = None,
     ):
         super().__init__(
             rpc_port=rpc_port, broadcast_port=broadcast_port, instances=instances
@@ -27,6 +28,9 @@ class ZMQServer(RouterServer):
 
         self.log = logging.getLogger(self.__class__.__name__)
         self.config = config or {}
+
+    
+        assert isinstance(instances.get("brainslosher"), BrainSlosher), "Brainslosher instance is required in instances dictionary."
         self.brainslosher: BrainSlosher = instances["brainslosher"]
 
         self.add_named_call("fill_chamber", "brainslosher", "fill_chamber")
@@ -119,6 +123,8 @@ def main():
         else r"src\brainslosher\scripts\sim_brainslosher_config.yaml"
     )
     config = Config(config_name)  # TODO: Should have some sort of validation here
+
+    assert config.cfg and isinstance(config.cfg.get("logging"), dict), "Configuration and logging settings are required." 
 
     # setup logging
     logging.config.dictConfig(
