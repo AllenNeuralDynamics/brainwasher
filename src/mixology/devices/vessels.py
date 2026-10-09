@@ -13,7 +13,7 @@ class Vessel:
     def curr_volume_ul(self):
         return sum(self.solution.values())
 
-    def add_solution(self, **chemicals: dict[str, float]):
+    def add_solution(self, **chemicals: float):
         added_volume_ul = sum(chemicals.values())
         if self.curr_volume_ul + added_volume_ul > self.max_volume_ul:
             raise ValueError("Adding solution would exceed max volume.")
