@@ -1,0 +1,44 @@
+name: Lint and Build Docs
+on:
+  workflow_call:
+  pull_request: 
+    branches: 
+      - main
+      - dev
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs: 
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: mixology-root
+            working-directory: .
+          - name: brainwasher
+            working-directory: instruments/brainwasher
+          - name: brainslosher
+            working-directory: instruments/brainslosher
+          - name: seqflow
+            working-directory: instruments/seqflow
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Run ruff format check
+        working-directory: ${{ matrix.working-directory }}
+        run: uvx ruff format --check
+
+      - name: Run ruff check
+        working-directory: ${{ matrix.working-directory }}
+        run: uvx ruff check
+
+      - name: Run python unit tests
+        working-directory: ${{ matrix.working-directory }}
+        run: uvx pytest

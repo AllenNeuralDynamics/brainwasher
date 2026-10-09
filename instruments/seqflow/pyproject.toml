@@ -11,12 +11,12 @@ readme = "README.md"
 
 requires-python = ">=3.11"
 dependencies = [
-    "mixology",
-    "device-spinner",
-    "one-liner>=0.1.1.dev3",
+    "mixology @ git+https://github.com/AllenNeuralDynamics/brainwasher.git@v1.0.0",
+    "device-spinner @ git+ssh://git@github.com/AllenNeuralDynamics/device-spinner.git",
+    "one-liner @ git+ssh://git@github.com/AllenNeuralDynamics/one-liner.git@main",
     "pydantic>=2.0.0",
     "pyyaml>=6.0.2",
-    "ficus>=0.1.0",
+    "ficus @ git+https://github.com/AllenNeuralDynamics/ficus.git",
 ]
 
 [project.scripts]
@@ -33,12 +33,6 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "tests"]
-
-[tool.uv.sources]
-mixology = { path = "../../", editable = true }
-device-spinner = { git = "ssh://git@github.com/AllenNeuralDynamics/device-spinner.git"}
-one-liner = { git = "ssh://git@github.com/AllenNeuralDynamics/one-liner.git", branch = "main"}
-ficus = { git = "https://github.com/AllenNeuralDynamics/ficus.git"}
 
 [[tool.mypy.overrides]]
 module = "mixology.*"
