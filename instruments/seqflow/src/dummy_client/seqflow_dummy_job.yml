@@ -1,6 +1,10 @@
 name: "SeqFlow Test Job"
 starting_solution: {}
 protocol:
+  - description: "Heat to 37 C"
+    temp_c: 37.0
+    duration_s: 15
+
   - solution:
       pbst: 0.1
     flow_rate_mlpm: 2.0
