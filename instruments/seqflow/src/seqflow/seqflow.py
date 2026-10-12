@@ -49,7 +49,8 @@ class SeqFlow(Instrument):
         self.pump.connect()
         self.selector.connect()
         self.heater.connect()
-        self._check_heater_stages(self.heater.active_stages)
+        # Validate the configured stage names at startup.
+        self.heater.set_active_stages(self.heater.active_stages)
 
         # attribute to track events that occur in job_worker
         self.job_status_lock = Lock()
@@ -129,15 +130,17 @@ class SeqFlow(Instrument):
     def set_active_heater_stages(self, stages: list[str]) -> None:
         """Set the heater stages that heat steps turn on. Not allowed while running.
 
+        Args:
+            stages: Stage names from the heater config (`stage_names`); the keys
+                of `get_heater_status()["stages"]`.
+
         Raises:
             ValueError: If a stage name is not one of the heater's stages.
         """
         if self.job_status.status == "running":
             self.log.warning("Cannot change heater stages while running.")
             return
-        self._check_heater_stages(stages)
-        self.heater.active_stages = list(stages)
-        self.log.info(f"Heater stages set to {stages}.")
+        self.heater.set_active_stages(stages)
 
     def get_heater_status(self) -> dict:
         """Get each heater stage's temperature, heating state, and selection as a dict."""
@@ -154,15 +157,6 @@ class SeqFlow(Instrument):
             }
         )
         return status.model_dump()
-
-    def _check_heater_stages(self, stages: list[str]) -> None:
-        """Raise ValueError if any of `stages` is not one of the heater's stages."""
-        all_stages = self.heater.get_stage_states()
-        unknown = [stage for stage in stages if stage not in all_stages]
-        if unknown:
-            raise ValueError(
-                f"Unknown heater stages: {unknown}. Available: {list(all_stages)}"
-            )
 
     def clear_status(self) -> None:
         """clear status of failed if possible."""

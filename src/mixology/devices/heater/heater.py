@@ -90,6 +90,21 @@ class HeaterDevice(ABC):
         ...
 
     # --- Shared Common Functions ---
+    def set_active_stages(self, stages: list[str]) -> None:
+        """Set the stages that `heat_up` turns on.
+
+        Raises:
+            ValueError: If a stage name is not one of this heater's stages.
+        """
+        all_stages = self.get_stage_states()
+        unknown = [stage for stage in stages if stage not in all_stages]
+        if unknown:
+            raise ValueError(
+                f"Unknown heater stages: {unknown}. Available: {list(all_stages)}"
+            )
+        self.active_stages = list(stages)
+        self.log.info(f"Active stages set to {self.active_stages}.")
+
     def get_cold_stages(self, temp_c: float) -> dict[str, float]:
         """Return each stage that is on but still more than `temp_tolerance_c`
         below `temp_c`, with its current temperature [C].
