@@ -193,7 +193,7 @@ class BrainSlosher(Instrument):
 
         volume_ml = volume_ml or self.rxn_vessel.curr_volume_ul / 1000
 
-        if volume_ml + self.waste.curr_volume_ul > self.waste.max_volume_ul:
+        if (volume_ml*1000) + self.waste.curr_volume_ul > self.waste.max_volume_ul:
             raise ValueError(
                 "Waste vessel will exceed max volume if chamber is drained. Please empty."
             )
