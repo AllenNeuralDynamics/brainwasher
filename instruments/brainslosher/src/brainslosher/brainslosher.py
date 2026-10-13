@@ -380,7 +380,7 @@ class BrainSlosher(Instrument):
         projected_waste_ul = self.waste.curr_volume_ul + required_waste_ul
         if projected_waste_ul > self.waste.max_volume_ul:
             raise ValueError(
-                "Job will overflow the waste vessel. Please empty waste and reset waste vesselstate.")
+                "Job will overflow the waste vessel. Please empty waste and reset waste vessel state.")
 
     @lock_flowpath
     def run_wash_step(self, duration_min: float, solution: str):
