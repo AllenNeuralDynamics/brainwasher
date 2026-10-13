@@ -159,6 +159,19 @@ def test_pause_run_step(brainslosher):
     assert brainslosher.resume_state_overrides["washes"] == 4
 
 
+def test_start_run_raises_when_job_overflows_waste(brainslosher):
+    brainslosher.waste.add_solution(**{"PBS": 4900})
+    job = BrainSlosherJob(
+        name="overflow_job",
+        starting_solution={},
+        protocol=[Cycle(solution="PBS", duration_min=1, washes=1)],
+        motor_speed_rpm=20,
+    )
+
+    with pytest.raises(ValueError, match="waste"):
+        brainslosher.start_run(job)
+
+
 def test_run_job(brainslosher, tmp_path):
     job = BrainSlosherJob(
         name="test_job",
