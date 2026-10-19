@@ -53,9 +53,7 @@ class BrainSlosherResumeState(BaseModel):
 
     step: int
     starting_solution: dict[str, float]
-    overrides: Annotated[dict[str, Any] | None, AfterValidator(values_in_cycle)] = (
-        None
-    )
+    overrides: Annotated[dict[str, Any] | None, AfterValidator(values_in_cycle)] = None
 
 
 class Cycle(BaseModel):
