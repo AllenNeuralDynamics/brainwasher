@@ -1,9 +1,11 @@
 """Harp Valve Controller PWM-based Mixer"""
+
 from mixology.devices.mixer import PWMMixer
 from pyharp.device import Device, MessageType
 from pyharp.messages import HarpMessage, WriteU8HarpMessage
 from struct import unpack
 from enum import IntEnum
+
 
 class AppRegs(IntEnum):
     ValvesState = 32
@@ -34,6 +36,7 @@ class AppRegs(IntEnum):
     AuxGPIOInputFallEvent = 56
     AuxGPIOInputRisingInputs = 57
     AuxGPIOFallingInputs = 58
+
 
 class HarpPWMMixer(PWMMixer):
     """An open loop mixing device."""

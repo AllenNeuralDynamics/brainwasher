@@ -38,12 +38,13 @@ class WasteVessel(Vessel):
 @dataclass(kw_only=True)
 class SlideContainer(Vessel):
     """A custom reaction vessel representing a multi-slide flow cell."""
+
     num_slides: int  # TODO: This can be used to calculate the duration_s of step
     max_volume_ul: float = field(init=False)
 
     def __post_init__(self):
         """Set max volume to infinity since this is a continuous flow cell."""
-        self.max_volume_ul = float('inf')
+        self.max_volume_ul = float("inf")
 
     def add_solution(self, **chemicals: dict[str, float]):
         """
