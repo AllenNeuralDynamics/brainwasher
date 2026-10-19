@@ -5,7 +5,9 @@ import time
 from pathlib import Path
 
 import yaml
+import zmq
 from one_liner.client import RouterClient  # type: ignore
+from one_liner.utils import StreamException  # type: ignore
 
 
 def stream_listener(client, stream_name):
@@ -21,7 +23,8 @@ def stream_listener(client, stream_name):
             _, msg = client.get_stream(stream_name)
             print(f"  Status update: {msg}")
             time.sleep(2)
-        except Exception as e:
+        except (zmq.Again, StreamException) as e:
+            # zmq.Again: no message yet; StreamException: streamed call raised.
             print(f"Error in stream_listener: {e}")
             time.sleep(2)
 

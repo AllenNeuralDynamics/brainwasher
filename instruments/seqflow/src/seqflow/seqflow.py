@@ -212,7 +212,7 @@ class SeqFlow(Instrument):
         except Exception as e:
             self.log.error(f"Error running job: {e!s}.")
             message = SeqFlowJobStatus(status="failed", message=str(e))
-            raise e
+            raise
 
         finally:
             with self.job_status_lock:
