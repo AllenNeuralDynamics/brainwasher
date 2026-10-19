@@ -5,10 +5,10 @@ import sys
 from unittest.mock import MagicMock
 
 # Create a dummy fcntl module for Windows
-if sys.platform == 'win32':
-    sys.modules['fcntl'] = MagicMock()
-    sys.modules['smbus2'] = MagicMock()
-    sys.modules['lib8mosind'] = MagicMock()
+if sys.platform == "win32":
+    sys.modules["fcntl"] = MagicMock()
+    sys.modules["smbus2"] = MagicMock()
+    sys.modules["lib8mosind"] = MagicMock()
 
 import brainwasher.brainwasher
 
@@ -21,7 +21,9 @@ def get_simulated_brainwasher():
     # This is kinda clunky and doesn't support dynamically changing fields or
     # where or not the high-level brainwaser is considred SIMULATED.
     pkg_dir = Path(__file__).parent.parent
-    cfg_file = pkg_dir / Path("src/brainwasher/scripts") /Path("sim_instrument_config.yaml")
+    cfg_file = (
+        pkg_dir / Path("src/brainwasher/scripts") / Path("sim_instrument_config.yaml")
+    )
     if not cfg_file.exists():
         raise FileNotFoundError(
             f"Cannot find {cfg_file.name} from path: {cfg_file.resolve()}"
