@@ -1,8 +1,7 @@
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 import logging
 import smtplib
-
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ def send_email(
             s.send_message(msg)
             print(f"EMAILING {to}")
         logger.info(
-            f"Sent email",
+            "Sent email",
             extra={
                 "subject": subject,
                 "to": to,
@@ -54,8 +53,8 @@ def send_email(
 
 
 if __name__ == "__main__":
-    header = f"<h2>Error occured durring run:</h2>"
-    msg = f"<h3>Device error. Please check device.</h3>"
+    header = "<h2>Error occured durring run:</h2>"
+    msg = "<h3>Device error. Please check device.</h3>"
     send_email(
         subject="Test Email", body=header + msg, to=["micah.woodard@alleninstitute.org"]
     )

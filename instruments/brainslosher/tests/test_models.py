@@ -1,8 +1,9 @@
+import pytest
+from pydantic import ValidationError
+
 from brainslosher.brainslosher_models import (
     BrainSlosherConfig,
 )
-import pytest
-from pydantic import ValidationError
 
 
 def test_required_keys():

@@ -1,16 +1,17 @@
 """pydantic model of brainwasher job."""
 
-from pydantic import (
-    BaseModel,
-    Field,
-    field_validator,
-    EmailStr,
-    ValidationError,
-    AfterValidator,
-)
-from mixology.job import Job
-from typing import Optional, Annotated, Any, Literal
 from pathlib import Path
+from typing import Annotated, Any, Literal
+
+from mixology.job import Job
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    EmailStr,
+    Field,
+    ValidationError,
+    field_validator,
+)
 
 
 class BrainSlosherJobStatus(BaseModel):
@@ -19,7 +20,7 @@ class BrainSlosherJobStatus(BaseModel):
     status: Literal["failed", "finished", "running", "paused", "idle"] = Field(
         ..., description="Indicated if status of job."
     )
-    message: Optional[str] = Field(
+    message: str | None = Field(
         default=None, description="Optional message of additional info."
     )
 
@@ -52,7 +53,7 @@ class BrainSlosherResumeState(BaseModel):
 
     step: int
     starting_solution: dict[str, float]
-    overrides: Annotated[Optional[dict[str, Any]], AfterValidator(values_in_cycle)] = (
+    overrides: Annotated[dict[str, Any] | None, AfterValidator(values_in_cycle)] = (
         None
     )
 
@@ -70,7 +71,7 @@ class BrainSlosherJob(Job):
     motor_speed_rpm: float = Field(
         ..., description="Speed of motor in rpms. Set to 0 to disable motor."
     )
-    resume_state: Optional[BrainSlosherResumeState] = None
+    resume_state: BrainSlosherResumeState | None = None
 
     def get_duration_s(self, start_step: int = 0):
         """Total job duration in seconds starting from the specified step."""
@@ -111,10 +112,10 @@ class BrainSlosherConfig(
         description="Buffer to add to draining volume to ensure chamber is completly empty.",
     )
     fill_volume_ml: float = Field(..., description="Volume to fill chamber completly.")
-    user_email: Optional[EmailStr] = Field(
+    user_email: EmailStr | None = Field(
         default=None, description="Optional email to send errors to."
     )  # validates email with email-validator package
-    instrument_name: Optional[str] = Field(
+    instrument_name: str | None = Field(
         default=None, description="Optional instrument name."
     )
 

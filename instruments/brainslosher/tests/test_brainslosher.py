@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+from mixology.devices.vessels import ReactionVessel
 
 from brainslosher.brainslosher import BrainSlosher
 from brainslosher.brainslosher_models import (
@@ -7,7 +9,6 @@ from brainslosher.brainslosher_models import (
     BrainSlosherJob,
     Cycle,
 )
-from mixology.devices.vessels import ReactionVessel
 
 
 @pytest.fixture
@@ -207,7 +208,7 @@ def test_resume_job(brainslosher, tmp_path, config):
 
     def fake_run_step(**kwargs):
         brainslosher.resume_state_overrides.update({"duration_min": 5, "washes": 1})
-        brainslosher.rxn_vessel.add_solution(**{"PBS": config.fill_volume_ml * 1000})
+        brainslosher.rxn_vessel.add_solution(PBS=config.fill_volume_ml * 1000)
         brainslosher.pause_requested.set()
 
     brainslosher.run_step = MagicMock(side_effect=fake_run_step)

@@ -1,14 +1,16 @@
-from brainslosher.brainslosher import BrainSlosher
-from brainslosher.utils.email_issues import send_email
+import argparse
 import logging
 import logging.config
-from one_liner.server import RouterServer
+import os
 import time
-import argparse
+
+import mixology
 from device_spinner.config import Config
 from device_spinner.device_spinner import DeviceSpinner
-import os
-import mixology
+from one_liner.server import RouterServer
+
+from brainslosher.brainslosher import BrainSlosher
+from brainslosher.utils.email_issues import send_email
 
 logging.basicConfig(level=logging.DEBUG)
 

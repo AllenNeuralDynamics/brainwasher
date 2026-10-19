@@ -1,21 +1,23 @@
-from mixology.instrument import Instrument
-from runze_control.multichannel_syringe_pump import SY01B
+from datetime import datetime, timedelta
+from functools import wraps
+from pathlib import Path
+from threading import Lock, RLock, Thread, current_thread
+from time import perf_counter
+from typing import Literal
+
+import yaml
 from mixology.devices.pololu.pololu_tic_mixer import (
     PololuTicMixer,
 )
+from mixology.devices.vessels import ReactionVessel, WasteVessel
+from mixology.instrument import Instrument
+from runze_control.multichannel_syringe_pump import SY01B
+
 from brainslosher.brainslosher_models import (
     BrainSlosherConfig,
     BrainSlosherJob,
     BrainSlosherJobStatus,
 )
-from mixology.devices.vessels import ReactionVessel, WasteVessel
-from threading import RLock, current_thread, Lock, Thread
-from functools import wraps
-from datetime import datetime, timedelta
-from typing import Literal, Union, Optional
-from pathlib import Path
-from time import perf_counter
-import yaml
 
 
 def lock_flowpath(func):
@@ -46,7 +48,7 @@ class BrainSlosher(Instrument):
         pump: SY01B,
         mixer: PololuTicMixer,
         waste_vessel: WasteVessel,
-        job: Optional[BrainSlosherJob] = None,
+        job: BrainSlosherJob | None = None,
     ):
         super().__init__()
 
@@ -98,7 +100,7 @@ class BrainSlosher(Instrument):
         if self._job:
             return self._job.model_dump()
 
-    def set_job(self, job: Union[dict, BrainSlosherJob]) -> None:
+    def set_job(self, job: dict | BrainSlosherJob) -> None:
         """
         Convienence method to set current job
 
@@ -219,7 +221,7 @@ class BrainSlosher(Instrument):
 
         max_pump = self.config.max_syringe_volume_ml
         while volume_ml > 0:
-            pump_vol = max_pump if volume_ml >= max_pump else volume_ml
+            pump_vol = min(max_pump, volume_ml)
             self.log.debug(
                 f"Moving pump to {solution} valve {self.config.selector_port_map[solution]}."
             )
@@ -263,7 +265,6 @@ class BrainSlosher(Instrument):
 
         """
         # TODO: implement checks if neccessary
-        pass
 
     def run_step(self, solution: str, duration_min: float, washes: int):
         """
@@ -281,7 +282,7 @@ class BrainSlosher(Instrument):
                 self.log.info(f"Starting wash step {i}")
                 self.run_wash_step(duration_min=duration_min, solution=solution)
             except Exception as e:
-                self.log.error(f"Error while performing wash {i + 1}: {str(e)}")
+                self.log.error(f"Error while performing wash {i + 1}: {e!s}")
                 raise e
             if self.pause_requested.is_set():
                 return
@@ -334,7 +335,7 @@ class BrainSlosher(Instrument):
                 message = BrainSlosherJobStatus(status="paused")
 
         except Exception as e:
-            self.log.error(f"Error running job: {str(e)}.")
+            self.log.error(f"Error running job: {e!s}.")
             message = BrainSlosherJobStatus(status="failed", message=str(e))
             raise e
 
