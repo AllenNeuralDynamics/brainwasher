@@ -1,17 +1,17 @@
-import os
-import time
+import argparse
 import logging
 import logging.config
-import argparse
-from typing import Optional
+import os
+import time
 from pathlib import Path
 
-from one_liner.server import RouterServer  # type: ignore
 from device_spinner.device_spinner import DeviceSpinner  # type: ignore
+from ficus.database.filesys import FileSysStore  # type: ignore
+from ficus.services.configs import get_config  # type: ignore
+from one_liner.server import RouterServer  # type: ignore
+
 from seqflow.seqflow import SeqFlow
 from seqflow.seqflow_config_model import SeqFlowSystemConfig
-from ficus.services.configs import get_config  # type: ignore
-from ficus.database.filesys import FileSysStore  # type: ignore
 
 
 class ZMQServer(RouterServer):
@@ -19,8 +19,8 @@ class ZMQServer(RouterServer):
         self,
         rpc_port: str = "5557",
         broadcast_port: str = "5558",
-        config: Optional[dict] = None,
-        instances: Optional[dict] = None,
+        config: dict | None = None,
+        instances: dict | None = None,
     ):
 
         super().__init__(

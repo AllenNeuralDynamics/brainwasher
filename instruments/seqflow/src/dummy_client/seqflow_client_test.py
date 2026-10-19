@@ -1,10 +1,11 @@
 # Test dummy codes
 
-from one_liner.client import RouterClient  # type: ignore
-import time
-import yaml
-from pathlib import Path
 import threading
+import time
+from pathlib import Path
+
+import yaml
+from one_liner.client import RouterClient  # type: ignore
 
 
 def stream_listener(client, stream_name):

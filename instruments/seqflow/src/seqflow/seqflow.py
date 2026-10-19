@@ -1,17 +1,19 @@
 # seqflow.py
 
-from mixology.instrument import Instrument
+import time
+from datetime import datetime
+from pathlib import Path
+from threading import Lock
+from typing import Any, Literal
+
+import yaml
 from mixology.devices.simulated_devices.peristaltic_pump import SimPeristalticPump
 from mixology.devices.simulated_devices.selector import SimSelector
-from seqflow.seqflow_models import SeqFlowJob, SeqFlowJobStatus
-from seqflow.seqflow_config_model import SeqFlowConfig
-from threading import Lock
 from mixology.devices.vessels import SlideContainer
-from datetime import datetime
-from typing import Union, Optional, Any, Literal
-from pathlib import Path
-import time
-import yaml
+from mixology.instrument import Instrument
+
+from seqflow.seqflow_config_model import SeqFlowConfig
+from seqflow.seqflow_models import SeqFlowJob, SeqFlowJobStatus
 
 
 class SeqFlow(Instrument):
@@ -42,7 +44,7 @@ class SeqFlow(Instrument):
         self.job_status: SeqFlowJobStatus = SeqFlowJobStatus(status="idle")
 
         # current job to run
-        self._job: Optional[SeqFlowJob] = None
+        self._job: SeqFlowJob | None = None
         # TODO: Add resume state tracking to SeqFlowJob. For now only remaining time is tracked in the instrument, but this should be saved to the job for resuming later.
         self.resume_state_overrides: dict[str, Any] = {}
 
@@ -101,7 +103,7 @@ class SeqFlow(Instrument):
 
         return None
 
-    def set_job(self, job: Union[dict, SeqFlowJob]) -> None:
+    def set_job(self, job: dict | SeqFlowJob) -> None:
         """Convenience method to set current job"""
         if self.job_status.status == "running":
             self.log.warning("Cannot set job when instrument is running. Please pause.")
@@ -157,13 +159,12 @@ class SeqFlow(Instrument):
         # TODO: Add logic
         # Example) If total volumn > 0, then solution should be in the selector_port_map (For heat or wait status)
         # If
-        pass
 
     def run_step(
         self,
-        solution: Optional[dict] = None,
-        duration_s: Optional[float] = None,
-        temp_c: Optional[float] = None,
+        solution: dict | None = None,
+        duration_s: float | None = None,
+        temp_c: float | None = None,
         flow_rate_mlpm: float = 0.0,
     ):
         if self._job is None:
@@ -209,7 +210,7 @@ class SeqFlow(Instrument):
                 message = SeqFlowJobStatus(status="paused")
 
         except Exception as e:
-            self.log.error(f"Error running job: {str(e)}.")
+            self.log.error(f"Error running job: {e!s}.")
             message = SeqFlowJobStatus(status="failed", message=str(e))
             raise e
 

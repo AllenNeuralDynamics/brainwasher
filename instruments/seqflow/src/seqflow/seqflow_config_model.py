@@ -1,25 +1,26 @@
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, Dict, Any, Literal
+from typing import Any, Literal
+
 from device_spinner.models import DeviceTrees  # type: ignore
 from one_liner.models import RouterServerConfig  # type: ignore
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class HandlerConfig(BaseModel):
     model_config = ConfigDict(extra="allow")
     class_: str = Field(..., alias="class")
-    level: Optional[str] = None
-    formatter: Optional[str] = None
-    filename: Optional[str] = None
+    level: str | None = None
+    formatter: str | None = None
+    filename: str | None = None
 
 
 class LoggingConfig(BaseModel):
     version: Literal[1]
     disable_existing_loggers: bool = False
-    formatters: Optional[Dict[str, Dict[str, Any]]] = None
-    handlers: Optional[Dict[str, HandlerConfig]] = None
-    loggers: Optional[Dict[str, Dict[str, Any]]] = None
-    root: Optional[Dict[str, Any]] = None
+    formatters: dict[str, dict[str, Any]] | None = None
+    handlers: dict[str, HandlerConfig] | None = None
+    loggers: dict[str, dict[str, Any]] | None = None
+    root: dict[str, Any] | None = None
 
 
 class RouterServerPortConfig(BaseModel):
@@ -31,7 +32,7 @@ class SeqFlowConfig(BaseModel, validate_assignment=True):
     # Use default_factory to satisfy mypy's static type checker
     save_folder: Path = Field(default_factory=lambda: Path("../../seq_flow_jobs/"))
     selector_port_map: dict[str, int]
-    instrument_name: Optional[str] = Field(
+    instrument_name: str | None = Field(
         default=None, description="Optional instrument name."
     )
 

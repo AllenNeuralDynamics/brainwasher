@@ -1,15 +1,15 @@
 # seqflow_models.py
 """pydantic model of seqflow job."""
 
+from typing import Annotated, Any, Literal
+
+from mixology.job import Job
 from pydantic import (
+    AfterValidator,
     BaseModel,
     Field,
     ValidationError,
-    AfterValidator,
 )
-from mixology.job import Job
-from typing import Optional, Annotated, Any, Literal
-
 
 DeviceType = Literal["pump", "heat_device", "wait", "stopper"]
 
@@ -18,17 +18,17 @@ class SeqFlowStep(BaseModel):
     """Model representing a single action within a sequence."""
 
     # --- STEP PARAMETERS ---
-    duration_s: Optional[float] = Field(
+    duration_s: float | None = Field(
         default=None, description="Time in seconds for each step."
     )
-    temp_c: Optional[float] = Field(
+    temp_c: float | None = Field(
         default=None, description="Temperature in Celsius for the heat wait step."
     )
     solution: dict[str, float] = Field(
         default_factory=dict,
         description="solution name and volume (mL) to fill into slides.",
     )
-    flow_rate_mlpm: Optional[float] = Field(
+    flow_rate_mlpm: float | None = Field(
         default=None, description="Step-specific flow rate override in mL/min."
     )
 
@@ -41,7 +41,7 @@ class SeqFlowJobStatus(BaseModel):
     status: Literal["failed", "finished", "running", "paused", "idle"] = Field(
         ..., description="Indicated if status of job."
     )
-    message: Optional[str] = Field(
+    message: str | None = Field(
         default=None, description="Optional message of additional info."
     )
 
@@ -85,7 +85,7 @@ class SeqFlowResumeState(BaseModel):
     # Overrides are a subset of SeqFlowStep fields whose values will
     # override those in the current step (e.g., partial wait times).
     overrides: Annotated[
-        Optional[dict[str, Any]], AfterValidator(values_in_seqflow_step)
+        dict[str, Any] | None, AfterValidator(values_in_seqflow_step)
     ] = None
 
 
@@ -95,7 +95,7 @@ class SeqFlowJob(Job):
     protocol: list[SeqFlowStep] = Field(
         default_factory=list, description="A list of steps to be run in order."
     )
-    resume_state: Optional[SeqFlowResumeState] = None
+    resume_state: SeqFlowResumeState | None = None
 
     def get_duration_s(self, start_step: int = 0) -> float:
         """
