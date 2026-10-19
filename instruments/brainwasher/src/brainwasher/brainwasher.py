@@ -2,26 +2,26 @@
 
 import _thread  # To kill the main thread from a child thread.
 import logging
-import yaml
-
-from mixology.devices.vessels import Vessel, ReactionVessel, WasteVessel
-from mixology.devices.mixer import Mixer
-from mixology.devices.liquid_presence_detection import BubbleDetectionSensor
-from mixology.devices.sequent_microsystems.valve import NCValve, ThreeTwoValve
-from mixology.devices.pressure_sensor import PressureSensor
-from mixology.devices.valves.closeable_vici import CloseableVICI
-from brainwasher.errors.instrument_errors import LeakCheckError
-from mixology.protocol import Protocol
-from mixology.job import Job
 from copy import deepcopy
 from datetime import timedelta
 from functools import wraps
 from pathlib import Path
-from runze_control.syringe_pump import SyringePump
-from time import sleep
+from threading import Event, RLock, Thread, current_thread
 from time import perf_counter as now
-from threading import Event, Thread, RLock, current_thread
+from time import sleep
 
+import yaml
+from mixology.devices.liquid_presence_detection import BubbleDetectionSensor
+from mixology.devices.mixer import Mixer
+from mixology.devices.pressure_sensor import PressureSensor
+from mixology.devices.sequent_microsystems.valve import NCValve, ThreeTwoValve
+from mixology.devices.valves.closeable_vici import CloseableVICI
+from mixology.devices.vessels import ReactionVessel, Vessel, WasteVessel
+from mixology.job import Job
+from mixology.protocol import Protocol
+from runze_control.syringe_pump import SyringePump
+
+from brainwasher.errors.instrument_errors import LeakCheckError
 
 SIMULATED = False
 

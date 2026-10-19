@@ -1,15 +1,14 @@
 """Instantiate objects from list of dicts."""
 
-from device_spinner.config import Config
-from device_spinner.device_spinner import DeviceSpinner
-
-from inpromptu.inpromptu_prompt_toolkit import Inpromptu
-
-import instruments.brainwasher.src.brainwasher.brainwasher  # For SIMULATED flag
 import argparse
-import traceback
 import logging
 import logging.config
+import traceback
+
+import instruments.brainwasher.src.brainwasher.brainwasher  # For SIMULATED flag
+from device_spinner.config import Config
+from device_spinner.device_spinner import DeviceSpinner
+from inpromptu.inpromptu_prompt_toolkit import Inpromptu
 
 ### Sample Protocol
 # demo_protocol_csv_str = \

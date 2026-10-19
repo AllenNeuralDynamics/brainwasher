@@ -1,8 +1,9 @@
-from device_spinner.device_spinner import DeviceSpinner
-from device_spinner.config import Config
-from pathlib import Path
 import sys
+from pathlib import Path
 from unittest.mock import MagicMock
+
+from device_spinner.config import Config
+from device_spinner.device_spinner import DeviceSpinner
 
 # Create a dummy fcntl module for Windows
 if sys.platform == "win32":

@@ -1,21 +1,20 @@
 """pydantic model of brainwasher job."""
 
-from pydantic import BaseModel, AfterValidator
-from typing import Optional, Annotated, Any
-from mixology.job import Job
-from pydantic import ValidationError
-from pydantic import computed_field
 from functools import cached_property
+from typing import Annotated, Any
+
+from mixology.job import Job
+from pydantic import AfterValidator, BaseModel, ValidationError, computed_field
 
 
 class WashStep(BaseModel):
     # FIXME: this should be retrieved from the function signature.
     # https://github.com/pydantic/pydantic/issues/1391
     # Warning: names & default values must match those in brainwasher.run_wash_step
-    intermittent_mixing_on_time_s: Optional[float] = None
-    intermittent_mixing_off_time_s: Optional[float] = None
-    mix_speed_rpm: Optional[float] = 0
-    duration_s: Optional[float] = 0
+    intermittent_mixing_on_time_s: float | None = None
+    intermittent_mixing_off_time_s: float | None = None
+    mix_speed_rpm: float | None = 0
+    duration_s: float | None = 0
     solution: dict[str, float]
 
     @property
@@ -67,13 +66,13 @@ class BrainwasherResumeState(BaseModel):
     # overrides are a subset of WashStep fields whose values will override
     # those in a WashStep.
     overrides: Annotated[
-        Optional[dict[str, Any]], AfterValidator(values_in_wash_step)
+        dict[str, Any] | None, AfterValidator(values_in_wash_step)
     ] = None
 
 
 class BrainwasherJob(Job):
-    protocol: Optional[list[WashStep]] = list()
-    resume_state: Optional[BrainwasherResumeState] = None
+    protocol: list[WashStep] | None = list()
+    resume_state: BrainwasherResumeState | None = None
 
     def get_duration_s(self, start_step: int = 0):
         """Total job duration in seconds starting from the specified step."""
