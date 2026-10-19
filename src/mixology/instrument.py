@@ -1,12 +1,14 @@
 """Instrument base class"""
 
-from abc import abstractmethod
-from pathlib import Path
-from mixology.job import Job
-from threading import Thread, Event
 import logging
+from abc import abstractmethod
 from datetime import timedelta
+from pathlib import Path
+from threading import Event, Thread
+
 import yaml
+
+from mixology.job import Job
 
 
 class Instrument:
@@ -132,7 +134,7 @@ class Instrument:
                     self.log.info("System paused.")
                     return  # Will execute finally block first.
             except Exception as e:
-                self.log.error(f"Error while running step {step}: {str(e)}")
+                self.log.error(f"Error while running step {step}: {e!s}")
                 raise e
             finally:
                 # Always save the current step in case of an unhandled exception

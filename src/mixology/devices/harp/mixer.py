@@ -1,10 +1,12 @@
 """Harp Valve Controller PWM-based Mixer"""
 
-from mixology.devices.mixer import PWMMixer
+from enum import IntEnum
+from struct import unpack
+
 from pyharp.device import Device, MessageType
 from pyharp.messages import HarpMessage, WriteU8HarpMessage
-from struct import unpack
-from enum import IntEnum
+
+from mixology.devices.mixer import PWMMixer
 
 
 class AppRegs(IntEnum):

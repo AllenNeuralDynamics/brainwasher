@@ -1,7 +1,6 @@
 """Simulated Selector"""
 
 import logging
-from typing import Union
 
 
 class SimSelector:
@@ -12,7 +11,7 @@ class SimSelector:
         self.position_count = positions
         self._position_dict = position_map
 
-    def move_to_position(self, position: Union[int, str]):
+    def move_to_position(self, position: int | str):
         self.log.debug(f"Moving to position: {position}")
 
 
@@ -28,5 +27,5 @@ class SimCloseableSelector(SimSelector):
     def close(self):
         self.log.debug("Closing flow.")
 
-    def move_to_port(self, port: Union[int, str]):
+    def move_to_port(self, port: int | str):
         self.log.debug(f"Moving to port: {port}")

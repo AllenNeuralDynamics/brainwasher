@@ -1,7 +1,8 @@
 """PWM Mosfet based Mixer"""
 
-from mixology.devices.mixer import Mixer
 import lib8mosind
+
+from mixology.devices.mixer import Mixer
 
 
 class OnOffMixer(Mixer):

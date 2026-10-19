@@ -1,7 +1,8 @@
 """Liquid Detection Sensor abstraction on top of Sequent Microsystems 16-input board"""
 
-from mixology.devices.pressure_sensor import PressureSensor as BasePressureSensor
 import lib16univin
+
+from mixology.devices.pressure_sensor import PressureSensor as BasePressureSensor
 
 
 class PressureSensor(BasePressureSensor):

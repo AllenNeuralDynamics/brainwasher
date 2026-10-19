@@ -1,18 +1,18 @@
 """pydantic model of job instance of protocol"""
 
-from pathlib import Path
-from pydantic import BaseModel, field_serializer
-
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import cached_property
-from typing import Optional, Literal
+from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel, field_serializer
 
 
 class SourceProtocol(BaseModel):
     """Path denoting the job or protocol that this job was generated from."""
 
-    path: Optional[Path] = None
-    accessed: Optional[datetime] = None
+    path: Path | None = None
+    accessed: datetime | None = None
 
     @field_serializer("path")
     def resolve_path(self, path: Path):
@@ -54,7 +54,7 @@ class ResumeState(BaseModel):
 
 
 class History(BaseModel):
-    events: Optional[list[Event]] = list()
+    events: list[Event] | None = list()
 
 
 class Job(BaseModel):
@@ -62,10 +62,10 @@ class Job(BaseModel):
 
     name: str
     starting_solution: dict[str, float]
-    source_protocol: Optional[SourceProtocol] = SourceProtocol()
-    protocol: Optional[list[Step]] = list()
-    resume_state: Optional[ResumeState] = None
-    history: Optional[History] = History()
+    source_protocol: SourceProtocol | None = SourceProtocol()
+    protocol: list[Step] | None = list()
+    resume_state: ResumeState | None = None
+    history: History | None = History()
 
     def get_duration_s(self, start_step: int = 0):
         """Total job duration in seconds starting from the specified step."""
@@ -82,22 +82,22 @@ class Job(BaseModel):
 
     def record_start(self, timestamp: datetime = None):
         """Record a start event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
+        timestamp = timestamp if timestamp else datetime.now(UTC)
         self.history.events.append(StartEvent(timestamp=timestamp))
 
     def record_finish(self, timestamp: datetime = None):
         """Record a finish event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
+        timestamp = timestamp if timestamp else datetime.now(UTC)
         self.history.events.append(FinishEvent(timestamp=timestamp))
 
     def record_pause(self, timestamp: datetime = None):
         """Record a finish event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
+        timestamp = timestamp if timestamp else datetime.now(UTC)
         self.history.events.append(PauseEvent(timestamp=timestamp))
 
     def record_resume(self, timestamp: datetime = None):
         """Record a finish event to the job's history."""
-        timestamp = timestamp if timestamp else datetime.now(timezone.utc)
+        timestamp = timestamp if timestamp else datetime.now(UTC)
         self.history.events.append(ResumeEvent(timestamp=timestamp))
 
     def save_resume_state(
@@ -113,7 +113,7 @@ class Job(BaseModel):
 
     def set_source_protocol(self, path: Path, access_timestamp: datetime = None):
         access_timestamp = (
-            access_timestamp if access_timestamp else datetime.now(timezone.utc)
+            access_timestamp if access_timestamp else datetime.now(UTC)
         )
         self.source_protocol = SourceProtocol(path=path, accessed=access_timestamp)
 

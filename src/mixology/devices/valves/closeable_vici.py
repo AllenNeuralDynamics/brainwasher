@@ -1,18 +1,16 @@
 """Multiposition Valves"""
 
 import logging
-
-from vicivalve import VICI
-from serial import Serial
-from typing import Union
-
 from dataclasses import dataclass
 from math import ceil
+
+from serial import Serial
+from vicivalve import VICI
 
 
 @dataclass
 class Port:
-    port: Union[int, str] = None
+    port: int | str = None
     open: bool = False
 
 
@@ -67,11 +65,11 @@ class CloseableVICI(VICI):
             return (port * 2 - 1) % (self.port_count * 2)
         return port * 2
 
-    def _check_port_range(self, port: Union[int, str]):
+    def _check_port_range(self, port: int | str):
         if str(port) not in self._port_map:
             raise ValueError(f"Requested port {port} does not exist.")
 
-    def move_to_port(self, port: Union[int, str]):
+    def move_to_port(self, port: int | str):
         """Move to the specified position."""
         self._check_port_range(port)
         port_index = self._port_map[str(port)]  # Convert name to int.
@@ -93,7 +91,7 @@ class CloseableVICI(VICI):
         super().move_to_position(closed_hw_position)
         self.current_port.open = False
 
-    def move_clockwise_to_port(self, port: Union[int, str]):
+    def move_clockwise_to_port(self, port: int | str):
         self._check_port_range(port)
         port_index = self._port_map[str(port)]  # Convert name to int.
         open_hw_position = self._to_nearest_hw_position(port_index, open=True)
@@ -102,7 +100,7 @@ class CloseableVICI(VICI):
         self.current_port.port = port
         self.current_port.open = True
 
-    def move_counterclockwise_to_port(self, port: Union[int, str]):
+    def move_counterclockwise_to_port(self, port: int | str):
         self._check_port_range(port)
         port_index = self._port_map[str(port)]  # Convert name to int.
         open_hw_position = self._to_nearest_hw_position(port_index, open=True)
@@ -113,8 +111,9 @@ class CloseableVICI(VICI):
 
 
 if __name__ == "__main__":
-    from serial import Serial
     from time import sleep
+
+    from serial import Serial
 
     logging.basicConfig(level=logging.DEBUG)
 

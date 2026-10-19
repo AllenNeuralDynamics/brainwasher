@@ -1,10 +1,11 @@
 """TigerController Serial Port Abstraction"""
 
-from mixology.devices.ika.rct_basic_device_codes import *
-from serial import Serial, SerialException
-from time import perf_counter
-from typing import Union
 import logging
+from time import perf_counter
+
+from serial import Serial, SerialException
+
+from mixology.devices.ika.rct_basic_device_codes import *
 
 
 class RCTBasic:
@@ -71,7 +72,7 @@ class RCTBasic:
     def reset(self):
         return self.send(self._format_cmd(Cmd.reset))
 
-    def set_operating_mode(self, mode: Union[OperatingMode, str]):
+    def set_operating_mode(self, mode: OperatingMode | str):
         self.send(self._format_cmd(Cmd.set_operating_mode, mode))
 
     # Missing: watchdog safety limits on temperature.
@@ -85,17 +86,17 @@ class RCTBasic:
 
         msg_termination = "\r\n"
 
-        self.log.debug(f"Sending: {repr(cmd_str)}")
+        self.log.debug(f"Sending: {cmd_str!r}")
         self.ser.write(cmd_str.encode("ascii"))
         self._last_cmd_send_time = perf_counter()
         while self.ser.out_waiting:
             pass
         reply = self.ser.read_until(msg_termination.encode("ascii")).decode("utf8")
-        self.log.debug(f"Reply: {repr(reply)}")
+        self.log.debug(f"Reply: {reply!r}")
         try:
             self._check_reply_for_errors(reply)
         except RuntimeError:
-            self.log.error(f"Error occurred when sending: {repr(cmd_str)}")
+            self.log.error(f"Error occurred when sending: {cmd_str!r}")
             raise
         return reply
 

@@ -1,22 +1,22 @@
 """Tissue-clearing proof-of-concept"""
 
 import logging
-import pandas as pd
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
+
+import pandas as pd
 from pint import UnitRegistry
-from typing import Union
 
 
 class Protocol:
     """Parser for reading/writing protocols to/from CSV files."""
 
-    def __init__(self, file: Union[Path, str, None] = None):
+    def __init__(self, file: Path | str | None = None):
         self.log = logging.getLogger(self.__class__.__name__)
         self.ureg = UnitRegistry()
         self.df = pd.read_csv(file) if file else None
 
-    def load(self, file: Union[Path, str]):
+    def load(self, file: Path | str):
         self.df = pd.read_csv(file)
         self.get_chemicals.cache_clear()
         self.get_solution.cache_clear()
@@ -26,8 +26,8 @@ class Protocol:
         """Return the number of steps in this protocol."""
         return len(self.df.index)
 
-    @lru_cache(maxsize=None)
-    def get_chemicals(self, step: Union[int, None] = None):
+    @cache
+    def get_chemicals(self, step: int | None = None):
         """Return all chemicals present in a protocol file or for a specific
         step."""
         if step is not None:
@@ -50,7 +50,7 @@ class Protocol:
                 return float(parsed_mix_speed.magnitude)
         raise ValueError("Unrecognized mix speed specification.")
 
-    @lru_cache(maxsize=None)
+    @cache
     def get_solution(self, step: int, max_volume_ul: float):
         """Return a dictionary, keyed by chemical name, of the solution volume
         in microliters"""

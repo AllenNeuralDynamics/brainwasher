@@ -1,6 +1,7 @@
-from mixology.devices.mixer import Mixer
-import subprocess
 import logging
+import subprocess
+
+from mixology.devices.mixer import Mixer
 
 
 class TicCmd:

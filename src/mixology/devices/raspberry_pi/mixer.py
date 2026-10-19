@@ -1,7 +1,8 @@
 """Raspberry Pi Valve Controller PWM-based Mixer"""
 
-from mixology.devices.mixer import PWMMixer
 from rpi_hardware_pwm import HardwarePWM
+
+from mixology.devices.mixer import PWMMixer
 
 
 class RaspberryPiPWMMixer(PWMMixer):

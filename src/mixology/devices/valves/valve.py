@@ -2,8 +2,6 @@
 
 import logging
 
-from typing import Union
-
 
 class Valve:
     def __init__(self, name: str = None):
@@ -58,7 +56,7 @@ class NOSolenoidValve(NOValve, SolenoidValve):
 class ThreeTwoValve(Valve):
     """3/2 valve base class."""
 
-    def select_way(self, way: Union[int, str]):
+    def select_way(self, way: int | str):
         """Select way 'A' (0) or 'B' (1)."""
         raise NotImplementedError
 

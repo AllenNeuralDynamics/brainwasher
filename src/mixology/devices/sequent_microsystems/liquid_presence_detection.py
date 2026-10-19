@@ -1,10 +1,10 @@
 """Liquid Detection Sensor abstraction on top of Sequent Microsystems 16-input board"""
 
+import lib16inpind
+
 from mixology.devices.liquid_presence_detection import (
     BubbleDetectionSensor as BaseBubbleDetectionSensor,
 )
-
-import lib16inpind
 
 
 class BubbleDetectionSensor(BaseBubbleDetectionSensor):
