@@ -1,8 +1,10 @@
 #!/usr/bin/env/python3
 
-from mixology.protocol import Protocol
 from io import StringIO
+
 from pint import UnitRegistry
+
+from mixology.protocol import Protocol
 
 csv_str = (
     '"Mix Speed",Chemicals,Solution,Duration\n'

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from ftdi_serial import Serial
-from time import sleep
-from vicivalve import VICI
-
 # Uncomment for some prolific log statements.
 import logging
+from time import sleep
+
+from ftdi_serial import Serial
+from vicivalve import VICI
 
 logging.basicConfig(level=logging.DEBUG)
 

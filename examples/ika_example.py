@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from mixology.devices.ika.rct_basic import RCTBasic
-from time import sleep
-
 # Uncomment for some prolific log statements.
 import logging
+from time import sleep
+
+from mixology.devices.ika.rct_basic import RCTBasic
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
