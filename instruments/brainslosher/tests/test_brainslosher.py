@@ -63,7 +63,7 @@ def test_withdraw_and_dispense_chunks(brainslosher, pump):
     brainslosher.withdraw_and_dispense_solution("PBS", 10.0, "chamber")
 
     # 10 ml with 4.5 ml syringe → 3 cycles. Chamber drained in init so called 4
-    assert pump.withdraw.call_count == 4  
+    assert pump.withdraw.call_count == 4
     assert pump.dispense.call_count == 4
 
 
@@ -75,9 +75,7 @@ def test_run_wash_empty_vessel(monkeypatch, brainslosher):
 
     # patch perf_counter
     times = iter([0, 600])
-    monkeypatch.setattr(
-        "brainslosher.brainslosher.perf_counter", lambda: next(times)
-    )
+    monkeypatch.setattr("brainslosher.brainslosher.perf_counter", lambda: next(times))
     brainslosher.run_wash_step(10, "PBS")
 
     # check chamber was prepped
@@ -95,9 +93,7 @@ def test_run_wash_full_vessel(monkeypatch, brainslosher):
 
     # patch perf_counter
     times = iter([0, 600])
-    monkeypatch.setattr(
-        "brainslosher.brainslosher.perf_counter", lambda: next(times)
-    )
+    monkeypatch.setattr("brainslosher.brainslosher.perf_counter", lambda: next(times))
     brainslosher.rxn_vessel.add_solution(something_else=10)
     brainslosher.run_wash_step(10, "PBS")
 
@@ -116,15 +112,13 @@ def test_run_wash_pause(monkeypatch, brainslosher):
 
     # patch perf_counter
     times = iter([0, 376, 382])
-    monkeypatch.setattr(
-        "brainslosher.brainslosher.perf_counter", lambda: next(times)
-    )
+    monkeypatch.setattr("brainslosher.brainslosher.perf_counter", lambda: next(times))
 
     # setup conditions to pause
     brainslosher.job_worker = MagicMock()
     brainslosher.job_worker.is_alive.return_value = True
-    brainslosher.prime_line.side_effect = (
-        lambda solution: brainslosher.pause_requested.set()
+    brainslosher.prime_line.side_effect = lambda solution: (
+        brainslosher.pause_requested.set()
     )
 
     brainslosher.run_wash_step(10.6, "PBS")

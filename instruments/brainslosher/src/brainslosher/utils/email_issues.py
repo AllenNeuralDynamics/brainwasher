@@ -12,7 +12,7 @@ def send_email(
     body: str,
     to: list[str],
     from_email: str = "svc_mpe@alleninstitute.org",
-    server_name: str =  "aidc-mx-1.corp.alleninstitute.org"
+    server_name: str = "aidc-mx-1.corp.alleninstitute.org",
 ) -> None:
     """
     Compile subject and body into an email, and send using the computer's SMTP server.
@@ -27,31 +27,35 @@ def send_email(
     msg["From"] = from_email
     msg["To"] = ", ".join(to)
 
-    smtp_server =  server_name
+    smtp_server = server_name
 
     # Send message
     try:
-        
         with smtplib.SMTP(smtp_server) as s:
             s.send_message(msg)
             print(f"EMAILING {to}")
         logger.info(
             f"Sent email",
             extra={
-            "subject":subject,
-            "to":to,
-            "body":body,}
+                "subject": subject,
+                "to": to,
+                "body": body,
+            },
         )
     except:
         logger.exception(
             "Failed to send email",
             extra={
-            "subject":subject,
-            "to":to,
-            "body":body,}
+                "subject": subject,
+                "to": to,
+                "body": body,
+            },
         )
 
+
 if __name__ == "__main__":
-    header = f'<h2>Error occured durring run:</h2>'
-    msg = f'<h3>Device error. Please check device.</h3>'
-    send_email(subject="Test Email", body=header + msg, to=["micah.woodard@alleninstitute.org"])
+    header = f"<h2>Error occured durring run:</h2>"
+    msg = f"<h3>Device error. Please check device.</h3>"
+    send_email(
+        subject="Test Email", body=header + msg, to=["micah.woodard@alleninstitute.org"]
+    )
