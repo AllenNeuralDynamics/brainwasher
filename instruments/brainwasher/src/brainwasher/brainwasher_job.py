@@ -65,9 +65,9 @@ class BrainwasherResumeState(BaseModel):
     # How to handle waste.
     # overrides are a subset of WashStep fields whose values will override
     # those in a WashStep.
-    overrides: Annotated[
-        dict[str, Any] | None, AfterValidator(values_in_wash_step)
-    ] = None
+    overrides: Annotated[dict[str, Any] | None, AfterValidator(values_in_wash_step)] = (
+        None
+    )
 
 
 class BrainwasherJob(Job):
