@@ -41,9 +41,9 @@ def send_email(
                 "body": body,
             },
         )
-    except:
+    except Exception as e:
         logger.exception(
-            "Failed to send email",
+            f"Failed to send email: {str(e)}",
             extra={
                 "subject": subject,
                 "to": to,

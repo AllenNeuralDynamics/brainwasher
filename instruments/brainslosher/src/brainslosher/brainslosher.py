@@ -3,7 +3,7 @@ from functools import wraps
 from pathlib import Path
 from threading import Lock, RLock, Thread, current_thread
 from time import perf_counter
-from typing import Literal
+from typing import Literal, Optional
 
 import yaml
 from mixology.devices.pololu.pololu_tic_mixer import (
@@ -75,7 +75,7 @@ class BrainSlosher(Instrument):
         self.job_status: BrainSlosherJobStatus = BrainSlosherJobStatus(status="idle")
 
         # current job to run
-        self._job: BrainSlosherJob = job
+        self._job: Optional[BrainSlosherJob] = job
 
         # track current step for progress
         self._step = 0
@@ -111,7 +111,7 @@ class BrainSlosher(Instrument):
             self.log.warning("Cannot set job when instrument is running. Please pause.")
             return
 
-        self._job = BrainSlosherJob(**job) if type(job) == dict else job
+        self._job = BrainSlosherJob(**job) if isinstance(job, dict) else job
         status = "paused" if self._job.resume_state else "idle"
         with self.job_status_lock:
             self.log.info(f"Job set and setting to {status}")
@@ -131,7 +131,7 @@ class BrainSlosher(Instrument):
             )
             self.job_status = BrainSlosherJobStatus(status=status)
 
-    def get_progress(self) -> int:
+    def get_progress(self) -> Optional[int]:
         """
         Progress of current run between 0 - 100
         """
@@ -188,14 +188,14 @@ class BrainSlosher(Instrument):
         self.withdraw_and_dispense_solution(solution, volume_ml, "chamber")
 
     @lock_flowpath
-    def drain_chamber(self, volume_ml: float = None) -> None:
+    def drain_chamber(self, volume_ml: Optional[float] = None) -> None:
         """
         Drain chamber
         """
 
         volume_ml = volume_ml or self.rxn_vessel.curr_volume_ul / 1000
 
-        if volume_ml + self.waste.curr_volume_ul > self.waste.max_volume_ul:
+        if (volume_ml * 1000) + self.waste.curr_volume_ul > self.waste.max_volume_ul:
             raise ValueError(
                 "Waste vessel will exceed max volume if chamber is drained. Please empty."
             )
@@ -289,7 +289,7 @@ class BrainSlosher(Instrument):
             # update state to reflect was wash finished
             self.resume_state_overrides.update(washes=washes - (i + 1))
 
-    def _load_job(self, job_path: str) -> BrainSlosherJob:
+    def _load_job(self, job_path: str | Path) -> BrainSlosherJob:
         """
         Rewrite to validate against BrainSlosherJob type
         """
@@ -364,6 +364,26 @@ class BrainSlosher(Instrument):
             **kwargs,
         )
 
+    def _check_job_will_overflow_waste(
+        self, job: BrainSlosherJob, start_step: int = 0
+    ) -> None:
+        """Reject jobs whose remaining wash volume would exceed the waste vessel."""
+        remaining_steps = job.protocol[start_step:]
+        if not remaining_steps:
+            return
+
+        required_waste_ul = sum(
+            step.washes
+            * (self.config.fill_volume_ml + self.config.drain_volume_buffer_ml)
+            * 1000
+            for step in remaining_steps
+        )
+        projected_waste_ul = self.waste.curr_volume_ul + required_waste_ul
+        if projected_waste_ul > self.waste.max_volume_ul:
+            raise ValueError(
+                "Job will overflow the waste vessel. Please empty waste and reset waste vessel state."
+            )
+
     @lock_flowpath
     def run_wash_step(self, duration_min: float, solution: str):
         """Fill, mix, and empty the reaction vessel to
@@ -435,11 +455,12 @@ class BrainSlosher(Instrument):
             self.log.error("No job to resume")
             return
 
-        if not job.source_protocol.path:
+        if not job.source_protocol or not job.source_protocol.path:
             self.log.error("No source protocol path to save to.")
             return
 
-        self.run(job.source_protocol.path)
+        self._check_job_will_overflow_waste(job, start_step=job.resume_state.step)
+        self.run(str(job.source_protocol.path))
 
     def restart_run(self, job: BrainSlosherJob):
         """
@@ -449,10 +470,11 @@ class BrainSlosher(Instrument):
 
         """
         # reset brainslosher
+        self._check_job_will_overflow_waste(job)
         self.clear_job()
         self.start_run(job)
 
-    def start_run(self, job: BrainSlosherJob):
+    def start_run(self, job: BrainSlosherJob | dict):
         """
         Set up a run by creating and saving job to specified path
 
@@ -460,24 +482,21 @@ class BrainSlosher(Instrument):
 
         """
         # validate and save job so instrument can run
-        valid_job = BrainSlosherJob(**job)
+        valid_job = (
+            BrainSlosherJob.model_validate(job) if isinstance(job, dict) else job
+        )
+        self._check_job_will_overflow_waste(valid_job)
 
         # create path for job
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         job_path = Path(self.config.save_folder) / f"{valid_job.name}_{timestamp}.yaml"
+        job_path.parent.mkdir(parents=True, exist_ok=True)
 
+        assert valid_job.source_protocol
         valid_job.source_protocol.path = job_path
         with open(Path(job_path), "w") as f:
             yaml.dump(valid_job.model_dump(), f)
-        self.run(job_path)
-
-    def get_job(self) -> dict | None:
-        """
-        Convienence method to get current job
-        """
-
-        if self._job:
-            return self._job.model_dump()
+        self.run(str(job_path))
 
     def get_config(self) -> dict:
         """

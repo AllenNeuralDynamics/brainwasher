@@ -45,7 +45,7 @@ class BrainSlosherResumeState(BaseModel):
             )
         # Validate override values against WashStep value constraints.
         try:  # Lazy way: try making a valid Step.
-            cylce = Cycle(**overrides, solution="")
+            Cycle(**overrides, solution="")
         except ValidationError as e:
             extra_msg = "Error validating ResumeState overrides against Cycle values."
             raise ValueError(extra_msg) from e
